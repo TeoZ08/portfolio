@@ -17,6 +17,7 @@ export type CameraResyncRef = {
 };
 
 export type DevFrameUpdates = {
+  interaction: DevFramePhase | null;
   player: DevFramePhase | null;
   cameraTarget: DevFramePhase | null;
   cameraRig: DevFramePhase | null;
@@ -30,6 +31,7 @@ const MAX_DEV_FRAME_DELTA = 0.1;
 
 export function createDevFrameUpdates(): DevFrameUpdates {
   return {
+    interaction: null,
     player: null,
     cameraTarget: null,
     cameraRig: null,
@@ -89,7 +91,8 @@ export function DevFrameLoop({
 
     const updates = frameUpdatesRef.current;
 
-    // Keep the update order explicit while staying on R3F's normal loop.
+    // Command interaction, apply Rapier movement, then update the camera chain.
+    updates.interaction?.(delta);
     updates.player?.(delta);
     updates.cameraTarget?.(delta);
     updates.cameraRig?.(delta);

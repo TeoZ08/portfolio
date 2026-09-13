@@ -14,8 +14,11 @@ import { CameraRig } from "@/world/camera/CameraRig";
 import { CameraTarget } from "@/world/camera/CameraTarget";
 import { EXPLORE_CAMERA_PRESET } from "@/world/camera/camera-presets";
 import { createCameraTargetState } from "@/world/camera/camera-types";
+import { InteractionSystem } from "@/world/interactions/InteractionSystem";
+import { DEV_INTERACTION_TARGETS } from "@/world/interactions/dev-interaction-targets";
 import { DevPlayground } from "@/world/playground/DevPlayground";
 import { DevPlayer } from "@/world/player/DevPlayer";
+import { createPlayerControlState } from "@/world/player/player-control";
 import { createPlayerMotionState } from "@/world/player/player-motion";
 
 function DevelopmentHelpers() {
@@ -33,6 +36,7 @@ export function DevCanvas() {
   const isDevelopment = process.env.NODE_ENV !== "production";
   const frameUpdatesRef = useRef(createDevFrameUpdates());
   const motionRef = useRef(createPlayerMotionState());
+  const playerControlRef = useRef(createPlayerControlState());
   const cameraTargetRef = useRef(createCameraTargetState());
   const cameraResyncRef = useRef(createCameraResyncState());
 
@@ -61,9 +65,16 @@ export function DevCanvas() {
               timeStep="vary"
             >
               <DevPlayground />
+              <InteractionSystem
+                frameUpdatesRef={frameUpdatesRef}
+                motionRef={motionRef}
+                playerControlRef={playerControlRef}
+                targets={DEV_INTERACTION_TARGETS}
+              />
               <DevPlayer
                 frameUpdatesRef={frameUpdatesRef}
                 motionRef={motionRef}
+                playerControlRef={playerControlRef}
               />
               <CameraTarget
                 frameUpdatesRef={frameUpdatesRef}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useWorldState } from "@/systems/world-state";
+import { useInteractionDebugState } from "@/world/interactions/interaction-state";
 import { usePlayerDebugState } from "@/world/player/player-state";
 
 function formatVector([x, y, z]: [number, number, number]) {
@@ -15,6 +16,20 @@ export function DevPanel() {
   const velocity = usePlayerDebugState((state) => state.velocity);
   const grounded = usePlayerDebugState((state) => state.grounded);
   const moving = usePlayerDebugState((state) => state.moving);
+  const interactionStatus = useInteractionDebugState((state) => state.status);
+  const interactionCandidateLabel = useInteractionDebugState(
+    (state) => state.candidateLabel,
+  );
+  const interactionActiveTargetLabel = useInteractionDebugState(
+    (state) => state.activeTargetLabel,
+  );
+
+  const interactionReadout =
+    interactionStatus === "idle"
+      ? interactionCandidateLabel === null
+        ? "idle"
+        : `E · interact · ${interactionCandidateLabel}`
+      : `${interactionStatus} · ${interactionActiveTargetLabel ?? "target"}`;
 
   if (process.env.NODE_ENV === "production") {
     return null;
@@ -52,6 +67,10 @@ export function DevPanel() {
         <div>
           <dt>Movendo</dt>
           <dd data-player-moving>{moving ? "true" : "false"}</dd>
+        </div>
+        <div>
+          <dt>Interação</dt>
+          <dd data-interaction-status>{interactionReadout}</dd>
         </div>
       </dl>
 

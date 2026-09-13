@@ -2,6 +2,8 @@
 
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 
+import { DevInteractionTargets } from "@/world/interactions/DevInteractionTargets";
+
 type Vector3Tuple = [number, number, number];
 
 type DevStaticBoxProps = {
@@ -94,6 +96,8 @@ export function DevPlayground() {
         size={[1.8, 1.6, 1.8]}
         color="#8994a0"
       />
+
+      <DevInteractionTargets />
     </group>
   );
 }

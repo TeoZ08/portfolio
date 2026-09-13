@@ -10,6 +10,10 @@ import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 import type { DevFrameUpdatesRef } from "@/world/DevFrameLoop";
 import {
+  resetPlayerControlState,
+  type PlayerControlRef,
+} from "@/world/player/player-control";
+import {
   publishPlayerDebugSnapshot,
   resetPlayerDebugState,
 } from "@/world/player/player-state";
@@ -32,6 +36,7 @@ const MAX_STEP_HEIGHT = 0.42;
 const MIN_STEP_WIDTH = 0.25;
 const SNAP_TO_GROUND_DISTANCE = 0.2;
 const DEBUG_PUBLISH_INTERVAL = 0.1;
+const PLAYER_ROTATION_SPEED = Math.PI * 4;
 
 type CharacterController = ReturnType<
   ReturnType<typeof useRapier>["world"]["createCharacterController"]
@@ -48,12 +53,45 @@ type PlayerStepScratch = {
   nextPosition: PlayerStepVector;
 };
 
+type PlayerRotationScratch = {
+  x: number;
+  y: number;
+  z: number;
+  w: number;
+};
+
 type DevPlayerProps = {
   frameUpdatesRef: DevFrameUpdatesRef;
   motionRef: PlayerMotionRef;
+  playerControlRef: PlayerControlRef;
 };
 
-export function DevPlayer({ frameUpdatesRef, motionRef }: DevPlayerProps) {
+function shortestAngleDelta(target: number, current: number) {
+  const fullTurn = Math.PI * 2;
+  let delta = (target - current + Math.PI) % fullTurn;
+
+  if (delta < 0) {
+    delta += fullTurn;
+  }
+
+  return delta - Math.PI;
+}
+
+function moveTowardsAngle(current: number, target: number, maxDelta: number) {
+  const delta = shortestAngleDelta(target, current);
+
+  if (Math.abs(delta) <= maxDelta) {
+    return target;
+  }
+
+  return current + Math.sign(delta) * maxDelta;
+}
+
+export function DevPlayer({
+  frameUpdatesRef,
+  motionRef,
+  playerControlRef,
+}: DevPlayerProps) {
   const bodyRef = useRef<RapierRigidBody>(null);
   const colliderRef = useRef<RapierCollider>(null);
   const characterControllerRef = useRef<CharacterController | null>(null);
@@ -63,6 +101,12 @@ export function DevPlayer({ frameUpdatesRef, motionRef }: DevPlayerProps) {
   const stepScratchRef = useRef<PlayerStepScratch>({
     desiredTranslation: { x: 0, y: 0, z: 0 },
     nextPosition: { x: 0, y: 0, z: 0 },
+  });
+  const rotationScratchRef = useRef<PlayerRotationScratch>({
+    x: 0,
+    y: 0,
+    z: 0,
+    w: 1,
   });
   const readInput = usePlayerInput();
   const { world } = useRapier();
@@ -122,7 +166,8 @@ export function DevPlayer({ frameUpdatesRef, motionRef }: DevPlayerProps) {
         return;
       }
 
-      const input = readInput();
+      const control = playerControlRef.current;
+      const input = control.manualInputEnabled ? readInput() : null;
       let verticalVelocity = verticalVelocityRef.current;
 
       if (groundedRef.current && verticalVelocity < 0) {
@@ -134,10 +179,16 @@ export function DevPlayer({ frameUpdatesRef, motionRef }: DevPlayerProps) {
       const currentPosition = body.translation();
       const scratch = stepScratchRef.current;
       const desiredTranslation = scratch.desiredTranslation;
+      const horizontalVelocityX = control.manualInputEnabled
+        ? (input?.x ?? 0) * PLAYER_SPEED
+        : control.desiredVelocity.x;
+      const horizontalVelocityZ = control.manualInputEnabled
+        ? (input?.z ?? 0) * PLAYER_SPEED
+        : control.desiredVelocity.z;
 
-      desiredTranslation.x = input.x * PLAYER_SPEED * delta;
+      desiredTranslation.x = horizontalVelocityX * delta;
       desiredTranslation.y = verticalVelocity * delta;
-      desiredTranslation.z = input.z * PLAYER_SPEED * delta;
+      desiredTranslation.z = horizontalVelocityZ * delta;
 
       characterController.computeColliderMovement(collider, desiredTranslation);
 
@@ -155,6 +206,21 @@ export function DevPlayer({ frameUpdatesRef, motionRef }: DevPlayerProps) {
         Math.hypot(correctedMovement.x, correctedMovement.z) > 0.0005;
       const inverseDelta = 1 / delta;
       const motion = motionRef.current;
+      const rotationTargetY = control.targetRotationY;
+      const nextRotationY = rotationTargetY === null
+        ? motion.rotationY
+        : moveTowardsAngle(
+            motion.rotationY,
+            rotationTargetY,
+            PLAYER_ROTATION_SPEED * delta,
+          );
+      const rotation = rotationScratchRef.current;
+
+      rotation.x = 0;
+      rotation.y = Math.sin(nextRotationY / 2);
+      rotation.z = 0;
+      rotation.w = Math.cos(nextRotationY / 2);
+      body.setNextKinematicRotation(rotation);
 
       groundedRef.current = grounded;
       verticalVelocityRef.current = grounded && verticalVelocity < 0
@@ -167,6 +233,7 @@ export function DevPlayer({ frameUpdatesRef, motionRef }: DevPlayerProps) {
       motion.velocity.x = correctedMovement.x * inverseDelta;
       motion.velocity.y = correctedMovement.y * inverseDelta;
       motion.velocity.z = correctedMovement.z * inverseDelta;
+      motion.rotationY = nextRotationY;
       motion.grounded = grounded;
       motion.moving = moving;
 
@@ -189,7 +256,7 @@ export function DevPlayer({ frameUpdatesRef, motionRef }: DevPlayerProps) {
         moving,
       });
     },
-    [motionRef, readInput],
+    [motionRef, playerControlRef, readInput],
   );
 
   useLayoutEffect(() => {
@@ -200,8 +267,9 @@ export function DevPlayer({ frameUpdatesRef, motionRef }: DevPlayerProps) {
       if (updates.player === updatePlayer) {
         updates.player = null;
       }
+      resetPlayerControlState(playerControlRef.current);
     };
-  }, [frameUpdatesRef, updatePlayer]);
+  }, [frameUpdatesRef, playerControlRef, updatePlayer]);
 
   useLayoutEffect(() => {
     resetPlayerMotionState(motionRef.current);
@@ -214,7 +282,7 @@ export function DevPlayer({ frameUpdatesRef, motionRef }: DevPlayerProps) {
       type="kinematicPosition"
       colliders={false}
       position={DEV_PLAYER_START_POSITION}
-      lockRotations
+      enabledRotations={[false, true, false]}
     >
       <CapsuleCollider
         ref={colliderRef}
@@ -225,6 +293,10 @@ export function DevPlayer({ frameUpdatesRef, motionRef }: DevPlayerProps) {
           args={[PLAYER_CAPSULE_RADIUS, PLAYER_CAPSULE_HALF_HEIGHT * 2, 8, 16]}
         />
         <meshBasicMaterial color="#f59e0b" wireframe />
+      </mesh>
+      <mesh name="DEV_PLAYER_FORWARD_MARKER" position={[0, 0, -0.42]}>
+        <boxGeometry args={[0.12, 0.12, 0.18]} />
+        <meshBasicMaterial color="#fff7ed" />
       </mesh>
     </RigidBody>
   );
