@@ -37,6 +37,8 @@ const MIN_STEP_WIDTH = 0.25;
 const SNAP_TO_GROUND_DISTANCE = 0.2;
 const DEBUG_PUBLISH_INTERVAL = 0.1;
 const PLAYER_ROTATION_SPEED = Math.PI * 4;
+const SITTING_VISUAL_SCALE_Y = 0.55;
+const SITTING_VISUAL_OFFSET_Y = -0.18;
 
 type CharacterController = ReturnType<
   ReturnType<typeof useRapier>["world"]["createCharacterController"]
@@ -58,6 +60,15 @@ type PlayerRotationScratch = {
   y: number;
   z: number;
   w: number;
+};
+
+type DevVisualGroup = {
+  scale: { y: number };
+  position: { y: number };
+};
+
+type DevVisualMarker = {
+  visible: boolean;
 };
 
 type DevPlayerProps = {
@@ -94,6 +105,9 @@ export function DevPlayer({
 }: DevPlayerProps) {
   const bodyRef = useRef<RapierRigidBody>(null);
   const colliderRef = useRef<RapierCollider>(null);
+  const visualGroupRef = useRef<DevVisualGroup>(null);
+  const sittingMarkerRef = useRef<DevVisualMarker>(null);
+  const sittingVisualRef = useRef(false);
   const characterControllerRef = useRef<CharacterController | null>(null);
   const verticalVelocityRef = useRef(0);
   const groundedRef = useRef(false);
@@ -167,14 +181,20 @@ export function DevPlayer({
       }
 
       const control = playerControlRef.current;
-      const input = control.manualInputEnabled ? readInput() : null;
+      const physicsLocked = control.physicsLocked;
+      const input =
+        control.manualInputEnabled && !physicsLocked ? readInput() : null;
       let verticalVelocity = verticalVelocityRef.current;
 
-      if (groundedRef.current && verticalVelocity < 0) {
-        verticalVelocity = GROUND_STICK_VELOCITY;
-      }
+      if (physicsLocked) {
+        verticalVelocity = 0;
+      } else {
+        if (groundedRef.current && verticalVelocity < 0) {
+          verticalVelocity = GROUND_STICK_VELOCITY;
+        }
 
-      verticalVelocity += GRAVITY * delta;
+        verticalVelocity += GRAVITY * delta;
+      }
 
       const currentPosition = body.translation();
       const scratch = stepScratchRef.current;
@@ -186,24 +206,34 @@ export function DevPlayer({
         ? (input?.z ?? 0) * PLAYER_SPEED
         : control.desiredVelocity.z;
 
-      desiredTranslation.x = horizontalVelocityX * delta;
-      desiredTranslation.y = verticalVelocity * delta;
-      desiredTranslation.z = horizontalVelocityZ * delta;
+      desiredTranslation.x = physicsLocked ? 0 : horizontalVelocityX * delta;
+      desiredTranslation.y = physicsLocked ? 0 : verticalVelocity * delta;
+      desiredTranslation.z = physicsLocked ? 0 : horizontalVelocityZ * delta;
 
       characterController.computeColliderMovement(collider, desiredTranslation);
 
       const correctedMovement = characterController.computedMovement();
       const nextPosition = scratch.nextPosition;
 
-      nextPosition.x = currentPosition.x + correctedMovement.x;
-      nextPosition.y = currentPosition.y + correctedMovement.y;
-      nextPosition.z = currentPosition.z + correctedMovement.z;
+      nextPosition.x = physicsLocked
+        ? currentPosition.x
+        : currentPosition.x + correctedMovement.x;
+      nextPosition.y = physicsLocked
+        ? currentPosition.y
+        : currentPosition.y + correctedMovement.y;
+      nextPosition.z = physicsLocked
+        ? currentPosition.z
+        : currentPosition.z + correctedMovement.z;
 
       body.setNextKinematicTranslation(nextPosition);
 
-      const grounded = characterController.computedGrounded();
-      const moving =
-        Math.hypot(correctedMovement.x, correctedMovement.z) > 0.0005;
+      const computedGrounded = characterController.computedGrounded();
+      const grounded = physicsLocked
+        ? groundedRef.current || computedGrounded
+        : computedGrounded;
+      const moving = physicsLocked
+        ? false
+        : Math.hypot(correctedMovement.x, correctedMovement.z) > 0.0005;
       const inverseDelta = 1 / delta;
       const motion = motionRef.current;
       const rotationTargetY = control.targetRotationY;
@@ -223,19 +253,35 @@ export function DevPlayer({
       body.setNextKinematicRotation(rotation);
 
       groundedRef.current = grounded;
-      verticalVelocityRef.current = grounded && verticalVelocity < 0
-        ? GROUND_STICK_VELOCITY
-        : verticalVelocity;
+      verticalVelocityRef.current = physicsLocked
+        ? 0
+        : grounded && verticalVelocity < 0
+          ? GROUND_STICK_VELOCITY
+          : verticalVelocity;
 
       motion.position.x = nextPosition.x;
       motion.position.y = nextPosition.y;
       motion.position.z = nextPosition.z;
-      motion.velocity.x = correctedMovement.x * inverseDelta;
-      motion.velocity.y = correctedMovement.y * inverseDelta;
-      motion.velocity.z = correctedMovement.z * inverseDelta;
+      motion.velocity.x = physicsLocked ? 0 : correctedMovement.x * inverseDelta;
+      motion.velocity.y = physicsLocked ? 0 : correctedMovement.y * inverseDelta;
+      motion.velocity.z = physicsLocked ? 0 : correctedMovement.z * inverseDelta;
       motion.rotationY = nextRotationY;
       motion.grounded = grounded;
       motion.moving = moving;
+
+      if (sittingVisualRef.current !== physicsLocked) {
+        sittingVisualRef.current = physicsLocked;
+
+        const visualGroup = visualGroupRef.current;
+        if (visualGroup) {
+          visualGroup.scale.y = physicsLocked ? SITTING_VISUAL_SCALE_Y : 1;
+          visualGroup.position.y = physicsLocked ? SITTING_VISUAL_OFFSET_Y : 0;
+        }
+
+        if (sittingMarkerRef.current) {
+          sittingMarkerRef.current.visible = physicsLocked;
+        }
+      }
 
       debugElapsedRef.current += delta;
 
@@ -248,9 +294,9 @@ export function DevPlayer({
       publishPlayerDebugSnapshot({
         position: [nextPosition.x, nextPosition.y, nextPosition.z],
         velocity: [
-          correctedMovement.x * inverseDelta,
-          correctedMovement.y * inverseDelta,
-          correctedMovement.z * inverseDelta,
+          physicsLocked ? 0 : correctedMovement.x * inverseDelta,
+          physicsLocked ? 0 : correctedMovement.y * inverseDelta,
+          physicsLocked ? 0 : correctedMovement.z * inverseDelta,
         ],
         grounded,
         moving,
@@ -288,16 +334,27 @@ export function DevPlayer({
         ref={colliderRef}
         args={[PLAYER_CAPSULE_HALF_HEIGHT, PLAYER_CAPSULE_RADIUS]}
       />
-      <mesh name="DEV_PLAYER_CAPSULE_MESH">
-        <capsuleGeometry
-          args={[PLAYER_CAPSULE_RADIUS, PLAYER_CAPSULE_HALF_HEIGHT * 2, 8, 16]}
-        />
-        <meshBasicMaterial color="#f59e0b" wireframe />
-      </mesh>
-      <mesh name="DEV_PLAYER_FORWARD_MARKER" position={[0, 0, -0.42]}>
-        <boxGeometry args={[0.12, 0.12, 0.18]} />
-        <meshBasicMaterial color="#fff7ed" />
-      </mesh>
+      <group ref={visualGroupRef} name="DEV_PLAYER_VISUAL">
+        <mesh name="DEV_PLAYER_CAPSULE_MESH">
+          <capsuleGeometry
+            args={[PLAYER_CAPSULE_RADIUS, PLAYER_CAPSULE_HALF_HEIGHT * 2, 8, 16]}
+          />
+          <meshBasicMaterial color="#f59e0b" wireframe />
+        </mesh>
+        <mesh name="DEV_PLAYER_FORWARD_MARKER" position={[0, 0, -0.42]}>
+          <boxGeometry args={[0.12, 0.12, 0.18]} />
+          <meshBasicMaterial color="#fff7ed" />
+        </mesh>
+        <mesh
+          ref={sittingMarkerRef}
+          name="DEV_PLAYER_SITTING_MARKER"
+          position={[0, -0.42, 0]}
+          visible={false}
+        >
+          <boxGeometry args={[0.8, 0.05, 0.8]} />
+          <meshBasicMaterial color="#fff7ed" wireframe />
+        </mesh>
+      </group>
     </RigidBody>
   );
 }

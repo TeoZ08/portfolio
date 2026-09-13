@@ -12,6 +12,7 @@ import {
 import type { InteractionStatus, InteractionTarget } from "./interaction-types";
 
 const INTERACTION_APPROACH_SPEED = 2.5;
+const INTERACTION_EXIT_SPEED = 2.5;
 
 type InteractionRuntimeState = {
   status: InteractionStatus;
@@ -108,6 +109,7 @@ function publishRuntimeState(runtime: InteractionRuntimeState) {
 function setPlayerControlIdle(playerControlRef: PlayerControlRef) {
   const control = playerControlRef.current;
   control.manualInputEnabled = true;
+  control.physicsLocked = false;
   control.desiredVelocity.x = 0;
   control.desiredVelocity.z = 0;
   control.targetRotationY = null;
@@ -121,9 +123,22 @@ function setPlayerControlAlignment(
 ) {
   const control = playerControlRef.current;
   control.manualInputEnabled = false;
+  control.physicsLocked = false;
   control.desiredVelocity.x = velocityX;
   control.desiredVelocity.z = velocityZ;
   control.targetRotationY = targetRotationY;
+}
+
+function setPlayerControlSitting(
+  playerControlRef: PlayerControlRef,
+  rotationY: number,
+) {
+  const control = playerControlRef.current;
+  control.manualInputEnabled = false;
+  control.physicsLocked = true;
+  control.desiredVelocity.x = 0;
+  control.desiredVelocity.z = 0;
+  control.targetRotationY = rotationY;
 }
 
 export function InteractionSystem({
@@ -155,15 +170,21 @@ export function InteractionSystem({
       runtime.interactRequested = false;
       runtime.cancelRequested = false;
 
-      if (
-        statusAtFrameStart !== "idle" &&
-        (cancelRequested || interactRequested)
-      ) {
+      const exitRequested = interactRequested || cancelRequested;
+
+      if (statusAtFrameStart === "approaching" && exitRequested) {
         runtime.status = "idle";
         runtime.activeTarget = null;
         setPlayerControlIdle(playerControlRef);
         publishRuntimeState(runtime);
         return;
+      }
+
+      if (
+        (statusAtFrameStart === "aligned" || statusAtFrameStart === "sitting") &&
+        exitRequested
+      ) {
+        runtime.status = "exiting";
       }
 
       if (statusAtFrameStart === "idle") {
@@ -199,6 +220,42 @@ export function InteractionSystem({
         return;
       }
 
+      if (runtime.status === "aligned") {
+        if (activeTarget.action.type === "sit") {
+          runtime.status = "sitting";
+          setPlayerControlSitting(
+            playerControlRef,
+            activeTarget.action.seatRotationY,
+          );
+          publishRuntimeState(runtime);
+          return;
+        }
+
+        setPlayerControlAlignment(
+          playerControlRef,
+          0,
+          0,
+          activeTarget.interactionRotationY,
+        );
+        return;
+      }
+
+      if (runtime.status === "sitting") {
+        if (activeTarget.action.type === "sit") {
+          setPlayerControlSitting(
+            playerControlRef,
+            activeTarget.action.seatRotationY,
+          );
+          return;
+        }
+
+        runtime.status = "idle";
+        runtime.activeTarget = null;
+        setPlayerControlIdle(playerControlRef);
+        publishRuntimeState(runtime);
+        return;
+      }
+
       const motion = motionRef.current;
       const dx = activeTarget.interactionPoint[0] - motion.position.x;
       const dy = activeTarget.interactionPoint[1] - motion.position.y;
@@ -208,6 +265,46 @@ export function InteractionSystem({
         activeTarget.positionTolerance * activeTarget.positionTolerance;
       const positionAligned =
         positionErrorSquared <= positionToleranceSquared;
+
+      if (runtime.status === "exiting") {
+        let velocityX = 0;
+        let velocityZ = 0;
+
+        if (!positionAligned) {
+          const planarDistance = Math.hypot(dx, dz);
+
+          if (planarDistance > 0.0001) {
+            const speed = Math.min(
+              INTERACTION_EXIT_SPEED,
+              planarDistance / Math.max(delta, 0.0001),
+            );
+            velocityX = (dx / planarDistance) * speed;
+            velocityZ = (dz / planarDistance) * speed;
+          }
+        }
+
+        setPlayerControlAlignment(
+          playerControlRef,
+          velocityX,
+          velocityZ,
+          activeTarget.interactionRotationY,
+        );
+
+        const rotationError = Math.abs(
+          shortestAngleDelta(activeTarget.interactionRotationY, motion.rotationY),
+        );
+        const rotationAligned =
+          rotationError <= activeTarget.rotationTolerance;
+
+        if (positionAligned && rotationAligned) {
+          runtime.status = "idle";
+          runtime.activeTarget = null;
+          setPlayerControlIdle(playerControlRef);
+          publishRuntimeState(runtime);
+        }
+
+        return;
+      }
 
       if (runtime.status === "approaching") {
         let velocityX = 0;

@@ -12,6 +12,11 @@ export const DEV_INTERACTION_FIXTURES: readonly DevInteractionFixture[] = [
     target: {
       id: "DEV_INTERACTION_CHAIR",
       label: "chair",
+      action: {
+        type: "sit",
+        seatPoint: [3, 0.86, 2.95],
+        seatRotationY: Math.PI,
+      },
       interactionPoint: [3, 0.86, 2.95],
       interactionRotationY: Math.PI,
       activationRadius: 1.6,
@@ -26,6 +31,9 @@ export const DEV_INTERACTION_FIXTURES: readonly DevInteractionFixture[] = [
     target: {
       id: "DEV_INTERACTION_CONSOLE",
       label: "console",
+      action: {
+        type: "align",
+      },
       interactionPoint: [1, 0.86, 1.4],
       interactionRotationY: Math.PI / 2,
       activationRadius: 1.6,
