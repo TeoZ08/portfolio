@@ -1,21 +1,25 @@
 "use client";
 
-import { useFrame } from "@react-three/fiber";
 import {
   CapsuleCollider,
   RigidBody,
   useRapier,
 } from "@react-three/rapier";
 import type { RapierCollider, RapierRigidBody } from "@react-three/rapier";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
+import type { DevFrameUpdatesRef } from "@/world/DevFrameLoop";
 import {
   publishPlayerDebugSnapshot,
   resetPlayerDebugState,
 } from "@/world/player/player-state";
 import { usePlayerInput } from "@/world/player/player-input";
+import {
+  DEV_PLAYER_START_POSITION,
+  resetPlayerMotionState,
+  type PlayerMotionRef,
+} from "@/world/player/player-motion";
 
-const DEV_PLAYER_START_POSITION: [number, number, number] = [0, 0.9, 4.5];
 const PLAYER_CAPSULE_HALF_HEIGHT = 0.5;
 const PLAYER_CAPSULE_RADIUS = 0.35;
 const PLAYER_SPEED = 4;
@@ -27,20 +31,39 @@ const MIN_SLOPE_SLIDE_ANGLE = Math.PI / 3;
 const MAX_STEP_HEIGHT = 0.42;
 const MIN_STEP_WIDTH = 0.25;
 const SNAP_TO_GROUND_DISTANCE = 0.2;
-const MAX_FRAME_DELTA = 0.1;
 const DEBUG_PUBLISH_INTERVAL = 0.1;
 
 type CharacterController = ReturnType<
   ReturnType<typeof useRapier>["world"]["createCharacterController"]
 >;
 
-export function DevPlayer() {
+type PlayerStepVector = {
+  x: number;
+  y: number;
+  z: number;
+};
+
+type PlayerStepScratch = {
+  desiredTranslation: PlayerStepVector;
+  nextPosition: PlayerStepVector;
+};
+
+type DevPlayerProps = {
+  frameUpdatesRef: DevFrameUpdatesRef;
+  motionRef: PlayerMotionRef;
+};
+
+export function DevPlayer({ frameUpdatesRef, motionRef }: DevPlayerProps) {
   const bodyRef = useRef<RapierRigidBody>(null);
   const colliderRef = useRef<RapierCollider>(null);
   const characterControllerRef = useRef<CharacterController | null>(null);
   const verticalVelocityRef = useRef(0);
   const groundedRef = useRef(false);
   const debugElapsedRef = useRef(0);
+  const stepScratchRef = useRef<PlayerStepScratch>({
+    desiredTranslation: { x: 0, y: 0, z: 0 },
+    nextPosition: { x: 0, y: 0, z: 0 },
+  });
   const readInput = usePlayerInput();
   const { world } = useRapier();
 
@@ -84,81 +107,105 @@ export function DevPlayer() {
         characterControllerRef.current = null;
       }
 
+      resetPlayerMotionState(motionRef.current);
       resetPlayerDebugState();
     };
-  }, [world]);
+  }, [motionRef, world]);
 
-  useFrame((_, rawDelta) => {
-    const body = bodyRef.current;
-    const collider = colliderRef.current;
-    const characterController = characterControllerRef.current;
+  const updatePlayer = useCallback(
+    (delta: number) => {
+      const body = bodyRef.current;
+      const collider = colliderRef.current;
+      const characterController = characterControllerRef.current;
 
-    if (!body || !collider || !characterController) {
-      return;
-    }
+      if (!body || !collider || !characterController) {
+        return;
+      }
 
-    const delta = Math.min(rawDelta, MAX_FRAME_DELTA);
+      const input = readInput();
+      let verticalVelocity = verticalVelocityRef.current;
 
-    if (delta <= 0) {
-      return;
-    }
+      if (groundedRef.current && verticalVelocity < 0) {
+        verticalVelocity = GROUND_STICK_VELOCITY;
+      }
 
-    const input = readInput();
-    let verticalVelocity = verticalVelocityRef.current;
+      verticalVelocity += GRAVITY * delta;
 
-    if (groundedRef.current && verticalVelocity < 0) {
-      verticalVelocity = GROUND_STICK_VELOCITY;
-    }
+      const currentPosition = body.translation();
+      const scratch = stepScratchRef.current;
+      const desiredTranslation = scratch.desiredTranslation;
 
-    verticalVelocity += GRAVITY * delta;
+      desiredTranslation.x = input.x * PLAYER_SPEED * delta;
+      desiredTranslation.y = verticalVelocity * delta;
+      desiredTranslation.z = input.z * PLAYER_SPEED * delta;
 
-    const currentPosition = body.translation();
-    const desiredTranslation = {
-      x: input.x * PLAYER_SPEED * delta,
-      y: verticalVelocity * delta,
-      z: input.z * PLAYER_SPEED * delta,
+      characterController.computeColliderMovement(collider, desiredTranslation);
+
+      const correctedMovement = characterController.computedMovement();
+      const nextPosition = scratch.nextPosition;
+
+      nextPosition.x = currentPosition.x + correctedMovement.x;
+      nextPosition.y = currentPosition.y + correctedMovement.y;
+      nextPosition.z = currentPosition.z + correctedMovement.z;
+
+      body.setNextKinematicTranslation(nextPosition);
+
+      const grounded = characterController.computedGrounded();
+      const moving =
+        Math.hypot(correctedMovement.x, correctedMovement.z) > 0.0005;
+      const inverseDelta = 1 / delta;
+      const motion = motionRef.current;
+
+      groundedRef.current = grounded;
+      verticalVelocityRef.current = grounded && verticalVelocity < 0
+        ? GROUND_STICK_VELOCITY
+        : verticalVelocity;
+
+      motion.position.x = nextPosition.x;
+      motion.position.y = nextPosition.y;
+      motion.position.z = nextPosition.z;
+      motion.velocity.x = correctedMovement.x * inverseDelta;
+      motion.velocity.y = correctedMovement.y * inverseDelta;
+      motion.velocity.z = correctedMovement.z * inverseDelta;
+      motion.grounded = grounded;
+      motion.moving = moving;
+
+      debugElapsedRef.current += delta;
+
+      if (debugElapsedRef.current < DEBUG_PUBLISH_INTERVAL) {
+        return;
+      }
+
+      debugElapsedRef.current = 0;
+
+      publishPlayerDebugSnapshot({
+        position: [nextPosition.x, nextPosition.y, nextPosition.z],
+        velocity: [
+          correctedMovement.x * inverseDelta,
+          correctedMovement.y * inverseDelta,
+          correctedMovement.z * inverseDelta,
+        ],
+        grounded,
+        moving,
+      });
+    },
+    [motionRef, readInput],
+  );
+
+  useLayoutEffect(() => {
+    const updates = frameUpdatesRef.current;
+    updates.player = updatePlayer;
+
+    return () => {
+      if (updates.player === updatePlayer) {
+        updates.player = null;
+      }
     };
+  }, [frameUpdatesRef, updatePlayer]);
 
-    characterController.computeColliderMovement(collider, desiredTranslation);
-
-    const correctedMovement = characterController.computedMovement();
-    const nextPosition = {
-      x: currentPosition.x + correctedMovement.x,
-      y: currentPosition.y + correctedMovement.y,
-      z: currentPosition.z + correctedMovement.z,
-    };
-
-    body.setNextKinematicTranslation(nextPosition);
-
-    const grounded = characterController.computedGrounded();
-    const moving =
-      Math.hypot(correctedMovement.x, correctedMovement.z) > 0.0005;
-
-    groundedRef.current = grounded;
-    verticalVelocityRef.current = grounded && verticalVelocity < 0
-      ? GROUND_STICK_VELOCITY
-      : verticalVelocity;
-
-    debugElapsedRef.current += delta;
-
-    if (debugElapsedRef.current < DEBUG_PUBLISH_INTERVAL) {
-      return;
-    }
-
-    debugElapsedRef.current = 0;
-    const inverseDelta = 1 / delta;
-
-    publishPlayerDebugSnapshot({
-      position: [nextPosition.x, nextPosition.y, nextPosition.z],
-      velocity: [
-        correctedMovement.x * inverseDelta,
-        correctedMovement.y * inverseDelta,
-        correctedMovement.z * inverseDelta,
-      ],
-      grounded,
-      moving,
-    });
-  });
+  useLayoutEffect(() => {
+    resetPlayerMotionState(motionRef.current);
+  }, [motionRef]);
 
   return (
     <RigidBody

@@ -2,10 +2,21 @@
 
 import { Canvas } from "@react-three/fiber";
 import { Physics } from "@react-three/rapier";
+import { useRef } from "react";
 
 import { useWorldState } from "@/systems/world-state";
+import {
+  createCameraResyncState,
+  createDevFrameUpdates,
+  DevFrameLoop,
+} from "@/world/DevFrameLoop";
+import { CameraRig } from "@/world/camera/CameraRig";
+import { CameraTarget } from "@/world/camera/CameraTarget";
+import { EXPLORE_CAMERA_PRESET } from "@/world/camera/camera-presets";
+import { createCameraTargetState } from "@/world/camera/camera-types";
 import { DevPlayground } from "@/world/playground/DevPlayground";
 import { DevPlayer } from "@/world/player/DevPlayer";
+import { createPlayerMotionState } from "@/world/player/player-motion";
 
 function DevelopmentHelpers() {
   return (
@@ -20,6 +31,10 @@ export function DevCanvas() {
   const currentRegion = useWorldState((state) => state.currentRegion);
   const timeOfDay = useWorldState((state) => state.timeOfDay);
   const isDevelopment = process.env.NODE_ENV !== "production";
+  const frameUpdatesRef = useRef(createDevFrameUpdates());
+  const motionRef = useRef(createPlayerMotionState());
+  const cameraTargetRef = useRef(createCameraTargetState());
+  const cameraResyncRef = useRef(createCameraResyncState());
 
   return (
     <section
@@ -29,7 +44,13 @@ export function DevCanvas() {
       data-time-of-day={timeOfDay}
       data-playground="physics"
     >
-      <Canvas camera={{ position: [10, 8, 10], fov: 50 }} dpr={[1, 2]}>
+      <Canvas
+        camera={{
+          position: EXPLORE_CAMERA_PRESET.initialPosition,
+          fov: EXPLORE_CAMERA_PRESET.fov,
+        }}
+        dpr={[1, 2]}
+      >
         {isDevelopment ? (
           <>
             <DevelopmentHelpers />
@@ -40,7 +61,25 @@ export function DevCanvas() {
               timeStep="vary"
             >
               <DevPlayground />
-              <DevPlayer />
+              <DevPlayer
+                frameUpdatesRef={frameUpdatesRef}
+                motionRef={motionRef}
+              />
+              <CameraTarget
+                frameUpdatesRef={frameUpdatesRef}
+                motionRef={motionRef}
+                resyncRef={cameraResyncRef}
+                targetRef={cameraTargetRef}
+              />
+              <CameraRig
+                frameUpdatesRef={frameUpdatesRef}
+                resyncRef={cameraResyncRef}
+                targetRef={cameraTargetRef}
+              />
+              <DevFrameLoop
+                frameUpdatesRef={frameUpdatesRef}
+                cameraResyncRef={cameraResyncRef}
+              />
             </Physics>
           </>
         ) : null}
