@@ -1,11 +1,20 @@
 "use client";
 
 import { useWorldState } from "@/systems/world-state";
+import { usePlayerDebugState } from "@/world/player/player-state";
+
+function formatVector([x, y, z]: [number, number, number]) {
+  return `${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)}`;
+}
 
 export function DevPanel() {
   const currentRegion = useWorldState((state) => state.currentRegion);
   const timeOfDay = useWorldState((state) => state.timeOfDay);
   const setTimeOfDay = useWorldState((state) => state.setTimeOfDay);
+  const position = usePlayerDebugState((state) => state.position);
+  const velocity = usePlayerDebugState((state) => state.velocity);
+  const grounded = usePlayerDebugState((state) => state.grounded);
+  const moving = usePlayerDebugState((state) => state.moving);
 
   if (process.env.NODE_ENV === "production") {
     return null;
@@ -13,7 +22,7 @@ export function DevPanel() {
 
   return (
     <aside className="dev-panel" data-dev-panel aria-label="Painel DEV">
-      <p className="dev-panel__title">DEV / Foundation</p>
+      <p className="dev-panel__title">DEV / Physics Playground</p>
 
       <dl className="dev-panel__readout">
         <div>
@@ -23,6 +32,26 @@ export function DevPanel() {
         <div>
           <dt>timeOfDay</dt>
           <dd data-time-of-day>{timeOfDay.toFixed(1)}</dd>
+        </div>
+        <div>
+          <dt>Player</dt>
+          <dd>DEV_PLAYER_CAPSULE</dd>
+        </div>
+        <div>
+          <dt>Posição</dt>
+          <dd data-player-position>{formatVector(position)}</dd>
+        </div>
+        <div>
+          <dt>Velocidade</dt>
+          <dd data-player-velocity>{formatVector(velocity)}</dd>
+        </div>
+        <div>
+          <dt>Grounded</dt>
+          <dd data-player-grounded>{grounded ? "true" : "false"}</dd>
+        </div>
+        <div>
+          <dt>Movendo</dt>
+          <dd data-player-moving>{moving ? "true" : "false"}</dd>
         </div>
       </dl>
 

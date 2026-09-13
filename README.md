@@ -29,7 +29,7 @@ O desenvolvimento deve ocorrer em uma pasta/repositório separado do portfólio 
 ## Execução técnica local
 
 ```bash
-npm install --omit=optional
+npm install --include=optional --omit=peer
 npm run dev
 npm run typecheck
 npm run build
