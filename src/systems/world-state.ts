@@ -1,9 +1,13 @@
 import { create } from "zustand";
 
 export const DEV_FOUNDATION_REGION = "DEV_FOUNDATION" as const;
+export const FIELD_REGION = "FIELD" as const;
+
+export type WorldRegion = typeof DEV_FOUNDATION_REGION | typeof FIELD_REGION;
 
 type WorldState = {
-  currentRegion: typeof DEV_FOUNDATION_REGION;
+  currentRegion: WorldRegion;
+  setCurrentRegion: (region: WorldRegion) => void;
   timeOfDay: number;
   setTimeOfDay: (value: number) => void;
 };
@@ -13,7 +17,8 @@ function clampTimeOfDay(value: number) {
 }
 
 export const useWorldState = create<WorldState>((set) => ({
-  currentRegion: DEV_FOUNDATION_REGION,
+  currentRegion: FIELD_REGION,
+  setCurrentRegion: (currentRegion) => set({ currentRegion }),
   timeOfDay: 12,
   setTimeOfDay: (value) => set({ timeOfDay: clampTimeOfDay(value) }),
 }));

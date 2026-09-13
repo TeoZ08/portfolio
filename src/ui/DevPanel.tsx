@@ -8,7 +8,11 @@ function formatVector([x, y, z]: [number, number, number]) {
   return `${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)}`;
 }
 
-export function DevPanel() {
+export function DevPanel({
+  title = "DEV / Physics Playground",
+}: {
+  title?: string;
+}) {
   const currentRegion = useWorldState((state) => state.currentRegion);
   const timeOfDay = useWorldState((state) => state.timeOfDay);
   const setTimeOfDay = useWorldState((state) => state.setTimeOfDay);
@@ -37,7 +41,7 @@ export function DevPanel() {
 
   return (
     <aside className="dev-panel" data-dev-panel aria-label="Painel DEV">
-      <p className="dev-panel__title">DEV / Physics Playground</p>
+      <p className="dev-panel__title">{title}</p>
 
       <dl className="dev-panel__readout">
         <div>

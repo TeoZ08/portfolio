@@ -19,17 +19,18 @@ input {
   font: inherit;
 }
 
-.foundation-page {
+.world-page,
+.dev-page {
   min-height: 100svh;
   position: relative;
 }
 
-.foundation-canvas {
+.world-canvas {
   height: 100svh;
   width: 100%;
 }
 
-.foundation-canvas canvas {
+.world-canvas canvas {
   display: block;
 }
 
