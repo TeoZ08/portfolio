@@ -9,6 +9,7 @@ import type { RapierCollider, RapierRigidBody } from "@react-three/rapier";
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 import type { DevFrameUpdatesRef } from "@/world/DevFrameLoop";
+import type { CameraViewRef } from "@/world/camera/camera-types";
 import {
   resetPlayerControlState,
   type PlayerControlRef,
@@ -72,6 +73,7 @@ type DevVisualMarker = {
 };
 
 type DevPlayerProps = {
+  cameraViewRef: CameraViewRef;
   frameUpdatesRef: DevFrameUpdatesRef;
   motionRef: PlayerMotionRef;
   playerControlRef: PlayerControlRef;
@@ -99,6 +101,7 @@ function moveTowardsAngle(current: number, target: number, maxDelta: number) {
 }
 
 export function DevPlayer({
+  cameraViewRef,
   frameUpdatesRef,
   motionRef,
   playerControlRef,
@@ -199,11 +202,20 @@ export function DevPlayer({
       const currentPosition = body.translation();
       const scratch = stepScratchRef.current;
       const desiredTranslation = scratch.desiredTranslation;
+      const manualSideInput = input?.x ?? 0;
+      const manualForwardInput = -(input?.z ?? 0);
+      const cameraView = cameraViewRef.current;
+      const manualVelocityX =
+        manualForwardInput * cameraView.forwardX +
+        manualSideInput * cameraView.rightX;
+      const manualVelocityZ =
+        manualForwardInput * cameraView.forwardZ +
+        manualSideInput * cameraView.rightZ;
       const horizontalVelocityX = control.manualInputEnabled
-        ? (input?.x ?? 0) * PLAYER_SPEED
+        ? manualVelocityX * PLAYER_SPEED
         : control.desiredVelocity.x;
       const horizontalVelocityZ = control.manualInputEnabled
-        ? (input?.z ?? 0) * PLAYER_SPEED
+        ? manualVelocityZ * PLAYER_SPEED
         : control.desiredVelocity.z;
 
       desiredTranslation.x = physicsLocked ? 0 : horizontalVelocityX * delta;
@@ -231,12 +243,19 @@ export function DevPlayer({
       const grounded = physicsLocked
         ? groundedRef.current || computedGrounded
         : computedGrounded;
+      const horizontalMovement = Math.hypot(
+        correctedMovement.x,
+        correctedMovement.z,
+      );
       const moving = physicsLocked
         ? false
-        : Math.hypot(correctedMovement.x, correctedMovement.z) > 0.0005;
+        : horizontalMovement > 0.0005;
       const inverseDelta = 1 / delta;
       const motion = motionRef.current;
-      const rotationTargetY = control.targetRotationY;
+      const rotationTargetY =
+        control.targetRotationY === null && moving
+          ? Math.atan2(correctedMovement.x, -correctedMovement.z)
+          : control.targetRotationY;
       const nextRotationY = rotationTargetY === null
         ? motion.rotationY
         : moveTowardsAngle(
@@ -302,7 +321,7 @@ export function DevPlayer({
         moving,
       });
     },
-    [motionRef, playerControlRef, readInput],
+    [cameraViewRef, motionRef, playerControlRef, readInput],
   );
 
   useLayoutEffect(() => {

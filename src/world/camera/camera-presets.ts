@@ -8,6 +8,7 @@ export type CameraPreset = {
   lookAheadDamping: number;
   cameraPositionDamping: number;
   orientationDamping: number;
+  headingDamping: number;
   fov: number;
 };
 
@@ -21,5 +22,6 @@ export const EXPLORE_CAMERA_PRESET: CameraPreset = {
   lookAheadDamping: 7,
   cameraPositionDamping: 5.5,
   orientationDamping: 9,
+  headingDamping: 4.5,
   fov: 50,
 };

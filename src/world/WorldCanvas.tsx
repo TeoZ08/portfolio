@@ -13,7 +13,10 @@ import {
 import { CameraRig } from "@/world/camera/CameraRig";
 import { CameraTarget } from "@/world/camera/CameraTarget";
 import { EXPLORE_CAMERA_PRESET } from "@/world/camera/camera-presets";
-import { createCameraTargetState } from "@/world/camera/camera-types";
+import {
+  createCameraTargetState,
+  createCameraViewState,
+} from "@/world/camera/camera-types";
 import { InteractionSystem } from "@/world/interactions/InteractionSystem";
 import type { InteractionTarget } from "@/world/interactions/interaction-types";
 import { DevPlayer } from "@/world/player/DevPlayer";
@@ -58,6 +61,9 @@ export function WorldCanvas({
   const motionRef = useRef(createPlayerMotionState());
   const playerControlRef = useRef(createPlayerControlState());
   const cameraTargetRef = useRef(createCameraTargetState());
+  const cameraViewRef = useRef(
+    createCameraViewState(EXPLORE_CAMERA_PRESET.offset),
+  );
   const cameraResyncRef = useRef(createCameraResyncState());
 
   useEffect(() => {
@@ -98,6 +104,7 @@ export function WorldCanvas({
             targets={targets}
           />
           <DevPlayer
+            cameraViewRef={cameraViewRef}
             frameUpdatesRef={frameUpdatesRef}
             motionRef={motionRef}
             playerControlRef={playerControlRef}
@@ -105,10 +112,12 @@ export function WorldCanvas({
           <CameraTarget
             frameUpdatesRef={frameUpdatesRef}
             motionRef={motionRef}
+            playerControlRef={playerControlRef}
             resyncRef={cameraResyncRef}
             targetRef={cameraTargetRef}
           />
           <CameraRig
+            cameraViewRef={cameraViewRef}
             frameUpdatesRef={frameUpdatesRef}
             resyncRef={cameraResyncRef}
             targetRef={cameraTargetRef}
