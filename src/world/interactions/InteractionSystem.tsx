@@ -129,7 +129,7 @@ function setPlayerControlAlignment(
   control.targetRotationY = targetRotationY;
 }
 
-function setPlayerControlSitting(
+function setPlayerControlLocked(
   playerControlRef: PlayerControlRef,
   rotationY: number,
 ) {
@@ -181,7 +181,9 @@ export function InteractionSystem({
       }
 
       if (
-        (statusAtFrameStart === "aligned" || statusAtFrameStart === "sitting") &&
+        (statusAtFrameStart === "aligned" ||
+          statusAtFrameStart === "sitting" ||
+          statusAtFrameStart === "using") &&
         exitRequested
       ) {
         runtime.status = "exiting";
@@ -223,9 +225,19 @@ export function InteractionSystem({
       if (runtime.status === "aligned") {
         if (activeTarget.action.type === "sit") {
           runtime.status = "sitting";
-          setPlayerControlSitting(
+          setPlayerControlLocked(
             playerControlRef,
             activeTarget.action.seatRotationY,
+          );
+          publishRuntimeState(runtime);
+          return;
+        }
+
+        if (activeTarget.action.type === "use") {
+          runtime.status = "using";
+          setPlayerControlLocked(
+            playerControlRef,
+            activeTarget.action.useRotationY,
           );
           publishRuntimeState(runtime);
           return;
@@ -240,11 +252,25 @@ export function InteractionSystem({
         return;
       }
 
-      if (runtime.status === "sitting") {
-        if (activeTarget.action.type === "sit") {
-          setPlayerControlSitting(
+      if (runtime.status === "sitting" || runtime.status === "using") {
+        if (
+          runtime.status === "sitting" &&
+          activeTarget.action.type === "sit"
+        ) {
+          setPlayerControlLocked(
             playerControlRef,
             activeTarget.action.seatRotationY,
+          );
+          return;
+        }
+
+        if (
+          runtime.status === "using" &&
+          activeTarget.action.type === "use"
+        ) {
+          setPlayerControlLocked(
+            playerControlRef,
+            activeTarget.action.useRotationY,
           );
           return;
         }

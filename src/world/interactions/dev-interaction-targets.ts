@@ -32,7 +32,8 @@ export const DEV_INTERACTION_FIXTURES: readonly DevInteractionFixture[] = [
       id: "DEV_INTERACTION_CONSOLE",
       label: "console",
       action: {
-        type: "align",
+        type: "use",
+        useRotationY: Math.PI / 2,
       },
       interactionPoint: [1, 0.86, 1.4],
       interactionRotationY: Math.PI / 2,

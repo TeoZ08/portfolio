@@ -3,6 +3,7 @@ export type InteractionStatus =
   | "approaching"
   | "aligned"
   | "sitting"
+  | "using"
   | "exiting";
 
 export type InteractionAction =
@@ -13,6 +14,10 @@ export type InteractionAction =
       type: "sit";
       seatPoint: readonly [number, number, number];
       seatRotationY: number;
+    }
+  | {
+      type: "use";
+      useRotationY: number;
     };
 
 export type InteractionTarget = {
