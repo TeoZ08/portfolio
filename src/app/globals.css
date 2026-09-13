@@ -1,0 +1,97 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #111111;
+  color: #f4f4f4;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.foundation-page {
+  min-height: 100svh;
+  position: relative;
+}
+
+.foundation-canvas {
+  height: 100svh;
+  width: 100%;
+}
+
+.foundation-canvas canvas {
+  display: block;
+}
+
+.dev-panel {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1;
+  width: min(20rem, calc(100vw - 2rem));
+  padding: 1rem;
+  border: 1px solid #777777;
+  background: #f4f4f4;
+  color: #111111;
+}
+
+.dev-panel__title {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dev-panel__readout {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+
+.dev-panel__readout div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.dev-panel__readout dt,
+.dev-panel__readout dd {
+  margin: 0;
+}
+
+.dev-panel__readout dt {
+  color: #555555;
+}
+
+.dev-panel__readout dd {
+  font-weight: 600;
+  text-align: right;
+}
+
+.dev-panel__control {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.dev-panel__control-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.dev-panel__control input {
+  width: 100%;
+}
