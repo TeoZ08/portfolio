@@ -187,84 +187,104 @@ export function DevPlayer({
 
       const control = playerControlRef.current;
       const physicsLocked = control.physicsLocked;
+      const transitionRequest = control.transitionRequest;
       const input =
         control.manualInputEnabled && !physicsLocked ? readInput() : null;
       let verticalVelocity = verticalVelocityRef.current;
 
-      if (physicsLocked) {
-        verticalVelocity = 0;
-      } else {
-        if (groundedRef.current && verticalVelocity < 0) {
-          verticalVelocity = GROUND_STICK_VELOCITY;
-        }
-
-        verticalVelocity += GRAVITY * delta;
-      }
-
       const currentPosition = body.translation();
       const scratch = stepScratchRef.current;
       const desiredTranslation = scratch.desiredTranslation;
-      const manualSideInput = input?.x ?? 0;
-      const manualForwardInput = -(input?.z ?? 0);
-      const cameraView = cameraViewRef.current;
-      const manualVelocityX =
-        manualForwardInput * cameraView.forwardX +
-        manualSideInput * cameraView.rightX;
-      const manualVelocityZ =
-        manualForwardInput * cameraView.forwardZ +
-        manualSideInput * cameraView.rightZ;
-      const horizontalVelocityX = control.manualInputEnabled
-        ? manualVelocityX * PLAYER_SPEED
-        : control.desiredVelocity.x;
-      const horizontalVelocityZ = control.manualInputEnabled
-        ? manualVelocityZ * PLAYER_SPEED
-        : control.desiredVelocity.z;
-
-      desiredTranslation.x = physicsLocked ? 0 : horizontalVelocityX * delta;
-      desiredTranslation.y = physicsLocked ? 0 : verticalVelocity * delta;
-      desiredTranslation.z = physicsLocked ? 0 : horizontalVelocityZ * delta;
-
-      characterController.computeColliderMovement(collider, desiredTranslation);
-
-      const correctedMovement = characterController.computedMovement();
       const nextPosition = scratch.nextPosition;
+      let movementX = 0;
+      let movementY = 0;
+      let movementZ = 0;
+      let grounded = groundedRef.current;
+      let moving = false;
 
-      nextPosition.x = physicsLocked
-        ? currentPosition.x
-        : currentPosition.x + correctedMovement.x;
-      nextPosition.y = physicsLocked
-        ? currentPosition.y
-        : currentPosition.y + correctedMovement.y;
-      nextPosition.z = physicsLocked
-        ? currentPosition.z
-        : currentPosition.z + correctedMovement.z;
+      if (transitionRequest !== null) {
+        nextPosition.x = transitionRequest.position[0];
+        nextPosition.y = transitionRequest.position[1];
+        nextPosition.z = transitionRequest.position[2];
+        control.transitionRequest = null;
+        verticalVelocity = 0;
+        grounded = true;
+      } else {
+        if (physicsLocked) {
+          verticalVelocity = 0;
+        } else {
+          if (groundedRef.current && verticalVelocity < 0) {
+            verticalVelocity = GROUND_STICK_VELOCITY;
+          }
+
+          verticalVelocity += GRAVITY * delta;
+        }
+
+        const manualSideInput = input?.x ?? 0;
+        const manualForwardInput = -(input?.z ?? 0);
+        const cameraView = cameraViewRef.current;
+        const manualVelocityX =
+          manualForwardInput * cameraView.forwardX +
+          manualSideInput * cameraView.rightX;
+        const manualVelocityZ =
+          manualForwardInput * cameraView.forwardZ +
+          manualSideInput * cameraView.rightZ;
+        const horizontalVelocityX = control.manualInputEnabled
+          ? manualVelocityX * PLAYER_SPEED
+          : control.desiredVelocity.x;
+        const horizontalVelocityZ = control.manualInputEnabled
+          ? manualVelocityZ * PLAYER_SPEED
+          : control.desiredVelocity.z;
+
+        desiredTranslation.x = physicsLocked
+          ? 0
+          : horizontalVelocityX * delta;
+        desiredTranslation.y = physicsLocked ? 0 : verticalVelocity * delta;
+        desiredTranslation.z = physicsLocked
+          ? 0
+          : horizontalVelocityZ * delta;
+
+        characterController.computeColliderMovement(collider, desiredTranslation);
+
+        const correctedMovement = characterController.computedMovement();
+        movementX = correctedMovement.x;
+        movementY = correctedMovement.y;
+        movementZ = correctedMovement.z;
+        nextPosition.x = physicsLocked
+          ? currentPosition.x
+          : currentPosition.x + movementX;
+        nextPosition.y = physicsLocked
+          ? currentPosition.y
+          : currentPosition.y + movementY;
+        nextPosition.z = physicsLocked
+          ? currentPosition.z
+          : currentPosition.z + movementZ;
+
+        const computedGrounded = characterController.computedGrounded();
+        grounded = physicsLocked
+          ? groundedRef.current || computedGrounded
+          : computedGrounded;
+        moving =
+          !physicsLocked && Math.hypot(movementX, movementZ) > 0.0005;
+      }
 
       body.setNextKinematicTranslation(nextPosition);
 
-      const computedGrounded = characterController.computedGrounded();
-      const grounded = physicsLocked
-        ? groundedRef.current || computedGrounded
-        : computedGrounded;
-      const horizontalMovement = Math.hypot(
-        correctedMovement.x,
-        correctedMovement.z,
-      );
-      const moving = physicsLocked
-        ? false
-        : horizontalMovement > 0.0005;
       const inverseDelta = 1 / delta;
       const motion = motionRef.current;
-      const rotationTargetY =
-        control.targetRotationY === null && moving
-          ? Math.atan2(correctedMovement.x, -correctedMovement.z)
-          : control.targetRotationY;
-      const nextRotationY = rotationTargetY === null
-        ? motion.rotationY
-        : moveTowardsAngle(
-            motion.rotationY,
-            rotationTargetY,
-            PLAYER_ROTATION_SPEED * delta,
-          );
+      const rotationTargetY = transitionRequest?.rotationY ??
+        (control.targetRotationY === null && moving
+          ? Math.atan2(movementX, -movementZ)
+          : control.targetRotationY);
+      const nextRotationY = transitionRequest !== null
+        ? transitionRequest.rotationY
+        : rotationTargetY === null
+          ? motion.rotationY
+          : moveTowardsAngle(
+              motion.rotationY,
+              rotationTargetY,
+              PLAYER_ROTATION_SPEED * delta,
+            );
       const rotation = rotationScratchRef.current;
 
       rotation.x = 0;
@@ -283,9 +303,15 @@ export function DevPlayer({
       motion.position.x = nextPosition.x;
       motion.position.y = nextPosition.y;
       motion.position.z = nextPosition.z;
-      motion.velocity.x = physicsLocked ? 0 : correctedMovement.x * inverseDelta;
-      motion.velocity.y = physicsLocked ? 0 : correctedMovement.y * inverseDelta;
-      motion.velocity.z = physicsLocked ? 0 : correctedMovement.z * inverseDelta;
+      motion.velocity.x = physicsLocked || transitionRequest !== null
+        ? 0
+        : movementX * inverseDelta;
+      motion.velocity.y = physicsLocked || transitionRequest !== null
+        ? 0
+        : movementY * inverseDelta;
+      motion.velocity.z = physicsLocked || transitionRequest !== null
+        ? 0
+        : movementZ * inverseDelta;
       motion.rotationY = nextRotationY;
       motion.grounded = grounded;
       motion.moving = moving;
@@ -315,9 +341,15 @@ export function DevPlayer({
       publishPlayerDebugSnapshot({
         position: [nextPosition.x, nextPosition.y, nextPosition.z],
         velocity: [
-          physicsLocked ? 0 : correctedMovement.x * inverseDelta,
-          physicsLocked ? 0 : correctedMovement.y * inverseDelta,
-          physicsLocked ? 0 : correctedMovement.z * inverseDelta,
+          physicsLocked || transitionRequest !== null
+            ? 0
+            : movementX * inverseDelta,
+          physicsLocked || transitionRequest !== null
+            ? 0
+            : movementY * inverseDelta,
+          physicsLocked || transitionRequest !== null
+            ? 0
+            : movementZ * inverseDelta,
         ],
         grounded,
         moving,

@@ -1,5 +1,5 @@
 export type CameraPreset = {
-  name: "EXPLORE";
+  name: "EXPLORE" | "INTERIOR";
   offset: readonly [number, number, number];
   initialPosition: readonly [number, number, number];
   targetHeightOffset: number;
@@ -24,4 +24,18 @@ export const EXPLORE_CAMERA_PRESET: CameraPreset = {
   orientationDamping: 9,
   headingDamping: 4.5,
   fov: 50,
+};
+
+export const INTERIOR_CAMERA_PRESET: CameraPreset = {
+  name: "INTERIOR",
+  offset: [5.4, 4.2, 5.4],
+  initialPosition: [5.4, 5.06, 10.4],
+  targetHeightOffset: 0.65,
+  lookAheadDistance: 0.28,
+  lookAheadReferenceSpeed: 4,
+  lookAheadDamping: 8,
+  cameraPositionDamping: 7,
+  orientationDamping: 11,
+  headingDamping: 5,
+  fov: 56,
 };

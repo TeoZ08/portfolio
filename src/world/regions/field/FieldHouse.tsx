@@ -5,6 +5,7 @@ import { FieldGeometry, FieldInstances } from "./FieldMeshes";
 import { FieldMaterial } from "./FieldMaterial";
 import { makeSurface, organicEllipsoid, type Point3 } from "./field-geometry";
 import { makeHouseDetails, makeRoofTile, ROOF_PITCH, ROOF_SLOPE_LENGTH } from "./field-house-details";
+import { HOUSE_EXTERIOR_DOOR_INTERACTION_POINT } from "./field-interaction-targets";
 import { HOUSE_CENTER } from "./field-layout";
 import { FIELD_PALETTE as P } from "./field-palette";
 
@@ -12,6 +13,11 @@ const DETAILS = makeHouseDetails();
 const TILE = makeRoofTile();
 const PLINTH_STONE = organicEllipsoid(10, 6, 0.075);
 const GABLE = makeSurface([0, 5.8, -6, 0, 5.8, 6, 0, 8.8, 0], [0, 1, 2]);
+const DOOR_MARKER_POSITION: Point3 = [
+  0,
+  HOUSE_EXTERIOR_DOOR_INTERACTION_POINT[1],
+  HOUSE_EXTERIOR_DOOR_INTERACTION_POINT[2] - HOUSE_CENTER[1],
+];
 
 function Timber({ position, size, color = P.wood }: {
   position: Point3; size: Point3; color?: string;
@@ -94,6 +100,13 @@ export function FieldHouse() {
       <Window position={[-8.09, 2.43, 0.7]} rotationY={-Math.PI / 2} />
       <Window position={[8.09, 2.43, -1.8]} rotationY={Math.PI / 2} />
       <Window position={[-2.8, 2.43, -6.09]} rotationY={Math.PI} />
+      <mesh
+        name="DEV_HOUSE_DOOR_INTERACTION_POINT"
+        position={DOOR_MARKER_POSITION}
+      >
+        <sphereGeometry args={[0.1, 8, 8]} />
+        <meshBasicMaterial color={P.devMarker} wireframe />
+      </mesh>
       <mesh position={[-4.5, 8.9, -1.8]} castShadow receiveShadow>
         <boxGeometry args={[0.85, 2.25, 0.95]} />
         <meshStandardMaterial color={P.plasterShade} roughness={1} />

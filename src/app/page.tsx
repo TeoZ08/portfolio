@@ -1,22 +1,43 @@
+"use client";
+
+import {
+  FIELD_REGION,
+  HOUSE_REGION,
+  useWorldState,
+} from "@/systems/world-state";
 import { DevPanel } from "@/ui/DevPanel";
+import { WorldTransitionOverlay } from "@/world/WorldTransitionOverlay";
 import { FieldRegion } from "@/world/regions/FieldRegion";
+import { HouseRegion } from "@/world/regions/HouseRegion";
 import { WorldCanvas } from "@/world/WorldCanvas";
+import { FIELD_INTERACTION_TARGETS } from "@/world/regions/field/field-interaction-targets";
 import { FIELD_PALETTE } from "@/world/regions/field/field-palette";
 import { FIELD_CAMERA_COMPOSITION } from "@/world/regions/field/field-view";
+import { HOUSE_INTERACTION_TARGETS } from "@/world/regions/house/house-interaction-targets";
+import { INTERIOR_CAMERA_PRESET } from "@/world/camera/camera-presets";
 
 export default function HomePage() {
+  const currentRegion = useWorldState((state) => state.currentRegion);
+  const isHouse = currentRegion === HOUSE_REGION;
+
   return (
     <main className="world-page">
       <WorldCanvas
         backgroundColor={FIELD_PALETTE.sky}
         playerColor={FIELD_PALETTE.player}
-        cameraPreset={FIELD_CAMERA_COMPOSITION}
-        canvasLabel="Protótipo visual do mundo: Arrival, Field e exterior da Casa"
+        cameraPreset={isHouse ? INTERIOR_CAMERA_PRESET : FIELD_CAMERA_COMPOSITION}
+        canvasLabel={
+          isHouse
+            ? "Protótipo DEV do interior da Casa"
+            : "Protótipo visual do mundo: Arrival, Field e exterior da Casa"
+        }
         dataWorldMode="vertical-slice"
-        region="FIELD"
+        region={isHouse ? HOUSE_REGION : FIELD_REGION}
+        targets={isHouse ? HOUSE_INTERACTION_TARGETS : FIELD_INTERACTION_TARGETS}
       >
-        <FieldRegion />
+        {isHouse ? <HouseRegion /> : <FieldRegion />}
       </WorldCanvas>
+      <WorldTransitionOverlay />
       {process.env.NODE_ENV !== "production" ? (
         <DevPanel title="DEV / Visual Vertical Slice" />
       ) : null}

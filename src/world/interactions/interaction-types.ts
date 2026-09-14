@@ -2,9 +2,12 @@ export type InteractionStatus =
   | "idle"
   | "approaching"
   | "aligned"
+  | "entering"
   | "sitting"
   | "using"
   | "exiting";
+
+export type InteractionDestination = "FIELD" | "HOUSE";
 
 export type InteractionAction =
   | {
@@ -18,6 +21,12 @@ export type InteractionAction =
   | {
       type: "use";
       useRotationY: number;
+    }
+  | {
+      type: "enter";
+      destinationRegion: InteractionDestination;
+      destinationPoint: readonly [number, number, number];
+      destinationRotationY: number;
     };
 
 export type InteractionTarget = {

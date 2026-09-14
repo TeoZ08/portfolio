@@ -36,6 +36,7 @@ export const FIELD_PALETTE = {
   sun: "#ffe1ae",
   fill: "#c6d9e6",
   player: "#b9723f",
+  devMarker: "#f4f4f4",
 } as const;
 
 export function linearColor(hex: string): [number, number, number] {

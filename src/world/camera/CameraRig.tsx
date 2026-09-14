@@ -107,6 +107,7 @@ export function CameraRig({
   const cameraLike = camera as unknown as CameraLike;
   const initializedRef = useRef(false);
   const scratchRef = useRef<CameraRigScratch | null>(null);
+  const previousPresetNameRef = useRef(preset.name);
   const currentHeadingRef = useRef(
     Math.atan2(-preset.offset[0], preset.offset[2]),
   );
@@ -119,6 +120,15 @@ export function CameraRig({
 
   const initializeRig = useCallback(() => {
     const target = targetRef.current;
+
+    if (previousPresetNameRef.current !== preset.name) {
+      currentHeadingRef.current = Math.atan2(
+        -preset.offset[0],
+        preset.offset[2],
+      );
+      previousPresetNameRef.current = preset.name;
+    }
+
     const currentHeading = currentHeadingRef.current;
 
     scratch.horizontalDistance = Math.hypot(preset.offset[0], preset.offset[2]);

@@ -34,6 +34,21 @@ input {
   display: block;
 }
 
+.world-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  background: #171817;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.world-transition--active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .dev-panel {
   position: fixed;
   top: 1rem;

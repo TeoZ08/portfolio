@@ -60,6 +60,12 @@ export function WorldCanvas({
   const currentRegion = useWorldState((state) => state.currentRegion);
   const timeOfDay = useWorldState((state) => state.timeOfDay);
   const setCurrentRegion = useWorldState((state) => state.setCurrentRegion);
+  const beginRegionTransition = useWorldState(
+    (state) => state.beginRegionTransition,
+  );
+  const completeRegionTransition = useWorldState(
+    (state) => state.completeRegionTransition,
+  );
   const isDevelopment = process.env.NODE_ENV !== "production";
   const frameUpdatesRef = useRef(createDevFrameUpdates());
   const motionRef = useRef(createPlayerMotionState());
@@ -103,8 +109,11 @@ export function WorldCanvas({
         >
           {children}
           <InteractionSystem
+            cameraResyncRef={cameraResyncRef}
             frameUpdatesRef={frameUpdatesRef}
             motionRef={motionRef}
+            onTransitionComplete={completeRegionTransition}
+            onTransitionStart={beginRegionTransition}
             playerControlRef={playerControlRef}
             targets={targets}
           />

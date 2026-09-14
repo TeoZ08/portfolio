@@ -3,11 +3,17 @@ export type PlayerControlVector = {
   z: number;
 };
 
+export type PlayerTransitionRequest = {
+  position: readonly [number, number, number];
+  rotationY: number;
+};
+
 export type PlayerControlState = {
   manualInputEnabled: boolean;
   physicsLocked: boolean;
   desiredVelocity: PlayerControlVector;
   targetRotationY: number | null;
+  transitionRequest: PlayerTransitionRequest | null;
 };
 
 export type PlayerControlRef = {
@@ -20,6 +26,7 @@ export function createPlayerControlState(): PlayerControlState {
     physicsLocked: false,
     desiredVelocity: { x: 0, z: 0 },
     targetRotationY: null,
+    transitionRequest: null,
   };
 }
 
@@ -29,4 +36,5 @@ export function resetPlayerControlState(state: PlayerControlState) {
   state.desiredVelocity.x = 0;
   state.desiredVelocity.z = 0;
   state.targetRotationY = null;
+  state.transitionRequest = null;
 }

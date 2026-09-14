@@ -2,17 +2,26 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
-import type { DevFrameUpdatesRef } from "@/world/DevFrameLoop";
+import type {
+  CameraResyncRef,
+  DevFrameUpdatesRef,
+} from "@/world/DevFrameLoop";
 import type { PlayerControlRef } from "@/world/player/player-control";
 import type { PlayerMotionRef } from "@/world/player/player-motion";
 import {
   publishInteractionDebugSnapshot,
   resetInteractionDebugState,
 } from "./interaction-state";
-import type { InteractionStatus, InteractionTarget } from "./interaction-types";
+import type {
+  InteractionDestination,
+  InteractionStatus,
+  InteractionTarget,
+} from "./interaction-types";
 
 const INTERACTION_APPROACH_SPEED = 2.5;
 const INTERACTION_EXIT_SPEED = 2.5;
+const TRANSITION_REPOSITION_DELAY = 0.16;
+const TRANSITION_DURATION = 0.34;
 
 type InteractionRuntimeState = {
   status: InteractionStatus;
@@ -20,11 +29,16 @@ type InteractionRuntimeState = {
   activeTarget: InteractionTarget | null;
   interactRequested: boolean;
   cancelRequested: boolean;
+  transitionElapsed: number;
+  transitionQueued: boolean;
 };
 
 type InteractionSystemProps = {
   frameUpdatesRef: DevFrameUpdatesRef;
+  cameraResyncRef: CameraResyncRef;
   motionRef: PlayerMotionRef;
+  onTransitionComplete: () => void;
+  onTransitionStart: (destinationRegion: InteractionDestination) => void;
   playerControlRef: PlayerControlRef;
   targets: readonly InteractionTarget[];
 };
@@ -36,6 +50,8 @@ function createInteractionRuntimeState(): InteractionRuntimeState {
     activeTarget: null,
     interactRequested: false,
     cancelRequested: false,
+    transitionElapsed: 0,
+    transitionQueued: false,
   };
 }
 
@@ -113,6 +129,7 @@ function setPlayerControlIdle(playerControlRef: PlayerControlRef) {
   control.desiredVelocity.x = 0;
   control.desiredVelocity.z = 0;
   control.targetRotationY = null;
+  control.transitionRequest = null;
 }
 
 function setPlayerControlAlignment(
@@ -142,8 +159,11 @@ function setPlayerControlLocked(
 }
 
 export function InteractionSystem({
+  cameraResyncRef,
   frameUpdatesRef,
   motionRef,
+  onTransitionComplete,
+  onTransitionStart,
   playerControlRef,
   targets,
 }: InteractionSystemProps) {
@@ -175,6 +195,8 @@ export function InteractionSystem({
       if (statusAtFrameStart === "approaching" && exitRequested) {
         runtime.status = "idle";
         runtime.activeTarget = null;
+        runtime.transitionElapsed = 0;
+        runtime.transitionQueued = false;
         setPlayerControlIdle(playerControlRef);
         publishRuntimeState(runtime);
         return;
@@ -200,6 +222,8 @@ export function InteractionSystem({
         if (interactRequested && !cancelRequested && candidate !== null) {
           runtime.activeTarget = candidate;
           runtime.status = "approaching";
+          runtime.transitionElapsed = 0;
+          runtime.transitionQueued = false;
           setPlayerControlAlignment(
             playerControlRef,
             0,
@@ -222,7 +246,76 @@ export function InteractionSystem({
         return;
       }
 
+      if (runtime.status === "entering") {
+        const action = activeTarget.action;
+
+        if (action.type !== "enter") {
+          runtime.status = "idle";
+          runtime.activeTarget = null;
+          runtime.transitionElapsed = 0;
+          runtime.transitionQueued = false;
+          setPlayerControlIdle(playerControlRef);
+          onTransitionComplete();
+          publishRuntimeState(runtime);
+          return;
+        }
+
+        runtime.transitionElapsed += delta;
+        setPlayerControlAlignment(
+          playerControlRef,
+          0,
+          0,
+          runtime.transitionQueued
+            ? action.destinationRotationY
+            : activeTarget.interactionRotationY,
+        );
+
+        if (
+          !runtime.transitionQueued &&
+          runtime.transitionElapsed >= TRANSITION_REPOSITION_DELAY
+        ) {
+          playerControlRef.current.transitionRequest = {
+            position: action.destinationPoint,
+            rotationY: action.destinationRotationY,
+          };
+          cameraResyncRef.current.active = true;
+          cameraResyncRef.current.stage = 1;
+          runtime.transitionQueued = true;
+        }
+
+        if (
+          runtime.transitionQueued &&
+          playerControlRef.current.transitionRequest === null &&
+          runtime.transitionElapsed >= TRANSITION_DURATION
+        ) {
+          runtime.status = "idle";
+          runtime.activeTarget = null;
+          runtime.transitionElapsed = 0;
+          runtime.transitionQueued = false;
+          setPlayerControlIdle(playerControlRef);
+          onTransitionComplete();
+          publishRuntimeState(runtime);
+        }
+
+        return;
+      }
+
       if (runtime.status === "aligned") {
+        if (activeTarget.action.type === "enter") {
+          runtime.status = "entering";
+          runtime.transitionElapsed = 0;
+          runtime.transitionQueued = false;
+          setPlayerControlAlignment(
+            playerControlRef,
+            0,
+            0,
+            activeTarget.interactionRotationY,
+          );
+          onTransitionStart(activeTarget.action.destinationRegion);
+          publishRuntimeState(runtime);
+          return;
+        }
+
         if (activeTarget.action.type === "sit") {
           runtime.status = "sitting";
           setPlayerControlLocked(
@@ -277,6 +370,8 @@ export function InteractionSystem({
 
         runtime.status = "idle";
         runtime.activeTarget = null;
+        runtime.transitionElapsed = 0;
+        runtime.transitionQueued = false;
         setPlayerControlIdle(playerControlRef);
         publishRuntimeState(runtime);
         return;
@@ -383,7 +478,15 @@ export function InteractionSystem({
         );
       }
     },
-    [motionRef, playerControlRef, runtime, targets],
+    [
+      cameraResyncRef,
+      motionRef,
+      onTransitionComplete,
+      onTransitionStart,
+      playerControlRef,
+      runtime,
+      targets,
+    ],
   );
 
   useEffect(() => {
@@ -444,10 +547,9 @@ export function InteractionSystem({
       if (updates.interaction === updateInteractions) {
         updates.interaction = null;
       }
-      setPlayerControlIdle(playerControlRef);
       resetInteractionDebugState();
     };
-  }, [frameUpdatesRef, playerControlRef, updateInteractions]);
+  }, [frameUpdatesRef, updateInteractions]);
 
   return null;
 }
