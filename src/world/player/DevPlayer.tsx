@@ -73,6 +73,7 @@ type DevVisualMarker = {
 };
 
 type DevPlayerProps = {
+  solidColor?: string;
   cameraViewRef: CameraViewRef;
   frameUpdatesRef: DevFrameUpdatesRef;
   motionRef: PlayerMotionRef;
@@ -101,6 +102,7 @@ function moveTowardsAngle(current: number, target: number, maxDelta: number) {
 }
 
 export function DevPlayer({
+  solidColor,
   cameraViewRef,
   frameUpdatesRef,
   motionRef,
@@ -354,11 +356,15 @@ export function DevPlayer({
         args={[PLAYER_CAPSULE_HALF_HEIGHT, PLAYER_CAPSULE_RADIUS]}
       />
       <group ref={visualGroupRef} name="DEV_PLAYER_VISUAL">
-        <mesh name="DEV_PLAYER_CAPSULE_MESH">
+        <mesh name="DEV_PLAYER_CAPSULE_MESH" castShadow={!!solidColor} receiveShadow={!!solidColor}>
           <capsuleGeometry
             args={[PLAYER_CAPSULE_RADIUS, PLAYER_CAPSULE_HALF_HEIGHT * 2, 8, 16]}
           />
-          <meshBasicMaterial color="#f59e0b" wireframe />
+          {solidColor ? (
+            <meshStandardMaterial color={solidColor} roughness={0.92} />
+          ) : (
+            <meshBasicMaterial color="#f59e0b" wireframe />
+          )}
         </mesh>
         <mesh name="DEV_PLAYER_FORWARD_MARKER" position={[0, 0, -0.42]}>
           <boxGeometry args={[0.12, 0.12, 0.18]} />

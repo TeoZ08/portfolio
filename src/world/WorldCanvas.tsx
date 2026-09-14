@@ -12,7 +12,7 @@ import {
 } from "@/world/DevFrameLoop";
 import { CameraRig } from "@/world/camera/CameraRig";
 import { CameraTarget } from "@/world/camera/CameraTarget";
-import { EXPLORE_CAMERA_PRESET } from "@/world/camera/camera-presets";
+import { EXPLORE_CAMERA_PRESET, type CameraPreset } from "@/world/camera/camera-presets";
 import {
   createCameraTargetState,
   createCameraViewState,
@@ -32,6 +32,8 @@ type WorldCanvasProps = {
   dataWorldMode: "physics-playground" | "vertical-slice";
   backgroundColor?: string;
   showHelpers?: boolean;
+  playerColor?: string;
+  cameraPreset?: CameraPreset;
   targets?: readonly InteractionTarget[];
 };
 
@@ -51,6 +53,8 @@ export function WorldCanvas({
   dataWorldMode,
   region,
   showHelpers = false,
+  playerColor,
+  cameraPreset = EXPLORE_CAMERA_PRESET,
   targets = EMPTY_INTERACTION_TARGETS,
 }: WorldCanvasProps) {
   const currentRegion = useWorldState((state) => state.currentRegion);
@@ -62,7 +66,7 @@ export function WorldCanvas({
   const playerControlRef = useRef(createPlayerControlState());
   const cameraTargetRef = useRef(createCameraTargetState());
   const cameraViewRef = useRef(
-    createCameraViewState(EXPLORE_CAMERA_PRESET.offset),
+    createCameraViewState(cameraPreset.offset),
   );
   const cameraResyncRef = useRef(createCameraResyncState());
 
@@ -82,9 +86,10 @@ export function WorldCanvas({
       data-world-mode={dataWorldMode}
     >
       <Canvas
+        shadows={dataWorldMode === "vertical-slice" ? "soft" : false}
         camera={{
-          position: EXPLORE_CAMERA_PRESET.initialPosition,
-          fov: EXPLORE_CAMERA_PRESET.fov,
+          position: cameraPreset.initialPosition,
+          fov: cameraPreset.fov,
         }}
         dpr={[1, 2]}
       >
@@ -104,12 +109,14 @@ export function WorldCanvas({
             targets={targets}
           />
           <DevPlayer
+            solidColor={playerColor}
             cameraViewRef={cameraViewRef}
             frameUpdatesRef={frameUpdatesRef}
             motionRef={motionRef}
             playerControlRef={playerControlRef}
           />
           <CameraTarget
+            preset={cameraPreset}
             frameUpdatesRef={frameUpdatesRef}
             motionRef={motionRef}
             playerControlRef={playerControlRef}
@@ -117,6 +124,7 @@ export function WorldCanvas({
             targetRef={cameraTargetRef}
           />
           <CameraRig
+            preset={cameraPreset}
             cameraViewRef={cameraViewRef}
             frameUpdatesRef={frameUpdatesRef}
             resyncRef={cameraResyncRef}

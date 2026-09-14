@@ -1,0 +1,49 @@
+// Milestone 005: shared matte palette for the visual prototype, not final assets.
+export const FIELD_PALETTE = {
+  grass: "#647b50",
+  grassLight: "#8f9864",
+  grassShade: "#526d56",
+  grassDry: "#ae9f6b",
+  path: "#b79a70",
+  pathLight: "#c4aa7e",
+  pathEdge: "#8f8956",
+  soil: "#76674f",
+  stone: "#99988a",
+  stoneShade: "#777e74",
+  stoneLight: "#b5ac94",
+  wood: "#766049",
+  woodLight: "#987952",
+  woodDark: "#493e32",
+  plaster: "#ddd1af",
+  plasterShade: "#c6baa0",
+  roof: "#93644f",
+  roofLight: "#a57556",
+  roofShade: "#845c4c",
+  shutter: "#64776b",
+  glass: "#7e9b98",
+  windowGlow: "#e7b365",
+  foliage: "#526e43",
+  foliageLight: "#819258",
+  foliageShade: "#476750",
+  flower: "#e2d6a4",
+  flowerGold: "#cdb261",
+  hill: "#677c6b",
+  hillMiddle: "#889a93",
+  hillFar: "#a6b4b4",
+  sky: "#bbc9cf",
+  skyHigh: "#86a9c0",
+  horizon: "#edcfab",
+  sun: "#ffe1ae",
+  fill: "#c6d9e6",
+  player: "#b9723f",
+} as const;
+
+export function linearColor(hex: string): [number, number, number] {
+  const value = Number.parseInt(hex.slice(1), 16);
+  return [value >> 16, (value >> 8) & 255, value & 255].map((channel) => {
+    const srgb = channel / 255;
+    return srgb <= 0.04045
+      ? srgb / 12.92
+      : ((srgb + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+}

@@ -1,55 +1,25 @@
 "use client";
 
-import { CuboidCollider, RigidBody } from "@react-three/rapier";
-
-const GENTLE_RISE_ANGLE = Math.atan2(0.55, 34);
+import { CuboidCollider, RigidBody, TrimeshCollider } from "@react-three/rapier";
+import { FieldGeometry } from "./FieldMeshes";
+import { FieldMaterial } from "./FieldMaterial";
+import { FIELD_TERRAIN_SURFACE } from "./field-surfaces";
 
 export function FieldTerrain() {
   return (
-    <group name="FIELD_TERRAIN_BLOCKOUT">
-      <RigidBody
-        name="FIELD_GROUND_COLLIDER"
-        type="fixed"
-        colliders={false}
-        position={[0, -0.35, -35]}
-      >
-        <CuboidCollider args={[55, 0.35, 70]} />
-        <mesh name="DEV_FIELD_GROUND" position={[0, 0, 0]}>
-          <boxGeometry args={[110, 0.7, 140]} />
-          <meshBasicMaterial color="#60745f" />
+    <group name="FIELD_TERRAIN_VISUAL_PROTOTYPE">
+      <RigidBody name="FIELD_GROUND_COLLIDER" type="fixed" colliders={false}>
+        {/* Render and collision share vertices; the player never walks on a hidden flat plane. */}
+        <TrimeshCollider args={[FIELD_TERRAIN_SURFACE.positions, FIELD_TERRAIN_SURFACE.indices]} />
+        <mesh name="FIELD_MEADOW_SURFACE" receiveShadow>
+          <FieldGeometry data={FIELD_TERRAIN_SURFACE} />
+          <FieldMaterial vertexColors />
         </mesh>
+        <CuboidCollider args={[0.5, 2.5, 70]} position={[-55, 1, -35]} />
+        <CuboidCollider args={[0.5, 2.5, 70]} position={[55, 1, -35]} />
+        <CuboidCollider args={[55, 2.5, 0.5]} position={[0, 1, -105]} />
+        <CuboidCollider args={[55, 2.5, 0.5]} position={[0, 1, 35]} />
       </RigidBody>
-
-      <RigidBody
-        name="FIELD_GENTLE_RISE_COLLIDER"
-        type="fixed"
-        colliders={false}
-        position={[30, 0.25, -38]}
-        rotation={[GENTLE_RISE_ANGLE, 0, 0]}
-      >
-        <CuboidCollider args={[11, 0.15, 17]} />
-        <mesh name="DEV_FIELD_GENTLE_RISE">
-          <boxGeometry args={[22, 0.3, 34]} />
-          <meshBasicMaterial color="#6f8064" />
-        </mesh>
-      </RigidBody>
-
-      <mesh
-        name="DEV_FUTURE_VEGETATION_AREA_WEST"
-        position={[24, 0.025, -28]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      >
-        <circleGeometry args={[10, 20]} />
-        <meshBasicMaterial color="#566c57" />
-      </mesh>
-      <mesh
-        name="DEV_FUTURE_VEGETATION_AREA_SOUTH"
-        position={[20, 0.025, -67]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      >
-        <circleGeometry args={[12, 20]} />
-        <meshBasicMaterial color="#566c57" />
-      </mesh>
     </group>
   );
 }
