@@ -97,18 +97,6 @@ function InteriorShell() {
         size={[2.38, 3.76, 0.06]}
         color={P.wood}
       />
-      <HouseBlockout
-        name="HOUSE_INTERIOR_TOP_BEAM_X"
-        position={[0, 4.35, 0]}
-        size={[16.5, 0.18, 0.22]}
-        color={P.woodDark}
-      />
-      <HouseBlockout
-        name="HOUSE_INTERIOR_TOP_BEAM_Z"
-        position={[0, 4.35, 0]}
-        size={[0.22, 0.18, 12.5]}
-        color={P.woodDark}
-      />
       <InteriorWindow position={[-4.6, 2.55, 5.94]} />
       <InteriorWindow position={[4.45, 2.55, 5.94]} />
       <InteriorWindow position={[-2.8, 2.55, -5.94]} rotationY={Math.PI} />
