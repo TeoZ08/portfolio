@@ -6,6 +6,9 @@ type CameraPresetBase = {
   lookAheadReferenceSpeed: number;
   lookAheadDamping: number;
   cameraPositionDamping: number;
+  manualPitchLimits: readonly [number, number];
+  manualYawLimits: readonly [number, number] | null;
+  manualRotationDamping: number;
   fov: number;
 };
 
@@ -30,6 +33,9 @@ export const EXPLORE_CAMERA_PRESET: CameraPreset = {
   lookAheadReferenceSpeed: 4,
   lookAheadDamping: 7,
   cameraPositionDamping: 5.5,
+  manualPitchLimits: [Math.PI * 25 / 180, Math.PI * 55 / 180],
+  manualYawLimits: null,
+  manualRotationDamping: 14,
   fov: 50,
 };
 
@@ -44,5 +50,8 @@ export const INTERIOR_CAMERA_PRESET: CameraPreset = {
   lookAheadReferenceSpeed: 4,
   lookAheadDamping: 8,
   cameraPositionDamping: 7,
+  manualPitchLimits: [Math.PI * 15 / 180, Math.PI * 38 / 180],
+  manualYawLimits: [-1.35, 0.15],
+  manualRotationDamping: 16,
   fov: 56,
 };
