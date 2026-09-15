@@ -19,8 +19,6 @@ export type CameraTargetState = {
   anchor: CameraVector;
   lookAhead: CameraVector;
   lookAt: CameraVector;
-  movementHeading: number;
-  hasMovementHeading: boolean;
 };
 
 export type CameraTargetRef = {
@@ -48,8 +46,6 @@ export function createCameraTargetState(): CameraTargetState {
     anchor: { x: 0, y: 0, z: 0 },
     lookAhead: { x: 0, y: 0, z: 0 },
     lookAt: { x: 0, y: 0, z: 0 },
-    movementHeading: 0,
-    hasMovementHeading: false,
   };
 }
 

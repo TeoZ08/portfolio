@@ -10,7 +10,6 @@ import type {
 import { EXPLORE_CAMERA_PRESET, type CameraPreset } from "./camera-presets";
 import {
   dampVector3,
-  getDampingAlpha,
   type CameraViewRef,
   type CameraTargetRef,
   type CameraVector,
@@ -21,9 +20,6 @@ type QuaternionLike = {
   y: number;
   z: number;
   w: number;
-  clone: () => QuaternionLike;
-  copy: (quaternion: QuaternionLike) => QuaternionLike;
-  slerp: (quaternion: QuaternionLike, alpha: number) => QuaternionLike;
 };
 
 type VectorLike = CameraVector & {
@@ -38,12 +34,8 @@ type CameraLike = {
 };
 
 type CameraRigScratch = {
-  currentQuaternion: QuaternionLike;
   desiredPosition: CameraVector;
-  desiredQuaternion: QuaternionLike;
   lookAtTarget: VectorLike;
-  offset: CameraVector;
-  horizontalDistance: number;
 };
 
 type CameraRigProps = {
@@ -56,24 +48,9 @@ type CameraRigProps = {
 
 function createCameraRigScratch(camera: CameraLike): CameraRigScratch {
   return {
-    currentQuaternion: camera.quaternion.clone(),
     desiredPosition: { x: 0, y: 0, z: 0 },
-    desiredQuaternion: camera.quaternion.clone(),
     lookAtTarget: camera.position.clone(),
-    offset: { x: 0, y: 0, z: 0 },
-    horizontalDistance: 0,
   };
-}
-
-function shortestAngleDelta(target: number, current: number) {
-  const fullTurn = Math.PI * 2;
-  let delta = (target - current + Math.PI) % fullTurn;
-
-  if (delta < 0) {
-    delta += fullTurn;
-  }
-
-  return delta - Math.PI;
 }
 
 function updateCameraView(
@@ -107,10 +84,6 @@ export function CameraRig({
   const cameraLike = camera as unknown as CameraLike;
   const initializedRef = useRef(false);
   const scratchRef = useRef<CameraRigScratch | null>(null);
-  const previousPresetNameRef = useRef(preset.name);
-  const currentHeadingRef = useRef(
-    Math.atan2(-preset.offset[0], preset.offset[2]),
-  );
 
   if (scratchRef.current === null || !scratchRef.current.lookAtTarget) {
     scratchRef.current = createCameraRigScratch(cameraLike);
@@ -121,34 +94,23 @@ export function CameraRig({
   const initializeRig = useCallback(() => {
     const target = targetRef.current;
 
-    if (previousPresetNameRef.current !== preset.name) {
-      currentHeadingRef.current = Math.atan2(
-        -preset.offset[0],
-        preset.offset[2],
-      );
-      previousPresetNameRef.current = preset.name;
+    if (preset.mode === "fixed") {
+      scratch.desiredPosition.x = preset.initialPosition[0];
+      scratch.desiredPosition.y = preset.initialPosition[1];
+      scratch.desiredPosition.z = preset.initialPosition[2];
+      scratch.lookAtTarget.x = preset.fixedLookAt[0];
+      scratch.lookAtTarget.y = preset.fixedLookAt[1];
+      scratch.lookAtTarget.z = preset.fixedLookAt[2];
+    } else {
+      scratch.desiredPosition.x = target.anchor.x + preset.offset[0];
+      scratch.desiredPosition.y = target.anchor.y + preset.offset[1];
+      scratch.desiredPosition.z = target.anchor.z + preset.offset[2];
+      scratch.lookAtTarget.copy(target.lookAt);
     }
 
-    const currentHeading = currentHeadingRef.current;
-
-    scratch.horizontalDistance = Math.hypot(preset.offset[0], preset.offset[2]);
-    scratch.offset.x = -Math.sin(currentHeading) * scratch.horizontalDistance;
-    scratch.offset.y = preset.offset[1];
-    scratch.offset.z = Math.cos(currentHeading) * scratch.horizontalDistance;
-    scratch.desiredPosition.x = target.anchor.x + scratch.offset.x;
-    scratch.desiredPosition.y = target.anchor.y + scratch.offset.y;
-    scratch.desiredPosition.z = target.anchor.z + scratch.offset.z;
-
     cameraLike.position.copy(scratch.desiredPosition);
-    scratch.lookAtTarget.copy(target.lookAt);
     cameraLike.lookAt(scratch.lookAtTarget);
-    scratch.desiredQuaternion.copy(cameraLike.quaternion);
-    cameraLike.quaternion.copy(scratch.desiredQuaternion);
     updateCameraView(cameraViewRef, cameraLike.quaternion);
-    currentHeadingRef.current = Math.atan2(
-      cameraViewRef.current.forwardX,
-      -cameraViewRef.current.forwardZ,
-    );
     initializedRef.current = true;
   }, [cameraLike, cameraViewRef, preset, scratch, targetRef]);
 
@@ -166,40 +128,22 @@ export function CameraRig({
         return;
       }
 
-      const target = targetRef.current;
-      const currentHeading = currentHeadingRef.current;
-
-      if (target.hasMovementHeading) {
-        currentHeadingRef.current +=
-          shortestAngleDelta(target.movementHeading, currentHeading) *
-          getDampingAlpha(preset.headingDamping, delta);
+      if (preset.mode === "fixed") {
+        return;
       }
 
-      scratch.offset.x =
-        -Math.sin(currentHeadingRef.current) * scratch.horizontalDistance;
-      scratch.offset.y = preset.offset[1];
-      scratch.offset.z =
-        Math.cos(currentHeadingRef.current) * scratch.horizontalDistance;
-
-      scratch.desiredPosition.x = target.anchor.x + scratch.offset.x;
-      scratch.desiredPosition.y = target.anchor.y + scratch.offset.y;
-      scratch.desiredPosition.z = target.anchor.z + scratch.offset.z;
+      const target = targetRef.current;
+      scratch.desiredPosition.x =
+        target.anchor.x + preset.offset[0] + target.lookAhead.x;
+      scratch.desiredPosition.y = target.anchor.y + preset.offset[1];
+      scratch.desiredPosition.z =
+        target.anchor.z + preset.offset[2] + target.lookAhead.z;
       dampVector3(
         cameraLike.position,
         scratch.desiredPosition,
         preset.cameraPositionDamping,
         delta,
       );
-
-      scratch.currentQuaternion.copy(cameraLike.quaternion);
-      scratch.lookAtTarget.copy(target.lookAt);
-      cameraLike.lookAt(scratch.lookAtTarget);
-      scratch.desiredQuaternion.copy(cameraLike.quaternion);
-      cameraLike.quaternion.copy(scratch.currentQuaternion).slerp(
-        scratch.desiredQuaternion,
-        getDampingAlpha(preset.orientationDamping, delta),
-      );
-      updateCameraView(cameraViewRef, cameraLike.quaternion);
     },
     [
       cameraLike,

@@ -29,24 +29,11 @@ type CameraTargetProps = {
 };
 
 const MIN_MANUAL_FOLLOW_SPEED = 0.5;
-const HEADING_CHANGE_THRESHOLD = Math.PI / 8;
-const HEADING_PERSISTENCE = 0.2;
 
 function createCameraTargetScratch(): CameraTargetScratch {
   return {
     desiredLookAhead: { x: 0, y: 0, z: 0 },
   };
-}
-
-function shortestAngleDelta(target: number, current: number) {
-  const fullTurn = Math.PI * 2;
-  let delta = (target - current + Math.PI) % fullTurn;
-
-  if (delta < 0) {
-    delta += fullTurn;
-  }
-
-  return delta - Math.PI;
 }
 
 export function CameraTarget({
@@ -59,11 +46,6 @@ export function CameraTarget({
 }: CameraTargetProps) {
   const initializedRef = useRef(false);
   const scratchRef = useRef<CameraTargetScratch | null>(null);
-  const lastObservedHeadingRef = useRef(0);
-  const headingCandidateRef = useRef(0);
-  const headingCandidateElapsedRef = useRef(0);
-  const headingCandidateActiveRef = useRef(false);
-  const manualMotionActiveRef = useRef(false);
 
   if (scratchRef.current === null) {
     scratchRef.current = createCameraTargetScratch();
@@ -84,13 +66,6 @@ export function CameraTarget({
     target.lookAt.x = target.anchor.x;
     target.lookAt.y = target.anchor.y;
     target.lookAt.z = target.anchor.z;
-    target.movementHeading = motion.rotationY;
-    target.hasMovementHeading = false;
-    lastObservedHeadingRef.current = motion.rotationY;
-    headingCandidateRef.current = motion.rotationY;
-    headingCandidateElapsedRef.current = 0;
-    headingCandidateActiveRef.current = false;
-    manualMotionActiveRef.current = false;
     initializedRef.current = true;
   }, [motionRef, preset, targetRef]);
 
@@ -115,63 +90,22 @@ export function CameraTarget({
       target.anchor.y = motion.position.y + preset.targetHeightOffset;
       target.anchor.z = motion.position.z;
 
+      if (preset.mode === "fixed") {
+        target.lookAhead.x = 0;
+        target.lookAhead.y = 0;
+        target.lookAhead.z = 0;
+        target.lookAt.x = target.anchor.x;
+        target.lookAt.y = target.anchor.y;
+        target.lookAt.z = target.anchor.z;
+        return;
+      }
+
       const planarSpeed = Math.hypot(motion.velocity.x, motion.velocity.z);
       const control = playerControlRef.current;
       const manualMovement =
-        control.manualInputEnabled &&
-        !control.physicsLocked &&
-        planarSpeed > MIN_MANUAL_FOLLOW_SPEED;
+        control.manualInputEnabled && !control.physicsLocked;
 
-      if (!manualMovement) {
-        manualMotionActiveRef.current = false;
-        headingCandidateActiveRef.current = false;
-        headingCandidateElapsedRef.current = 0;
-      } else {
-        const observedHeading = Math.atan2(
-          motion.velocity.x,
-          -motion.velocity.z,
-        );
-        const observedChange = Math.abs(
-          shortestAngleDelta(observedHeading, lastObservedHeadingRef.current),
-        );
-
-        if (!manualMotionActiveRef.current) {
-          manualMotionActiveRef.current = true;
-          headingCandidateRef.current = observedHeading;
-          headingCandidateElapsedRef.current = 0;
-          headingCandidateActiveRef.current = true;
-        } else if (observedChange > HEADING_CHANGE_THRESHOLD) {
-          headingCandidateRef.current = observedHeading;
-          headingCandidateElapsedRef.current = 0;
-          headingCandidateActiveRef.current = true;
-        } else if (headingCandidateActiveRef.current) {
-          const candidateChange = Math.abs(
-            shortestAngleDelta(
-              observedHeading,
-              headingCandidateRef.current,
-            ),
-          );
-
-          if (candidateChange > HEADING_CHANGE_THRESHOLD) {
-            headingCandidateRef.current = observedHeading;
-            headingCandidateElapsedRef.current = 0;
-          } else {
-            headingCandidateElapsedRef.current += delta;
-
-            if (
-              headingCandidateElapsedRef.current >= HEADING_PERSISTENCE
-            ) {
-              target.movementHeading = headingCandidateRef.current;
-              target.hasMovementHeading = true;
-              headingCandidateActiveRef.current = false;
-            }
-          }
-        }
-
-        lastObservedHeadingRef.current = observedHeading;
-      }
-
-      if (planarSpeed > 0.001) {
+      if (manualMovement && planarSpeed > MIN_MANUAL_FOLLOW_SPEED) {
         const strength =
           Math.min(planarSpeed / preset.lookAheadReferenceSpeed, 1) *
           preset.lookAheadDistance;
