@@ -1,6 +1,7 @@
 "use client";
 
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
+import { useExperienceState } from "@/systems/experience-state";
 import { FieldGeometry, FieldInstances } from "./FieldMeshes";
 import { FieldMaterial } from "./FieldMaterial";
 import { makeSurface, organicEllipsoid, type Point3 } from "./field-geometry";
@@ -52,6 +53,7 @@ function Window({ position, rotationY = 0, warm = false }: {
 }
 
 export function FieldHouse() {
+  const showHelpers = useExperienceState(state => state.debugVisible);
   return (
     <group name="HOUSE_EXTERIOR_VISUAL_PROTOTYPE" position={[HOUSE_CENTER[0], 0, HOUSE_CENTER[1]]}>
       <RigidBody
@@ -103,6 +105,7 @@ export function FieldHouse() {
       <mesh
         name="DEV_HOUSE_DOOR_INTERACTION_POINT"
         position={DOOR_MARKER_POSITION}
+        visible={showHelpers}
       >
         <sphereGeometry args={[0.1, 8, 8]} />
         <meshBasicMaterial color={P.devMarker} wireframe />

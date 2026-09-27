@@ -24,7 +24,7 @@ export function FieldLandmarks() {
         <meshStandardMaterial vertexColors roughness={1} />
       </mesh>
       <FieldInstances name="FIELD_LANDMARK_CANOPY_SHADOW_VOLUMES" data={LEAF_CLUSTER} instances={FOLIAGE} castShadow shadowOnly />
-      <FieldInstances name="FIELD_LANDMARK_LEAVES" data={LEAF} instances={LEAVES} doubleSided />
+      <FieldInstances name="FIELD_LANDMARK_LEAVES" data={LEAF} instances={LEAVES} doubleSided sway={.09} />
     </group>
   );
 }

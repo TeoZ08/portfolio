@@ -1,6 +1,8 @@
 "use client";
 
 import { useLayoutEffect, useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useExperienceState } from "@/systems/experience-state";
 import { makeInstanceBuffers, type FieldInstance, type SurfaceData } from "./field-geometry";
 
 // Declarative buffer attributes are disposed by R3F on unmount. All instance
@@ -22,7 +24,7 @@ type InstanceMeshRef = {
 };
 
 export function FieldInstances({
-  name, data, instances, castShadow = false, roughness = 1, doubleSided = false, shadowOnly = false,
+  name, data, instances, castShadow = false, roughness = 1, doubleSided = false, shadowOnly = false, sway = 0,
 }: {
   name: string;
   data: SurfaceData;
@@ -31,9 +33,14 @@ export function FieldInstances({
   roughness?: number;
   doubleSided?: boolean;
   shadowOnly?: boolean;
+  sway?: number;
 }) {
   const meshRef = useRef<InstanceMeshRef>(null);
   const buffers = useMemo(() => makeInstanceBuffers(instances), [instances]);
+  const breeze = useRef({ value: 0 });
+  useFrame((_, delta) => {
+    if (sway && !useExperienceState.getState().reducedMotion) breeze.current.value += Math.min(delta, .1);
+  });
   useLayoutEffect(() => {
     const mesh = meshRef.current;
     if (!mesh) return;
@@ -48,7 +55,19 @@ export function FieldInstances({
       <FieldGeometry data={data} />
       <instancedBufferAttribute attach="instanceColor" args={[buffers.colors, 3]} />
       <meshStandardMaterial roughness={roughness} metalness={0} side={doubleSided ? 2 : 0}
-        colorWrite={!shadowOnly} depthWrite={!shadowOnly} />
+        colorWrite={!shadowOnly} depthWrite={!shadowOnly}
+        customProgramCacheKey={() => `field-foliage-${sway}`}
+        onBeforeCompile={(shader: { uniforms: Record<string, unknown>; vertexShader: string }) => {
+          if (!sway) return;
+          shader.uniforms.uFieldBreeze = breeze.current;
+          shader.vertexShader = `uniform float uFieldBreeze;\n${shader.vertexShader}`.replace("#include <begin_vertex>", `#include <begin_vertex>
+            #ifdef USE_INSTANCING
+              float phase = instanceMatrix[3].x * .47 + instanceMatrix[3].z * .32;
+              float bend = max(0.0, position.y) * ${sway.toFixed(3)};
+              transformed.x += sin(uFieldBreeze * .85 + phase) * bend;
+              transformed.z += cos(uFieldBreeze * .63 + phase) * bend * .45;
+            #endif`);
+        }} />
     </instancedMesh>
   );
 }

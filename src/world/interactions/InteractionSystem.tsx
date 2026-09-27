@@ -442,7 +442,7 @@ export function InteractionSystem({
             );
             velocityX = (dx / planarDistance) * speed;
             velocityZ = (dz / planarDistance) * speed;
-            desiredRotationY = Math.atan2(dx, -dz);
+            desiredRotationY = Math.atan2(-dx, -dz);
           }
         }
 
@@ -525,12 +525,19 @@ export function InteractionSystem({
       runtime.cancelRequested = false;
     };
 
+    const interactFromButton = () => { runtime.interactRequested = true; };
+    const cancelFromButton = () => { runtime.cancelRequested = true; };
+    window.addEventListener("world:interact", interactFromButton);
+    window.addEventListener("world:cancel", cancelFromButton);
+
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     window.addEventListener("blur", clearPressedKeys);
     document.addEventListener("visibilitychange", clearPressedKeys);
 
     return () => {
+      window.removeEventListener("world:interact", interactFromButton);
+      window.removeEventListener("world:cancel", cancelFromButton);
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("blur", clearPressedKeys);

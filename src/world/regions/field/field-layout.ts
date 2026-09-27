@@ -75,7 +75,8 @@ export function terrainHeight(x: number, z: number) {
   const eastRise = 0.65 * Math.exp(-(((x - 30) / 13) ** 2) - ((z + 38) / 22) ** 2);
   const westBank = 1.5 * Math.exp(-(((x + 35) / 14) ** 2) - ((z + 8) / 20) ** 2);
   const backBank = 1.8 * Math.exp(-(((x - 20) / 20) ** 2) - ((z + 75) / 18) ** 2);
-  return (broad + eastRise + westBank + backBank) * landingMask * houseMask;
+  const lookout = 3.8 * Math.exp(-(((x - 8) / 14) ** 2) - ((z + 88) / 13) ** 2);
+  return (broad + eastRise + westBank + backBank + lookout) * landingMask * houseMask;
 }
 
 // Exact barycentric height of the rendered/collision grid, also used by props/path.

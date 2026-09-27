@@ -42,16 +42,19 @@ export const EXPLORE_CAMERA_PRESET: CameraPreset = {
 export const INTERIOR_CAMERA_PRESET: CameraPreset = {
   mode: "fixed",
   name: "INTERIOR",
-  offset: [7.6, 5, 10.5],
-  initialPosition: [7.6, 6.1, 10.5],
-  fixedLookAt: [0, 1.2, -0.6],
+  // From the entrance at room height, not above an exposed dollhouse. The
+  // shell continues behind the playable threshold to enclose this view.
+  offset: [1.8, 2.65, 10.4],
+  initialPosition: [1.8, 3.8, 9.2],
+  fixedLookAt: [0, 1.15, -1.2],
   targetHeightOffset: 0.65,
   lookAheadDistance: 0,
   lookAheadReferenceSpeed: 4,
   lookAheadDamping: 8,
   cameraPositionDamping: 7,
-  manualPitchLimits: [Math.PI * 15 / 180, Math.PI * 38 / 180],
-  manualYawLimits: [-1.35, 0.15],
+  // Keep the lens below the 4.5 m ceiling and within the entry-side enclosure.
+  manualPitchLimits: [Math.PI * 10 / 180, Math.PI * 16 / 180],
+  manualYawLimits: [-0.42, 0.38],
   manualRotationDamping: 16,
-  fov: 56,
+  fov: 60,
 };

@@ -8,7 +8,7 @@ import {
 export const HOUSE_INTERACTION_TARGETS = [
   {
     id: "HOUSE_EXIT_DOOR",
-    label: "exit house",
+    label: "Sair da casa",
     action: {
       type: "enter",
       destinationRegion: "FIELD",

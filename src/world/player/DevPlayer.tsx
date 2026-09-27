@@ -19,6 +19,7 @@ import {
   resetPlayerDebugState,
 } from "@/world/player/player-state";
 import { usePlayerInput } from "@/world/player/player-input";
+import { VisitorAvatar } from "./VisitorAvatar";
 import {
   DEV_PLAYER_START_POSITION,
   resetPlayerMotionState,
@@ -274,7 +275,7 @@ export function DevPlayer({
       const motion = motionRef.current;
       const rotationTargetY = transitionRequest?.rotationY ??
         (control.targetRotationY === null && moving
-          ? Math.atan2(movementX, -movementZ)
+          ? Math.atan2(-movementX, -movementZ)
           : control.targetRotationY);
       const nextRotationY = transitionRequest !== null
         ? transitionRequest.rotationY
@@ -387,7 +388,7 @@ export function DevPlayer({
         ref={colliderRef}
         args={[PLAYER_CAPSULE_HALF_HEIGHT, PLAYER_CAPSULE_RADIUS]}
       />
-      <group ref={visualGroupRef} name="DEV_PLAYER_VISUAL">
+      {solidColor ? <VisitorAvatar motionRef={motionRef} controlRef={playerControlRef} /> : <group ref={visualGroupRef} name="DEV_PLAYER_VISUAL">
         <mesh name="DEV_PLAYER_CAPSULE_MESH" castShadow={!!solidColor} receiveShadow={!!solidColor}>
           <capsuleGeometry
             args={[PLAYER_CAPSULE_RADIUS, PLAYER_CAPSULE_HALF_HEIGHT * 2, 8, 16]}
@@ -411,7 +412,7 @@ export function DevPlayer({
           <boxGeometry args={[0.8, 0.05, 0.8]} />
           <meshBasicMaterial color="#fff7ed" wireframe />
         </mesh>
-      </group>
+      </group>}
     </RigidBody>
   );
 }

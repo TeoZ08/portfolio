@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import { touchMovement, worldInputBlocked } from "@/systems/experience-state";
 
 const MOVEMENT_KEYS = new Set([
   "w",
@@ -79,12 +80,19 @@ export function usePlayerInput() {
     const pressedKeys = pressedKeysRef.current;
     const input = inputRef.current;
 
+    if (worldInputBlocked()) {
+      pressedKeys.clear(); input.x=0; input.z=0;
+      return input;
+    }
+
     input.x =
       (pressedKeys.has("d") || pressedKeys.has("arrowright") ? 1 : 0) -
       (pressedKeys.has("a") || pressedKeys.has("arrowleft") ? 1 : 0);
     input.z =
       (pressedKeys.has("s") || pressedKeys.has("arrowdown") ? 1 : 0) -
       (pressedKeys.has("w") || pressedKeys.has("arrowup") ? 1 : 0);
+    input.x += touchMovement.x;
+    input.z += touchMovement.z;
 
     const magnitude = Math.hypot(input.x, input.z);
 

@@ -11,7 +11,7 @@ export const HOUSE_EXTERIOR_DOOR_INTERACTION_POINT = [
 export const FIELD_INTERACTION_TARGETS = [
   {
     id: "HOUSE_ENTRY_DOOR",
-    label: "enter house",
+    label: "Entrar na casa",
     action: {
       type: "enter",
       destinationRegion: "HOUSE",

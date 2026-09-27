@@ -5,13 +5,21 @@ import { FIELD_PALETTE as P, linearColor } from "./field-palette";
 const grass = linearColor(P.grass);
 const shade = linearColor(P.grassShade);
 const dry = linearColor(P.grassLight);
+const forestFloor = linearColor("#45574a");
 
 export function groundColor(x: number, z: number) {
   const patch = Math.sin(x * 0.23 + Math.sin(z * 0.13)) * Math.cos(z * 0.2) * 0.5 + 0.5;
   const grain = Math.sin(x * 2.8 + z * 1.9) * Math.sin(z * 3.1 - x * 1.7) * 0.035;
   const destination = patch > 0.5 ? dry : shade;
   const strength = Math.abs(patch - 0.5) * 1.15;
-  return grass.map((channel, i) => Math.max(0, channel + (destination[i] - channel) * strength + grain * channel));
+  // A broad, soft bed of moss/shade under the western grove. Colour only: the
+  // approved height grid, triangles and Rapier collision surface stay identical.
+  const grove = Math.max(0, 1 - Math.hypot((x + 44) / 14, (z + 68) / 14));
+  const shadeWeight = grove * grove * (3 - 2 * grove) * .72;
+  return grass.map((channel, i) => {
+    const meadow = Math.max(0, channel + (destination[i] - channel) * strength + grain * channel);
+    return meadow + (forestFloor[i] - meadow) * shadeWeight;
+  });
 }
 
 export function makeTerrainSurface() {

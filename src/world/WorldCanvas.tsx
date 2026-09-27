@@ -5,6 +5,7 @@ import { Physics } from "@react-three/rapier";
 import { useEffect, useRef, type ReactNode } from "react";
 
 import { useWorldState, type WorldRegion } from "@/systems/world-state";
+import { useExperienceState } from "@/systems/experience-state";
 import {
   createCameraResyncState,
   createDevFrameUpdates,
@@ -59,6 +60,7 @@ export function WorldCanvas({
 }: WorldCanvasProps) {
   const currentRegion = useWorldState((state) => state.currentRegion);
   const timeOfDay = useWorldState((state) => state.timeOfDay);
+  const lowQuality = useExperienceState((state) => state.quality === "low");
   const setCurrentRegion = useWorldState((state) => state.setCurrentRegion);
   const beginRegionTransition = useWorldState(
     (state) => state.beginRegionTransition,
@@ -92,12 +94,12 @@ export function WorldCanvas({
       data-world-mode={dataWorldMode}
     >
       <Canvas
-        shadows={dataWorldMode === "vertical-slice" ? "soft" : false}
+        shadows={dataWorldMode === "vertical-slice" && !lowQuality ? "soft" : false}
         camera={{
           position: cameraPreset.initialPosition,
           fov: cameraPreset.fov,
         }}
-        dpr={[1, 2]}
+        dpr={lowQuality ? 1 : [1, 2]}
       >
         <color attach="background" args={[backgroundColor]} />
         {isDevelopment && showHelpers ? <DevelopmentHelpers /> : null}
