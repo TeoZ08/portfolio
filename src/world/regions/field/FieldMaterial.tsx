@@ -38,7 +38,7 @@ function applyPigment(shader: PaintShader) {
 }
 
 export function FieldMaterial({ color = "#ffffff", vertexColors = false, side = 0 }: {
-  color?: string; vertexColors?: boolean; side?: number;
+  color?: string; vertexColors?: boolean; side?: 0 | 1 | 2;
 }) {
   return <meshStandardMaterial color={color} vertexColors={vertexColors} side={side}
     roughness={1} metalness={0} onBeforeCompile={applyPigment}

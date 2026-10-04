@@ -49,9 +49,15 @@ function DeskLamp() {
 }
 
 function Computer() {
-  return <group name="HOUSE_COMPUTER_VISUAL_PLACEHOLDER">
+  return <group name="HOUSE_COMPUTER">
     <Part name="COMPUTER_MONITOR_HOUSING" position={[4.25, 2.35, -5.29]} size={[2.22, 1.31, 0.18]} color={P.ink} finish="paint" radius={0.065} castShadow />
-    <Part name="COMPUTER_UNLIT_SCREEN" position={[4.25, 2.39, -5.189]} size={[2.025, 1.055, 0.024]} color={P.screen} finish="paint" radius={0.011} />
+    <mesh name="COMPUTER_STANDBY_SCREEN" position={[4.25, 2.39, -5.189]}>
+      <boxGeometry args={[2.025, 1.055, 0.024]} />
+      <meshStandardMaterial color={P.screen} emissive={P.screenLight} emissiveIntensity={0.2} roughness={0.76} />
+    </mesh>
+    <Part name="COMPUTER_STANDBY_HEADER" position={[4.02, 2.57, -5.17]} size={[0.92, 0.035, 0.012]} color={P.screenLight} radius={0.005} />
+    <Part name="COMPUTER_STANDBY_LINE" position={[3.89, 2.42, -5.17]} size={[0.66, 0.025, 0.012]} color={P.slate} radius={0.004} />
+    <Part name="COMPUTER_STANDBY_LINE_SHORT" position={[3.76, 2.31, -5.17]} size={[0.4, 0.022, 0.012]} color={P.slate} radius={0.004} />
     <Part name="MONITOR_LOWER_BEZEL" position={[4.25, 1.81, -5.175]} size={[1.97, 0.068, 0.015]} color={P.metal} finish="metal" radius={0.007} />
     <Part name="MONITOR_STAND_NECK" position={[4.25, 1.77, -5.31]} size={[0.17, 0.48, 0.14]} color={P.metal} finish="metal" castShadow />
     <Part name="MONITOR_STAND_FOOT" position={[4.25, 1.592, -5.18]} size={[0.65, 0.055, 0.43]} color={P.metal} finish="metal" radius={0.026} />

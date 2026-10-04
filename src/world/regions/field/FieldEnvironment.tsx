@@ -61,7 +61,7 @@ export function FieldEnvironment() {
   const scene = useThree((state) => state.scene);
   const attachFog = useCallback((_parent: unknown, fog: unknown) => {
     const previous = scene.fog;
-    scene.fog = fog;
+    scene.fog = fog as typeof scene.fog;
     return () => { scene.fog = previous; };
   }, [scene]);
   return (

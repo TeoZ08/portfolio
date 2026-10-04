@@ -55,7 +55,7 @@ function pigment(shader: MaterialShader, finish: HouseFinish) {
 
 // No texture downloads or moving uniforms. Pigment remains subtle at room scale.
 export function HouseMaterial({ color, finish = "paint", vertexColors = false, side = 0 }: {
-  color: string; finish?: HouseFinish; vertexColors?: boolean; side?: number;
+  color: string; finish?: HouseFinish; vertexColors?: boolean; side?: 0 | 1 | 2;
 }) {
   return <meshStandardMaterial key={finish} color={color} roughness={ROUGHNESS[finish]}
     metalness={finish === "metal" ? 0.3 : 0} vertexColors={vertexColors} side={side}

@@ -6,6 +6,7 @@ import type {
   CameraResyncRef,
   DevFrameUpdatesRef,
 } from "@/world/DevFrameLoop";
+import { useExperienceState } from "@/systems/experience-state";
 import type { PlayerControlRef } from "@/world/player/player-control";
 import type { PlayerMotionRef } from "@/world/player/player-motion";
 import {
@@ -498,6 +499,12 @@ export function InteractionSystem({
       }
 
       if (key !== "e" && key !== "escape") {
+        return;
+      }
+
+      // The HTML device layer owns its own Escape navigation while it is
+      // open. Do not let the world interaction state consume that key too.
+      if (useExperienceState.getState().deviceActive) {
         return;
       }
 

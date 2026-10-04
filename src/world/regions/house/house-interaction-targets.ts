@@ -1,9 +1,12 @@
 import type { InteractionTarget } from "@/world/interactions/interaction-types";
 
 import {
+  HOUSE_COMPUTER_INTERACTION_POINT,
   HOUSE_FIELD_EXIT_POINT,
   HOUSE_INTERIOR_DOOR_POINT,
 } from "./house-layout";
+
+export const HOUSE_COMPUTER_TARGET_ID = "HOUSE_COMPUTER" as const;
 
 export const HOUSE_INTERACTION_TARGETS = [
   {
@@ -18,6 +21,19 @@ export const HOUSE_INTERACTION_TARGETS = [
     interactionPoint: HOUSE_INTERIOR_DOOR_POINT,
     interactionRotationY: Math.PI,
     activationRadius: 2.1,
+    positionTolerance: 0.08,
+    rotationTolerance: 0.05,
+  },
+  {
+    id: HOUSE_COMPUTER_TARGET_ID,
+    label: "Usar o computador",
+    action: {
+      type: "use",
+      useRotationY: 0,
+    },
+    interactionPoint: HOUSE_COMPUTER_INTERACTION_POINT,
+    interactionRotationY: 0,
+    activationRadius: 2,
     positionTolerance: 0.08,
     rotationTolerance: 0.05,
   },

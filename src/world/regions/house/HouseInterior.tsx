@@ -3,7 +3,10 @@
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useExperienceState } from "@/systems/experience-state";
 
-import { HOUSE_INTERIOR_ENTRY_POINT } from "./house-layout";
+import {
+  HOUSE_COMPUTER_INTERACTION_POINT,
+  HOUSE_INTERIOR_ENTRY_POINT,
+} from "./house-layout";
 import { HouseRoom } from "./HouseRoom";
 import { HouseShell } from "./HouseShell";
 import { HouseLighting } from "./HouseLighting";
@@ -40,6 +43,10 @@ export function HouseInterior() {
       <HouseShell />
       <HouseRoom />
       <mesh name="DEV_HOUSE_EXIT_DOOR_INTERACTION_POINT" position={HOUSE_INTERIOR_ENTRY_POINT} visible={showHelpers}>
+        <sphereGeometry args={[0.1, 8, 8]} />
+        <meshBasicMaterial color={P.devMarker} wireframe />
+      </mesh>
+      <mesh name="DEV_HOUSE_COMPUTER_INTERACTION_POINT" position={HOUSE_COMPUTER_INTERACTION_POINT} visible={showHelpers}>
         <sphereGeometry args={[0.1, 8, 8]} />
         <meshBasicMaterial color={P.devMarker} wireframe />
       </mesh>
