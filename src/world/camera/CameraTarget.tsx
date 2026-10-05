@@ -9,6 +9,7 @@ import type {
 import { useExperienceState } from "@/systems/experience-state";
 import type { PlayerControlRef } from "@/world/player/player-control";
 import type { PlayerMotionRef } from "@/world/player/player-motion";
+import { CAMERA_INPUT } from "./camera-controls";
 import { EXPLORE_CAMERA_PRESET, type CameraPreset } from "./camera-presets";
 import {
   dampVector3,
@@ -131,7 +132,7 @@ export function CameraTarget({
         target.lookAhead,
         scratch.desiredLookAhead,
         reducedMotion
-          ? preset.lookAheadDamping * 2.75
+          ? preset.lookAheadDamping * CAMERA_INPUT.reducedMotionDampingMultiplier
           : preset.lookAheadDamping,
         delta,
       );

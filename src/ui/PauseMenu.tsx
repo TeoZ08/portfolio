@@ -34,7 +34,9 @@ export function PauseMenu({ open }: { open: boolean }) {
       </nav>
       <dl className="pause-controls">
         <div><dt>WASD / setas</dt><dd>Caminhar</dd></div>
-        <div><dt>Arrastar no cenário</dt><dd>Olhar ao redor</dd></div>
+        <div><dt>Arrastar / dois dedos</dt><dd>Olhar ao redor</dd></div>
+        <div><dt>Roda / pinça</dt><dd>Aproximar / afastar</dd></div>
+        <div><dt>C</dt><dd>Recentralizar câmera</dd></div>
         <div><dt>E</dt><dd>Interagir / encerrar</dd></div>
         <div><dt>Esc</dt><dd>Voltar / pausar</dd></div>
       </dl>

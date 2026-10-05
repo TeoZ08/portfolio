@@ -3,7 +3,7 @@ button,a,input,select{ -webkit-tap-highlight-color:transparent }
 button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #617a5d;outline-offset:4px}
 .brand-mark{font:italic 36px Georgia,serif;letter-spacing:-.12em;font-weight:700;text-decoration:none;color:inherit;padding-right:.13em}
 .eyebrow{font-size:10px;font-weight:600;letter-spacing:.17em;text-transform:uppercase}
-.world-page{overflow:hidden;background:#bbc9cf}.world-canvas canvas{touch-action:none}
+.world-page{overflow:hidden;background:#bbc9cf}.world-canvas canvas{touch-action:none;overscroll-behavior:none}
 .world-presentation{position:fixed;inset:0;pointer-events:none;color:#f4efdd;z-index:3;text-shadow:0 1px 12px #263a2438}
 .world-presentation a,.world-presentation button,.world-presentation .dev-panel{pointer-events:auto}
 .world-menu-access{position:absolute;top:24px;right:24px;opacity:0;border:0;background:var(--paper);color:var(--ink);padding:8px 16px;font-size:20px;border-radius:3px;pointer-events:none!important}

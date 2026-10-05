@@ -69,9 +69,15 @@ type FieldCameraOrientation = {
 };
 
 type CameraPointerState = {
-  pointerId: number | null;
-  lastX: number;
-  lastY: number;
+  activePointerId: number | null;
+  pointers: Map<number, CameraPointer>;
+  pinchDistance: number | null;
+};
+
+type CameraPointer = {
+  pointerType: string;
+  x: number;
+  y: number;
 };
 
 type CameraRigProps = {
@@ -112,9 +118,9 @@ function createFieldCameraOrientation(): FieldCameraOrientation {
 
 function createCameraPointerState(): CameraPointerState {
   return {
-    pointerId: null,
-    lastX: 0,
-    lastY: 0,
+    activePointerId: null,
+    pointers: new Map(),
+    pinchDistance: null,
   };
 }
 
@@ -303,6 +309,16 @@ export function CameraRig({
 
   const updateRig = useCallback(
     (delta: number) => {
+      const manualCamera = manualCameraRef.current;
+
+      if (worldInputBlocked()) {
+        // Freeze both smoothing and queued gestures while a semantic overlay
+        // or the HTML computer owns the interaction surface.
+        manualCamera.pendingYaw = 0;
+        manualCamera.pendingPitch = 0;
+        return;
+      }
+
       const resync = resyncRef.current;
       if (resync.active && resync.stage === 2) {
         initializeRig();
@@ -315,7 +331,6 @@ export function CameraRig({
         return;
       }
 
-      const manualCamera = manualCameraRef.current;
       const dampingMultiplier = reducedMotion
         ? CAMERA_INPUT.reducedMotionDampingMultiplier
         : 1;
@@ -417,19 +432,20 @@ export function CameraRig({
     const pointerState = pointerStateRef.current;
     const manualCamera = manualCameraRef.current;
 
-    const releasePointerCapture = () => {
-      if (
-        pointerState.pointerId !== null &&
-        element.hasPointerCapture(pointerState.pointerId)
-      ) {
-        element.releasePointerCapture(pointerState.pointerId);
+    const releasePointerCapture = (pointerId: number) => {
+      if (element.hasPointerCapture(pointerId)) {
+        element.releasePointerCapture(pointerId);
       }
-
-      pointerState.pointerId = null;
     };
 
-    const clearDragging = (clearPendingInput: boolean) => {
-      releasePointerCapture();
+    const clearPointerInput = (clearPendingInput: boolean) => {
+      for (const pointerId of pointerState.pointers.keys()) {
+        releasePointerCapture(pointerId);
+      }
+
+      pointerState.pointers.clear();
+      pointerState.activePointerId = null;
+      pointerState.pinchDistance = null;
 
       if (clearPendingInput) {
         manualCamera.pendingYaw = 0;
@@ -437,41 +453,124 @@ export function CameraRig({
       }
     };
 
+    const getTouchPointers = () =>
+      [...pointerState.pointers.entries()].filter(
+        ([, pointer]) => pointer.pointerType === "touch",
+      );
+
+    const getTouchDistance = () => {
+      const touches = getTouchPointers();
+
+      if (touches.length < 2) {
+        return null;
+      }
+
+      const first = touches[0][1];
+      const second = touches[1][1];
+      return Math.hypot(second.x - first.x, second.y - first.y);
+    };
+
+    const updateTouchMode = () => {
+      const touches = getTouchPointers();
+
+      if (touches.length >= 2) {
+        pointerState.activePointerId = null;
+        pointerState.pinchDistance = getTouchDistance();
+        return;
+      }
+
+      pointerState.pinchDistance = null;
+      pointerState.activePointerId = touches.length === 1 ? touches[0][0] : null;
+    };
+
     const handlePointerDown = (event: PointerEvent) => {
       if (
-        event.pointerType !== "mouse" ||
-        (event.button !== 0 && event.button !== 2) ||
+        (event.pointerType !== "touch" &&
+          event.button !== 0 &&
+          event.button !== 2) ||
         worldInputBlocked() ||
         isInteractiveCameraTarget(event.target)
       ) {
         return;
       }
 
-      pointerState.pointerId = event.pointerId;
-      pointerState.lastX = event.clientX;
-      pointerState.lastY = event.clientY;
+      if (event.pointerType !== "touch") {
+        clearPointerInput(false);
+      }
+
+      pointerState.pointers.set(event.pointerId, {
+        pointerType: event.pointerType,
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      if (event.pointerType === "touch") {
+        updateTouchMode();
+      } else {
+        pointerState.activePointerId = event.pointerId;
+      }
+
       element.setPointerCapture(event.pointerId);
       event.preventDefault();
     };
 
     const handlePointerMove = (event: PointerEvent) => {
+      const pointer = pointerState.pointers.get(event.pointerId);
+
+      if (!pointer) {
+        return;
+      }
+
+      if (worldInputBlocked() || isInteractiveCameraTarget(event.target)) {
+        clearPointerInput(true);
+        return;
+      }
+
       if (
-        pointerState.pointerId === null ||
-        event.pointerId !== pointerState.pointerId ||
+        pointer.pointerType !== "touch" &&
         (event.buttons & 3) === 0
       ) {
         return;
       }
 
-      if (worldInputBlocked() || isInteractiveCameraTarget(event.target)) {
-        clearDragging(true);
+      const deltaX = event.clientX - pointer.x;
+      const deltaY = event.clientY - pointer.y;
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
+
+      if (pointer.pointerType === "touch") {
+        const touchDistance = getTouchDistance();
+
+        if (touchDistance !== null) {
+          if (pointerState.pinchDistance !== null) {
+            manualCamera.targetRadius = getZoomRadius(
+              manualCamera.targetRadius,
+              pointerState.pinchDistance - touchDistance,
+              preset.radiusLimits,
+            );
+          }
+
+          pointerState.pinchDistance = touchDistance;
+          event.preventDefault();
+          return;
+        }
+
+        if (pointerState.activePointerId !== event.pointerId) {
+          return;
+        }
+
+        manualCamera.pendingYaw +=
+          deltaX * CAMERA_INPUT.touchYawSensitivity;
+        manualCamera.pendingPitch -=
+          deltaY * CAMERA_INPUT.touchPitchSensitivity;
+        event.preventDefault();
         return;
       }
 
-      const deltaX = event.clientX - pointerState.lastX;
-      const deltaY = event.clientY - pointerState.lastY;
-      pointerState.lastX = event.clientX;
-      pointerState.lastY = event.clientY;
+      if (pointerState.activePointerId !== event.pointerId) {
+        return;
+      }
+
       manualCamera.pendingYaw +=
         deltaX * CAMERA_INPUT.mouseYawSensitivity;
       manualCamera.pendingPitch -=
@@ -537,11 +636,36 @@ export function CameraRig({
     };
 
     const handlePointerUp = (event: PointerEvent) => {
-      if (
-        pointerState.pointerId !== null &&
-        event.pointerId === pointerState.pointerId
-      ) {
-        clearDragging(false);
+      const pointer = pointerState.pointers.get(event.pointerId);
+
+      if (!pointer) {
+        return;
+      }
+
+      releasePointerCapture(event.pointerId);
+      pointerState.pointers.delete(event.pointerId);
+
+      if (pointer.pointerType === "touch") {
+        updateTouchMode();
+      } else if (pointerState.activePointerId === event.pointerId) {
+        pointerState.activePointerId = null;
+      }
+    };
+
+    const handlePointerCancel = (event: PointerEvent) => {
+      const pointer = pointerState.pointers.get(event.pointerId);
+
+      if (!pointer) {
+        return;
+      }
+
+      releasePointerCapture(event.pointerId);
+      pointerState.pointers.delete(event.pointerId);
+
+      if (pointer.pointerType === "touch") {
+        updateTouchMode();
+      } else if (pointerState.activePointerId === event.pointerId) {
+        pointerState.activePointerId = null;
       }
     };
 
@@ -552,19 +676,19 @@ export function CameraRig({
     };
 
     const handleWindowBlur = () => {
-      clearDragging(true);
+      clearPointerInput(true);
     };
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        clearDragging(true);
+        clearPointerInput(true);
       }
     };
 
     element.addEventListener("pointerdown", handlePointerDown);
     element.addEventListener("pointermove", handlePointerMove);
     element.addEventListener("pointerup", handlePointerUp);
-    element.addEventListener("pointercancel", handleWindowBlur);
+    element.addEventListener("pointercancel", handlePointerCancel);
     element.addEventListener("contextmenu", handleContextMenu);
     element.addEventListener("wheel", handleWheel, { passive: false });
     window.addEventListener("pointerup", handlePointerUp);
@@ -577,7 +701,7 @@ export function CameraRig({
       element.removeEventListener("pointerdown", handlePointerDown);
       element.removeEventListener("pointermove", handlePointerMove);
       element.removeEventListener("pointerup", handlePointerUp);
-      element.removeEventListener("pointercancel", handleWindowBlur);
+      element.removeEventListener("pointercancel", handlePointerCancel);
       element.removeEventListener("contextmenu", handleContextMenu);
       element.removeEventListener("wheel", handleWheel);
       window.removeEventListener("pointerup", handlePointerUp);
@@ -585,9 +709,9 @@ export function CameraRig({
       window.removeEventListener(CAMERA_RECENTER_EVENT, handleRecenterRequest);
       window.removeEventListener("blur", handleWindowBlur);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      clearDragging(true);
+      clearPointerInput(true);
     };
-  }, [gl, preset.radiusLimits, recenterCamera]);
+  }, [gl, preset, recenterCamera]);
 
   useLayoutEffect(() => {
     initializeRig();
