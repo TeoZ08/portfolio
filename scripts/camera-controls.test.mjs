@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   getCameraDefaultView,
+  getCameraObstructionDistance,
   getWheelIntent,
   getZoomRadius,
 } from "../src/world/camera/camera-controls.ts";
@@ -61,5 +62,51 @@ test("default views and zoom stay inside each preset's limits", () => {
       INTERIOR_CAMERA_PRESET.radiusLimits,
     ),
     INTERIOR_CAMERA_PRESET.radiusLimits[1],
+  );
+});
+
+test("camera obstruction keeps the chosen distance when there is no hit", () => {
+  assert.equal(
+    getCameraObstructionDistance({
+      desiredDistance: 12,
+      hitTimeOfImpact: null,
+    }),
+    12,
+  );
+});
+
+test("camera obstruction subtracts wall padding from the hit distance", () => {
+  assert.equal(
+    getCameraObstructionDistance({
+      desiredDistance: 12,
+      hitTimeOfImpact: 4,
+      minimumDistance: 1.5,
+      pivotOffset: 0.5,
+      wallPadding: 0.25,
+    }),
+    4.25,
+  );
+});
+
+test("camera obstruction respects minimum and desired distances", () => {
+  assert.equal(
+    getCameraObstructionDistance({
+      desiredDistance: 10,
+      hitTimeOfImpact: 0.1,
+      minimumDistance: 1.6,
+      pivotOffset: 0.6,
+      wallPadding: 0.3,
+    }),
+    1.6,
+  );
+  assert.equal(
+    getCameraObstructionDistance({
+      desiredDistance: 3,
+      hitTimeOfImpact: 8,
+      minimumDistance: 1.6,
+      pivotOffset: 0.6,
+      wallPadding: 0.3,
+    }),
+    3,
   );
 });

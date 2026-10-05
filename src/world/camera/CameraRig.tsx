@@ -1,6 +1,7 @@
 "use client";
 
 import { useThree } from "@react-three/fiber";
+import { useRapier } from "@react-three/rapier";
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 import {
@@ -14,8 +15,10 @@ import type {
 } from "@/world/DevFrameLoop";
 import {
   CAMERA_INPUT,
+  CAMERA_OBSTRUCTION,
   clampCameraValue,
   getCameraDefaultView,
+  getCameraObstructionDistance,
   getWheelIntent,
   getZoomRadius,
   isInteractiveCameraTarget,
@@ -48,6 +51,8 @@ type CameraLike = {
 
 type CameraRigScratch = {
   desiredPosition: CameraVector;
+  rayDirection: CameraVector;
+  rayOrigin: CameraVector;
 };
 
 type ManualCameraState = {
@@ -59,6 +64,8 @@ type ManualCameraState = {
   pendingPitch: number;
   currentRadius: number;
   targetRadius: number;
+  obstructionRadius: number;
+  obstructionEngaged: boolean;
   initialized: boolean;
 };
 
@@ -91,6 +98,8 @@ type CameraRigProps = {
 function createCameraRigScratch(): CameraRigScratch {
   return {
     desiredPosition: { x: 0, y: 0, z: 0 },
+    rayDirection: { x: 0, y: 0, z: 0 },
+    rayOrigin: { x: 0, y: 0, z: 0 },
   };
 }
 
@@ -104,6 +113,8 @@ function createManualCameraState(): ManualCameraState {
     pendingPitch: 0,
     currentRadius: 1,
     targetRadius: 1,
+    obstructionRadius: 1,
+    obstructionEngaged: false,
     initialized: false,
   };
 }
@@ -174,14 +185,15 @@ function setDesiredPosition(
   pivotY: number,
   pivotZ: number,
   manualCamera: ManualCameraState,
+  radius = manualCamera.currentRadius,
 ) {
   const horizontalDistance =
-    Math.cos(manualCamera.currentPitch) * manualCamera.currentRadius;
+    Math.cos(manualCamera.currentPitch) * radius;
 
   desiredPosition.x =
     pivotX - Math.sin(manualCamera.currentYaw) * horizontalDistance;
   desiredPosition.y =
-    pivotY + Math.sin(manualCamera.currentPitch) * manualCamera.currentRadius;
+    pivotY + Math.sin(manualCamera.currentPitch) * radius;
   desiredPosition.z =
     pivotZ + Math.cos(manualCamera.currentYaw) * horizontalDistance;
 }
@@ -216,6 +228,7 @@ export function CameraRig({
   targetRef,
 }: CameraRigProps) {
   const { camera, gl } = useThree();
+  const { rapier, world } = useRapier();
   const reducedMotion = useExperienceState((state) => state.reducedMotion);
   const cameraLike = camera as unknown as CameraLike;
   const initializedRef = useRef(false);
@@ -224,12 +237,24 @@ export function CameraRig({
   const fieldOrientationRef = useRef(createFieldCameraOrientation());
   const activePresetKeyRef = useRef<string | null>(null);
   const pointerStateRef = useRef(createCameraPointerState());
+  const obstructionRayRef = useRef<InstanceType<typeof rapier.Ray> | null>(
+    null,
+  );
 
   if (scratchRef.current === null) {
     scratchRef.current = createCameraRigScratch();
   }
 
   const scratch = scratchRef.current;
+
+  if (obstructionRayRef.current === null) {
+    obstructionRayRef.current = new rapier.Ray(
+      scratch.rayOrigin,
+      scratch.rayDirection,
+    );
+  }
+
+  const obstructionRay = obstructionRayRef.current;
 
   const initializeRig = useCallback(() => {
     const target = targetRef.current;
@@ -259,6 +284,8 @@ export function CameraRig({
       manualCamera.pendingPitch = 0;
       manualCamera.currentRadius = initial.radius;
       manualCamera.targetRadius = initial.radius;
+      manualCamera.obstructionRadius = initial.radius;
+      manualCamera.obstructionEngaged = false;
       manualCamera.initialized = true;
       activePresetKeyRef.current = presetKey;
 
@@ -379,29 +406,118 @@ export function CameraRig({
       }
 
       const target = targetRef.current;
-      if (preset.mode === "fixed") {
-        setDesiredPosition(
-          scratch.desiredPosition,
-          preset.fixedLookAt[0],
-          preset.fixedLookAt[1],
-          preset.fixedLookAt[2],
-          manualCamera,
-        );
-      } else {
-        setDesiredPosition(
-          scratch.desiredPosition,
-          target.lookAt.x,
-          target.lookAt.y,
-          target.lookAt.z,
-          manualCamera,
-        );
+      const pivot = preset.mode === "fixed"
+        ? {
+            x: preset.fixedLookAt[0],
+            y: preset.fixedLookAt[1],
+            z: preset.fixedLookAt[2],
+          }
+        : target.lookAt;
+
+      setDesiredPosition(
+        scratch.desiredPosition,
+        pivot.x,
+        pivot.y,
+        pivot.z,
+        manualCamera,
+      );
+
+      const desiredOffsetX = scratch.desiredPosition.x - pivot.x;
+      const desiredOffsetY = scratch.desiredPosition.y - pivot.y;
+      const desiredOffsetZ = scratch.desiredPosition.z - pivot.z;
+      const desiredDistance = Math.hypot(
+        desiredOffsetX,
+        desiredOffsetY,
+        desiredOffsetZ,
+      );
+      const inverseDesiredDistance = desiredDistance > 0.0001
+        ? 1 / desiredDistance
+        : 0;
+
+      scratch.rayDirection.x = desiredOffsetX * inverseDesiredDistance;
+      scratch.rayDirection.y = desiredOffsetY * inverseDesiredDistance;
+      scratch.rayDirection.z = desiredOffsetZ * inverseDesiredDistance;
+      scratch.rayOrigin.x =
+        pivot.x + scratch.rayDirection.x * CAMERA_OBSTRUCTION.pivotOffset;
+      scratch.rayOrigin.y =
+        pivot.y + scratch.rayDirection.y * CAMERA_OBSTRUCTION.pivotOffset;
+      scratch.rayOrigin.z =
+        pivot.z + scratch.rayDirection.z * CAMERA_OBSTRUCTION.pivotOffset;
+
+      const rayLength = Math.max(
+        0,
+        desiredDistance - CAMERA_OBSTRUCTION.pivotOffset,
+      );
+      const hit = rayLength > 0
+        ? world.castRay(
+            obstructionRay,
+            rayLength,
+            true,
+            rapier.QueryFilterFlags.EXCLUDE_SENSORS |
+              rapier.QueryFilterFlags.EXCLUDE_KINEMATIC,
+          )
+        : null;
+      const obstructionTarget = getCameraObstructionDistance({
+        desiredDistance,
+        hitTimeOfImpact: hit?.timeOfImpact ?? null,
+      });
+
+      if (hit !== null) {
+        manualCamera.obstructionEngaged = true;
+      } else if (
+        manualCamera.obstructionEngaged &&
+        manualCamera.obstructionRadius >= desiredDistance - 0.01
+      ) {
+        manualCamera.obstructionEngaged = false;
       }
 
+      const retracting =
+        obstructionTarget < manualCamera.obstructionRadius - 0.001;
+
+      if (manualCamera.obstructionEngaged) {
+        const obstructionDamping = reducedMotion
+          ? retracting
+            ? CAMERA_OBSTRUCTION.reducedMotionRetractDamping
+            : CAMERA_OBSTRUCTION.reducedMotionRestoreDamping
+          : retracting
+            ? CAMERA_OBSTRUCTION.retractDamping
+            : CAMERA_OBSTRUCTION.restoreDamping;
+        const obstructionDelta = Math.min(
+          delta,
+          CAMERA_OBSTRUCTION.maximumDampingDelta,
+        );
+
+        manualCamera.obstructionRadius +=
+          (obstructionTarget - manualCamera.obstructionRadius) *
+          getDampingAlpha(obstructionDamping, obstructionDelta);
+        manualCamera.obstructionRadius = Math.min(
+          manualCamera.obstructionRadius,
+          desiredDistance,
+        );
+      } else {
+        manualCamera.obstructionRadius = desiredDistance;
+      }
+
+      setDesiredPosition(
+        scratch.desiredPosition,
+        pivot.x,
+        pivot.y,
+        pivot.z,
+        manualCamera,
+        manualCamera.obstructionRadius,
+      );
+
       if (preset.mode === "follow") {
+        const positionDamping = retracting
+          ? reducedMotion
+            ? CAMERA_OBSTRUCTION.reducedMotionRetractDamping
+            : CAMERA_OBSTRUCTION.retractDamping
+          : preset.cameraPositionDamping * dampingMultiplier;
+
         dampVector3(
           cameraLike.position,
           scratch.desiredPosition,
-          preset.cameraPositionDamping * dampingMultiplier,
+          positionDamping,
           delta,
         );
       } else {
@@ -419,11 +535,15 @@ export function CameraRig({
       cameraLike,
       cameraViewRef,
       initializeRig,
+      obstructionRay,
       preset,
+      rapier.QueryFilterFlags.EXCLUDE_KINEMATIC,
+      rapier.QueryFilterFlags.EXCLUDE_SENSORS,
       reducedMotion,
       resyncRef,
       scratch,
       targetRef,
+      world,
     ],
   );
 

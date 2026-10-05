@@ -15,6 +15,17 @@ export const CAMERA_INPUT = {
   reducedMotionDampingMultiplier: 2.75,
 } as const;
 
+export const CAMERA_OBSTRUCTION = {
+  minimumDistance: 1.6,
+  pivotOffset: 0.6,
+  wallPadding: 0.3,
+  retractDamping: 24,
+  restoreDamping: 5,
+  reducedMotionRetractDamping: 14,
+  reducedMotionRestoreDamping: 7,
+  maximumDampingDelta: 1 / 20,
+} as const;
+
 export type WheelInput = {
   ctrlKey: boolean;
   deltaMode: number;
@@ -26,6 +37,14 @@ export type CameraDefaultView = {
   yaw: number;
   pitch: number;
   radius: number;
+};
+
+export type CameraObstructionDistanceInput = {
+  desiredDistance: number;
+  hitTimeOfImpact: number | null;
+  minimumDistance?: number;
+  pivotOffset?: number;
+  wallPadding?: number;
 };
 
 export function clampCameraValue(
@@ -57,6 +76,26 @@ export function getCameraDefaultView(preset: CameraPreset): CameraDefaultView {
       preset.radiusLimits,
     ),
   };
+}
+
+export function getCameraObstructionDistance({
+  desiredDistance,
+  hitTimeOfImpact,
+  minimumDistance = CAMERA_OBSTRUCTION.minimumDistance,
+  pivotOffset = CAMERA_OBSTRUCTION.pivotOffset,
+  wallPadding = CAMERA_OBSTRUCTION.wallPadding,
+}: CameraObstructionDistanceInput) {
+  if (hitTimeOfImpact === null) {
+    return desiredDistance;
+  }
+
+  const paddedHitDistance =
+    pivotOffset + Math.max(0, hitTimeOfImpact) - wallPadding;
+
+  return Math.min(
+    desiredDistance,
+    Math.max(minimumDistance, paddedHitDistance),
+  );
 }
 
 export function getWheelIntent(input: WheelInput): "orbit" | "zoom" {
