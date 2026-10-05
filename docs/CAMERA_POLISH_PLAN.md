@@ -1,5 +1,12 @@
 # Camera polish — milestone atual
 
+## Problemas observados
+
+- O `CameraRig` original só orbitava enquanto um botão estava pressionado; gestos de dois dedos no trackpad chegam como `WheelEvent` e eram ignorados.
+- O raio era fixo, sem zoom/dolly amortecido e sem limites distintos para campo e interior.
+- Menus/desktop bloqueavam player e interações, mas o rig não congelava explicitamente a própria acomodação; movimento reduzido também não chegava ao look-ahead/câmera.
+- Os colliders Rapier existentes servem ao player, mas ainda não há contrato testado para consulta de obstrução pela câmera.
+
 ## Plano
 
 - Separar intenção de entrada de aplicação da câmera com helpers puros e configuração explícita.
@@ -32,3 +39,5 @@ Como a Web Platform não identifica o hardware do `wheel`, a distinção é cons
 ## Depois deste milestone
 
 Colisão de câmera fica fora deste patch. O próximo passo deve testar um cast do pivô até a posição desejada contra uma camada explícita de geometria sólida, aplicar margem perto da superfície e amortecer apenas a recuperação do raio. Antes de integrar, validar cantos, portas, teto do interior, transições de região e ausência de jitter; não usar toda a cena como collider implicitamente.
+
+Ideias posteriores de gameplay e storytelling ambiental: presets contextuais authored para banco, janela e computador; vento afetando vegetação, papéis e cortinas; alteração discreta da luz após o retorno do computador; e enquadramentos que revelem casa, árvore e caminhos conforme a exploração, sem HUD permanente ou regiões novas neste milestone.

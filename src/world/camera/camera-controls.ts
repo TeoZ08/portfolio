@@ -3,8 +3,14 @@ import type { CameraPreset } from "./camera-presets";
 export const CAMERA_INPUT = {
   mouseYawSensitivity: 0.006,
   mousePitchSensitivity: 0.0045,
+  touchYawSensitivity: 0.007,
+  touchPitchSensitivity: 0.005,
   trackpadYawSensitivity: 0.0035,
   trackpadPitchSensitivity: 0.0028,
+  trackpadMaxPixelDelta: 50,
+  trackpadMinDelta: 0.5,
+  wheelLinePixels: 16,
+  wheelDeltaLimit: 120,
   zoomSensitivity: 0.0018,
   reducedMotionDampingMultiplier: 2.75,
 } as const;
@@ -66,9 +72,9 @@ export function getWheelIntent(input: WheelInput): "orbit" | "zoom" {
   // Browsers do not expose the hardware source. Pixel deltas with horizontal
   // movement, fine granularity, or modest magnitude are the conservative
   // signals available for a two-finger trackpad gesture.
-  return absoluteX > 0.5 ||
+  return absoluteX > CAMERA_INPUT.trackpadMinDelta ||
     hasTrackpadGranularity ||
-    (absoluteY > 0 && absoluteY < 50)
+    (absoluteY > 0 && absoluteY < CAMERA_INPUT.trackpadMaxPixelDelta)
     ? "orbit"
     : "zoom";
 }
@@ -79,7 +85,7 @@ export function normalizeWheelDelta(
   pageSize: number,
 ) {
   if (deltaMode === 1) {
-    return delta * 16;
+    return delta * CAMERA_INPUT.wheelLinePixels;
   }
 
   if (deltaMode === 2) {
@@ -94,7 +100,10 @@ export function getZoomRadius(
   wheelDelta: number,
   limits: readonly [number, number],
 ) {
-  const boundedDelta = clampCameraValue(wheelDelta, [-120, 120]);
+  const boundedDelta = clampCameraValue(
+    wheelDelta,
+    [-CAMERA_INPUT.wheelDeltaLimit, CAMERA_INPUT.wheelDeltaLimit],
+  );
 
   return clampCameraValue(
     currentRadius * Math.exp(boundedDelta * CAMERA_INPUT.zoomSensitivity),
@@ -104,6 +113,7 @@ export function getZoomRadius(
 
 export function isInteractiveCameraTarget(target: EventTarget | null) {
   return (
+    typeof Element !== "undefined" &&
     target instanceof Element &&
     target.closest(
       "a, button, input, textarea, select, [contenteditable='true'], [role='button'], [data-world-ui]",

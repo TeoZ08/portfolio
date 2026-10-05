@@ -59,8 +59,8 @@ export const INTERIOR_CAMERA_PRESET: CameraPreset = {
   // Keep the lens below the 4.5 m ceiling and within the entry-side enclosure.
   manualPitchLimits: [Math.PI * 10 / 180, Math.PI * 16 / 180],
   manualYawLimits: [-0.42, 0.38],
-  manualRotationDamping: 16,
+  manualRotationDamping: 10,
   radiusLimits: [8.75, 11.5],
-  zoomDamping: 14,
-  fov: 60,
+  zoomDamping: 9.5,
+  fov: 58,
 };
