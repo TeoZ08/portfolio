@@ -9,6 +9,8 @@ type CameraPresetBase = {
   manualPitchLimits: readonly [number, number];
   manualYawLimits: readonly [number, number] | null;
   manualRotationDamping: number;
+  radiusLimits: readonly [number, number];
+  zoomDamping: number;
   fov: number;
 };
 
@@ -36,6 +38,8 @@ export const EXPLORE_CAMERA_PRESET: CameraPreset = {
   manualPitchLimits: [Math.PI * 25 / 180, Math.PI * 55 / 180],
   manualYawLimits: null,
   manualRotationDamping: 14,
+  radiusLimits: [7.5, 18],
+  zoomDamping: 11,
   fov: 50,
 };
 
@@ -56,5 +60,7 @@ export const INTERIOR_CAMERA_PRESET: CameraPreset = {
   manualPitchLimits: [Math.PI * 10 / 180, Math.PI * 16 / 180],
   manualYawLimits: [-0.42, 0.38],
   manualRotationDamping: 16,
+  radiusLimits: [8.75, 11.5],
+  zoomDamping: 14,
   fov: 60,
 };

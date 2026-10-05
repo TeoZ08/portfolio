@@ -26,7 +26,7 @@ function Preferences() {
     <label className="setting-row"><span><strong>Movimento reduzido</strong><small>Transições mais curtas e ambiente sem animação decorativa.</small></span><input type="checkbox" checked={reducedMotion} onChange={event => useExperienceState.getState().setReducedMotion(event.target.checked)} /></label>
     <label className="setting-row"><span><strong>Qualidade do mundo</strong><small>Econômica reduz resolução e sombras.</small></span><select value={quality} onChange={event => useExperienceState.getState().setQuality(event.target.value as "balanced" | "low")}><option value="balanced">Equilibrada</option><option value="low">Econômica</option></select></label>
     <div className="quiet-note"><Icon name="walk" /><p>Você também pode consultar todos os arquivos sem carregar o mundo 3D.</p><Link href="/arquivo">Abrir modo direto ↗</Link></div>
-    <h2>Controles</h2><dl className="control-list"><div><dt>WASD / setas</dt><dd>Caminhar</dd></div><div><dt>Arrastar no cenário</dt><dd>Girar a câmera</dd></div><div><dt>E</dt><dd>Interagir / sair da interação</dd></div><div><dt>Esc</dt><dd>Voltar / abrir o menu</dd></div></dl>
+    <h2>Controles</h2><dl className="control-list"><div><dt>WASD / setas</dt><dd>Caminhar</dd></div><div><dt>Arrastar / dois dedos</dt><dd>Girar a câmera</dd></div><div><dt>Roda / pinça</dt><dd>Aproximar</dd></div><div><dt>C</dt><dd>Recentralizar câmera</dd></div><div><dt>E</dt><dd>Interagir / sair da interação</dd></div><div><dt>Esc</dt><dd>Voltar / abrir o menu</dd></div></dl>
   </div>;
 }
 

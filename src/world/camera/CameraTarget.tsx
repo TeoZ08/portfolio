@@ -6,6 +6,7 @@ import type {
   CameraResyncRef,
   DevFrameUpdatesRef,
 } from "@/world/DevFrameLoop";
+import { useExperienceState } from "@/systems/experience-state";
 import type { PlayerControlRef } from "@/world/player/player-control";
 import type { PlayerMotionRef } from "@/world/player/player-motion";
 import { EXPLORE_CAMERA_PRESET, type CameraPreset } from "./camera-presets";
@@ -44,6 +45,7 @@ export function CameraTarget({
   resyncRef,
   targetRef,
 }: CameraTargetProps) {
+  const reducedMotion = useExperienceState((state) => state.reducedMotion);
   const initializedRef = useRef(false);
   const scratchRef = useRef<CameraTargetScratch | null>(null);
 
@@ -105,7 +107,11 @@ export function CameraTarget({
       const manualMovement =
         control.manualInputEnabled && !control.physicsLocked;
 
-      if (manualMovement && planarSpeed > MIN_MANUAL_FOLLOW_SPEED) {
+      if (
+        !reducedMotion &&
+        manualMovement &&
+        planarSpeed > MIN_MANUAL_FOLLOW_SPEED
+      ) {
         const strength =
           Math.min(planarSpeed / preset.lookAheadReferenceSpeed, 1) *
           preset.lookAheadDistance;
@@ -124,7 +130,9 @@ export function CameraTarget({
       dampVector3(
         target.lookAhead,
         scratch.desiredLookAhead,
-        preset.lookAheadDamping,
+        reducedMotion
+          ? preset.lookAheadDamping * 2.75
+          : preset.lookAheadDamping,
         delta,
       );
       target.lookAt.x = target.anchor.x + target.lookAhead.x;
@@ -136,6 +144,7 @@ export function CameraTarget({
       motionRef,
       playerControlRef,
       preset,
+      reducedMotion,
       resyncRef,
       scratch,
       targetRef,

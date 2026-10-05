@@ -3,10 +3,24 @@
 import { useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
+import {
+  CAMERA_RECENTER_EVENT,
+  useExperienceState,
+  worldInputBlocked,
+} from "@/systems/experience-state";
 import type {
   CameraResyncRef,
   DevFrameUpdatesRef,
 } from "@/world/DevFrameLoop";
+import {
+  CAMERA_INPUT,
+  clampCameraValue,
+  getCameraDefaultView,
+  getWheelIntent,
+  getZoomRadius,
+  isInteractiveCameraTarget,
+  normalizeWheelDelta,
+} from "./camera-controls";
 import { EXPLORE_CAMERA_PRESET, type CameraPreset } from "./camera-presets";
 import {
   dampVector3,
@@ -15,9 +29,6 @@ import {
   type CameraTargetRef,
   type CameraVector,
 } from "./camera-types";
-
-const MOUSE_YAW_SENSITIVITY = 0.006;
-const MOUSE_PITCH_SENSITIVITY = 0.0045;
 
 type QuaternionLike = {
   x: number;
@@ -46,7 +57,8 @@ type ManualCameraState = {
   targetPitch: number;
   pendingYaw: number;
   pendingPitch: number;
-  radius: number;
+  currentRadius: number;
+  targetRadius: number;
   initialized: boolean;
 };
 
@@ -84,7 +96,8 @@ function createManualCameraState(): ManualCameraState {
     targetPitch: 0,
     pendingYaw: 0,
     pendingPitch: 0,
-    radius: 1,
+    currentRadius: 1,
+    targetRadius: 1,
     initialized: false,
   };
 }
@@ -120,10 +133,6 @@ function shortestAngleDelta(target: number, current: number) {
   return normalizeAngle(target - current);
 }
 
-function clamp(value: number, limits: readonly [number, number]) {
-  return Math.min(limits[1], Math.max(limits[0], value));
-}
-
 function dampAngle(current: number, target: number, damping: number, delta: number) {
   const difference = shortestAngleDelta(target, current);
   const alpha = getDampingAlpha(damping, delta);
@@ -133,35 +142,6 @@ function dampAngle(current: number, target: number, damping: number, delta: numb
   }
 
   return normalizeAngle(current + difference * alpha);
-}
-
-function getInitialManualOrientation(preset: CameraPreset) {
-  if (preset.mode === "fixed") {
-    const offsetX = preset.initialPosition[0] - preset.fixedLookAt[0];
-    const offsetY = preset.initialPosition[1] - preset.fixedLookAt[1];
-    const offsetZ = preset.initialPosition[2] - preset.fixedLookAt[2];
-    const horizontalDistance = Math.hypot(offsetX, offsetZ);
-
-    return {
-      yaw: Math.atan2(-offsetX, offsetZ),
-      pitch: clamp(
-        Math.atan2(offsetY, horizontalDistance),
-        preset.manualPitchLimits,
-      ),
-      radius: Math.hypot(horizontalDistance, offsetY),
-    };
-  }
-
-  const horizontalDistance = Math.hypot(preset.offset[0], preset.offset[2]);
-
-  return {
-    yaw: Math.atan2(-preset.offset[0], preset.offset[2]),
-    pitch: clamp(
-      Math.atan2(preset.offset[1], horizontalDistance),
-      preset.manualPitchLimits,
-    ),
-    radius: Math.hypot(horizontalDistance, preset.offset[1]),
-  };
 }
 
 function setCameraQuaternion(
@@ -190,12 +170,12 @@ function setDesiredPosition(
   manualCamera: ManualCameraState,
 ) {
   const horizontalDistance =
-    Math.cos(manualCamera.currentPitch) * manualCamera.radius;
+    Math.cos(manualCamera.currentPitch) * manualCamera.currentRadius;
 
   desiredPosition.x =
     pivotX - Math.sin(manualCamera.currentYaw) * horizontalDistance;
   desiredPosition.y =
-    pivotY + Math.sin(manualCamera.currentPitch) * manualCamera.radius;
+    pivotY + Math.sin(manualCamera.currentPitch) * manualCamera.currentRadius;
   desiredPosition.z =
     pivotZ + Math.cos(manualCamera.currentYaw) * horizontalDistance;
 }
@@ -230,6 +210,7 @@ export function CameraRig({
   targetRef,
 }: CameraRigProps) {
   const { camera, gl } = useThree();
+  const reducedMotion = useExperienceState((state) => state.reducedMotion);
   const cameraLike = camera as unknown as CameraLike;
   const initializedRef = useRef(false);
   const scratchRef = useRef<CameraRigScratch | null>(null);
@@ -251,14 +232,17 @@ export function CameraRig({
     const presetChanged = activePresetKeyRef.current !== presetKey;
 
     if (presetChanged || !manualCamera.initialized) {
-      const initial = getInitialManualOrientation(preset);
+      const initial = getCameraDefaultView(preset);
       const shouldRestoreFieldOrientation =
         preset.mode === "follow" && fieldOrientationRef.current.valid;
       const yaw = shouldRestoreFieldOrientation
         ? fieldOrientationRef.current.yaw
         : initial.yaw;
       const pitch = shouldRestoreFieldOrientation
-        ? clamp(fieldOrientationRef.current.pitch, preset.manualPitchLimits)
+        ? clampCameraValue(
+            fieldOrientationRef.current.pitch,
+            preset.manualPitchLimits,
+          )
         : initial.pitch;
 
       manualCamera.currentYaw = normalizeAngle(yaw);
@@ -267,7 +251,8 @@ export function CameraRig({
       manualCamera.targetPitch = pitch;
       manualCamera.pendingYaw = 0;
       manualCamera.pendingPitch = 0;
-      manualCamera.radius = initial.radius;
+      manualCamera.currentRadius = initial.radius;
+      manualCamera.targetRadius = initial.radius;
       manualCamera.initialized = true;
       activePresetKeyRef.current = presetKey;
 
@@ -305,6 +290,17 @@ export function CameraRig({
     initializedRef.current = true;
   }, [cameraLike, cameraViewRef, preset, scratch, targetRef]);
 
+  const recenterCamera = useCallback(() => {
+    const manualCamera = manualCameraRef.current;
+    const initial = getCameraDefaultView(preset);
+
+    manualCamera.pendingYaw = 0;
+    manualCamera.pendingPitch = 0;
+    manualCamera.targetYaw = normalizeAngle(initial.yaw);
+    manualCamera.targetPitch = initial.pitch;
+    manualCamera.targetRadius = initial.radius;
+  }, [preset]);
+
   const updateRig = useCallback(
     (delta: number) => {
       const resync = resyncRef.current;
@@ -320,6 +316,9 @@ export function CameraRig({
       }
 
       const manualCamera = manualCameraRef.current;
+      const dampingMultiplier = reducedMotion
+        ? CAMERA_INPUT.reducedMotionDampingMultiplier
+        : 1;
 
       if (manualCamera.pendingYaw !== 0) {
         manualCamera.targetYaw = normalizeAngle(
@@ -329,7 +328,7 @@ export function CameraRig({
       }
 
       if (manualCamera.pendingPitch !== 0) {
-        manualCamera.targetPitch = clamp(
+        manualCamera.targetPitch = clampCameraValue(
           manualCamera.targetPitch + manualCamera.pendingPitch,
           preset.manualPitchLimits,
         );
@@ -337,7 +336,7 @@ export function CameraRig({
       }
 
       if (preset.manualYawLimits !== null) {
-        manualCamera.targetYaw = clamp(
+        manualCamera.targetYaw = clampCameraValue(
           manualCamera.targetYaw,
           preset.manualYawLimits,
         );
@@ -346,12 +345,18 @@ export function CameraRig({
       manualCamera.currentYaw = dampAngle(
         manualCamera.currentYaw,
         manualCamera.targetYaw,
-        preset.manualRotationDamping,
+        preset.manualRotationDamping * dampingMultiplier,
         delta,
       );
       manualCamera.currentPitch +=
         (manualCamera.targetPitch - manualCamera.currentPitch) *
-        getDampingAlpha(preset.manualRotationDamping, delta);
+        getDampingAlpha(
+          preset.manualRotationDamping * dampingMultiplier,
+          delta,
+        );
+      manualCamera.currentRadius +=
+        (manualCamera.targetRadius - manualCamera.currentRadius) *
+        getDampingAlpha(preset.zoomDamping * dampingMultiplier, delta);
 
       if (preset.mode === "follow") {
         fieldOrientationRef.current.yaw = manualCamera.targetYaw;
@@ -381,7 +386,7 @@ export function CameraRig({
         dampVector3(
           cameraLike.position,
           scratch.desiredPosition,
-          preset.cameraPositionDamping,
+          preset.cameraPositionDamping * dampingMultiplier,
           delta,
         );
       } else {
@@ -400,6 +405,7 @@ export function CameraRig({
       cameraViewRef,
       initializeRig,
       preset,
+      reducedMotion,
       resyncRef,
       scratch,
       targetRef,
@@ -432,7 +438,12 @@ export function CameraRig({
     };
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (event.button !== 0 && event.button !== 2) {
+      if (
+        event.pointerType !== "mouse" ||
+        (event.button !== 0 && event.button !== 2) ||
+        worldInputBlocked() ||
+        isInteractiveCameraTarget(event.target)
+      ) {
         return;
       }
 
@@ -446,8 +457,14 @@ export function CameraRig({
     const handlePointerMove = (event: PointerEvent) => {
       if (
         pointerState.pointerId === null ||
-        event.pointerId !== pointerState.pointerId
+        event.pointerId !== pointerState.pointerId ||
+        (event.buttons & 3) === 0
       ) {
+        return;
+      }
+
+      if (worldInputBlocked() || isInteractiveCameraTarget(event.target)) {
+        clearDragging(true);
         return;
       }
 
@@ -455,9 +472,68 @@ export function CameraRig({
       const deltaY = event.clientY - pointerState.lastY;
       pointerState.lastX = event.clientX;
       pointerState.lastY = event.clientY;
-      manualCamera.pendingYaw += deltaX * MOUSE_YAW_SENSITIVITY;
-      manualCamera.pendingPitch -= deltaY * MOUSE_PITCH_SENSITIVITY;
+      manualCamera.pendingYaw +=
+        deltaX * CAMERA_INPUT.mouseYawSensitivity;
+      manualCamera.pendingPitch -=
+        deltaY * CAMERA_INPUT.mousePitchSensitivity;
       event.preventDefault();
+    };
+
+    const handleWheel = (event: WheelEvent) => {
+      if (
+        worldInputBlocked() ||
+        isInteractiveCameraTarget(event.target)
+      ) {
+        return;
+      }
+
+      const deltaX = normalizeWheelDelta(
+        event.deltaX,
+        event.deltaMode,
+        window.innerWidth,
+      );
+      const deltaY = normalizeWheelDelta(
+        event.deltaY,
+        event.deltaMode,
+        window.innerHeight,
+      );
+
+      if (getWheelIntent(event) === "orbit") {
+        // Wheel deltas describe content scroll and are opposite to the
+        // physical two-finger gesture. Invert them to match mouse dragging.
+        manualCamera.pendingYaw -=
+          deltaX * CAMERA_INPUT.trackpadYawSensitivity;
+        manualCamera.pendingPitch +=
+          deltaY * CAMERA_INPUT.trackpadPitchSensitivity;
+      } else {
+        manualCamera.targetRadius = getZoomRadius(
+          manualCamera.targetRadius,
+          deltaY,
+          preset.radiusLimits,
+        );
+      }
+
+      event.preventDefault();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.key.toLowerCase() !== "c" ||
+        event.repeat ||
+        worldInputBlocked() ||
+        isInteractiveCameraTarget(event.target)
+      ) {
+        return;
+      }
+
+      recenterCamera();
+      event.preventDefault();
+    };
+
+    const handleRecenterRequest = () => {
+      if (!worldInputBlocked()) {
+        recenterCamera();
+      }
     };
 
     const handlePointerUp = (event: PointerEvent) => {
@@ -470,7 +546,9 @@ export function CameraRig({
     };
 
     const handleContextMenu = (event: MouseEvent) => {
-      event.preventDefault();
+      if (!worldInputBlocked() && !isInteractiveCameraTarget(event.target)) {
+        event.preventDefault();
+      }
     };
 
     const handleWindowBlur = () => {
@@ -488,7 +566,10 @@ export function CameraRig({
     element.addEventListener("pointerup", handlePointerUp);
     element.addEventListener("pointercancel", handleWindowBlur);
     element.addEventListener("contextmenu", handleContextMenu);
+    element.addEventListener("wheel", handleWheel, { passive: false });
     window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener(CAMERA_RECENTER_EVENT, handleRecenterRequest);
     window.addEventListener("blur", handleWindowBlur);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
@@ -498,12 +579,15 @@ export function CameraRig({
       element.removeEventListener("pointerup", handlePointerUp);
       element.removeEventListener("pointercancel", handleWindowBlur);
       element.removeEventListener("contextmenu", handleContextMenu);
+      element.removeEventListener("wheel", handleWheel);
       window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener(CAMERA_RECENTER_EVENT, handleRecenterRequest);
       window.removeEventListener("blur", handleWindowBlur);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       clearDragging(true);
     };
-  }, [gl]);
+  }, [gl, preset.radiusLimits, recenterCamera]);
 
   useLayoutEffect(() => {
     initializeRig();

@@ -40,6 +40,11 @@ export function worldInputBlocked() {
 
 // Touch values are transient; never published through React/Zustand.
 export const touchMovement = { x: 0, z: 0 };
+export const CAMERA_RECENTER_EVENT = "camera:recenter";
+
+export function requestCameraRecenter() {
+  window.dispatchEvent(new CustomEvent(CAMERA_RECENTER_EVENT));
+}
 
 export function requestWorldInteraction(cancel = false) {
   window.dispatchEvent(new CustomEvent(cancel ? "world:cancel" : "world:interact"));

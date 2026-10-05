@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { Desktop } from "@/computer/Desktop";
-import { useExperienceState, requestWorldInteraction, touchMovement } from "@/systems/experience-state";
+import { requestCameraRecenter, useExperienceState, requestWorldInteraction, touchMovement } from "@/systems/experience-state";
 import { useInteractionDebugState } from "@/world/interactions/interaction-state";
 import { HOUSE_COMPUTER_TARGET_ID } from "@/world/regions/house/house-interaction-targets";
 import { DevPanel } from "./DevPanel";
@@ -45,6 +45,7 @@ export function WorldPresentation() {
   const hint=status==="idle"?label:status==="approaching"?"Cancelar aproximação":status==="entering"||status==="exiting"?null:"Voltar a explorar";
   return <div className="world-presentation" data-world-ui>
     {!deviceActive && <button className="world-menu-access" aria-label="Pausa e arquivos (Escape)" disabled={status!=="idle"} onClick={()=>useExperienceState.getState().openMenu()}><span aria-hidden="true">···</span><span className="world-menu-access-label">Pausa e arquivos</span></button>}
+    {!menuOpen && !deviceActive && <button className="camera-help" onClick={requestCameraRecenter} aria-label="Recentralizar câmera. Arraste para girar, use dois dedos no trackpad para orbitar, ou a roda do mouse para aproximar" title="Arraste: girar · trackpad: orbitar · roda: zoom · C: recentralizar"><span aria-hidden="true">↻</span> Câmera <kbd>C</kbd></button>}
     {!menuOpen && !deviceActive && hint && <button className="world-interaction-prompt" onClick={()=>requestWorldInteraction()}><kbd>E</kbd>{hint}</button>}
     {!menuOpen && !deviceActive && <div className="touch-movement" aria-label="Controles de movimento">
       {([['↑',0,-1,'Frente'],['←',-1,0,'Esquerda'],['↓',0,1,'Trás'],['→',1,0,'Direita']] as const).map(([symbol,x,z,title])=><button key={title} aria-label={title} onPointerDown={event=>{event.currentTarget.setPointerCapture(event.pointerId);touchMovement.x=x;touchMovement.z=z;}} onPointerUp={()=>{touchMovement.x=0;touchMovement.z=0;}} onPointerCancel={()=>{touchMovement.x=0;touchMovement.z=0;}} onLostPointerCapture={()=>{touchMovement.x=0;touchMovement.z=0;}}>{symbol}</button>)}
