@@ -159,6 +159,19 @@ function setPlayerControlLocked(
   control.targetRotationY = rotationY;
 }
 
+function setPlayerControlUsing(
+  playerControlRef: PlayerControlRef,
+  rotationY: number,
+  seated: boolean,
+) {
+  if (seated) {
+    setPlayerControlLocked(playerControlRef, rotationY);
+    return;
+  }
+
+  setPlayerControlAlignment(playerControlRef, 0, 0, rotationY);
+}
+
 export function InteractionSystem({
   cameraResyncRef,
   frameUpdatesRef,
@@ -210,6 +223,7 @@ export function InteractionSystem({
         exitRequested
       ) {
         runtime.status = "exiting";
+        runtime.transitionQueued = false;
       }
 
       if (statusAtFrameStart === "idle") {
@@ -318,20 +332,36 @@ export function InteractionSystem({
         }
 
         if (activeTarget.action.type === "sit") {
-          runtime.status = "sitting";
           setPlayerControlLocked(
             playerControlRef,
             activeTarget.action.seatRotationY,
           );
+
+          if (!runtime.transitionQueued) {
+            playerControlRef.current.transitionRequest = {
+              position: activeTarget.action.seatPoint,
+              rotationY: activeTarget.action.seatRotationY,
+            };
+            runtime.transitionQueued = true;
+            return;
+          }
+
+          if (playerControlRef.current.transitionRequest !== null) {
+            return;
+          }
+
+          runtime.status = "sitting";
+          runtime.transitionQueued = false;
           publishRuntimeState(runtime);
           return;
         }
 
         if (activeTarget.action.type === "use") {
           runtime.status = "using";
-          setPlayerControlLocked(
+          setPlayerControlUsing(
             playerControlRef,
             activeTarget.action.useRotationY,
+            activeTarget.action.seated ?? false,
           );
           publishRuntimeState(runtime);
           return;
@@ -362,9 +392,10 @@ export function InteractionSystem({
           runtime.status === "using" &&
           activeTarget.action.type === "use"
         ) {
-          setPlayerControlLocked(
+          setPlayerControlUsing(
             playerControlRef,
             activeTarget.action.useRotationY,
+            activeTarget.action.seated ?? false,
           );
           return;
         }
@@ -389,6 +420,32 @@ export function InteractionSystem({
         positionErrorSquared <= positionToleranceSquared;
 
       if (runtime.status === "exiting") {
+        if (activeTarget.action.type === "sit") {
+          setPlayerControlLocked(
+            playerControlRef,
+            activeTarget.action.seatRotationY,
+          );
+
+          if (!runtime.transitionQueued) {
+            playerControlRef.current.transitionRequest = {
+              position: activeTarget.interactionPoint,
+              rotationY: activeTarget.interactionRotationY,
+            };
+            runtime.transitionQueued = true;
+            return;
+          }
+
+          if (playerControlRef.current.transitionRequest === null) {
+            runtime.status = "idle";
+            runtime.activeTarget = null;
+            runtime.transitionQueued = false;
+            setPlayerControlIdle(playerControlRef);
+            publishRuntimeState(runtime);
+          }
+
+          return;
+        }
+
         let velocityX = 0;
         let velocityZ = 0;
 

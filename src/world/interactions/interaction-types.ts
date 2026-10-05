@@ -21,6 +21,7 @@ export type InteractionAction =
   | {
       type: "use";
       useRotationY: number;
+      seated?: boolean;
     }
   | {
       type: "enter";

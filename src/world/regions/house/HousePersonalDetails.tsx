@@ -69,6 +69,29 @@ function ReferenceBoard() {
       </group>)}
     <Part name="SMALL_PINNED_COLOUR_REFERENCE" position={[1.15, 0.45, 0.13]} size={[0.4, 0.36, 0.01]} color={P.slate} finish="paper" rotation={[0, 0, 0.07]} radius={0.003} />
     <Part name="BOARD_SAVED_ENVELOPE" position={[-0.75, -0.6, 0.13]} size={[0.71, 0.21, 0.017]} color={P.linenLight} finish="paper" rotation={[0, 0, -0.025]} radius={0.006} />
+    <group name="BOARD_PINNED_EXTENSION_TICKET" position={[1.14, -0.58, 0.13]} rotation={[0, 0, -0.055]}>
+      <Part name="EXTENSION_TICKET_PAPER" position={[0, 0, 0]} size={[0.56, 0.25, 0.012]} color={P.paper} finish="paper" radius={0.004} />
+      <Part name="EXTENSION_TICKET_STUB_LINE" position={[0.13, 0, 0.009]} size={[0.012, 0.19, 0.004]} color={P.clay} finish="paper" radius={0.002} />
+      <Part name="EXTENSION_TICKET_NOTE_LINE" position={[-0.1, 0, 0.009]} size={[0.18, 0.014, 0.004]} color={P.slate} finish="paper" radius={0.002} />
+    </group>
+  </group>;
+}
+
+function WallClock() {
+  return <group name="HOUSE_SIMPLE_WALL_CLOCK" position={[-7.96, 3.42, -3.35]} rotation={[0, Math.PI / 2, 0]}>
+    <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
+      <cylinderGeometry args={[0.48, 0.48, 0.09, 24]} />
+      <HouseMaterial color={P.woodLight} finish="paint" />
+    </mesh>
+    <mesh position={[0, 0, 0.052]}>
+      <circleGeometry args={[0.405, 24]} />
+      <HouseMaterial color={P.paper} finish="paper" />
+    </mesh>
+    <Part name="CLOCK_HOUR_HAND" position={[-0.07, 0.09, 0.068]} size={[0.035, 0.24, 0.025]}
+      rotation={[0, 0, -0.52]} color={P.ink} finish="paint" radius={0.009} />
+    <Part name="CLOCK_MINUTE_HAND" position={[0.1, 0.08, 0.07]} size={[0.032, 0.33, 0.025]}
+      rotation={[0, 0, 0.78]} color={P.slate} finish="paint" radius={0.008} />
+    <mesh position={[0, 0, 0.086]}><sphereGeometry args={[0.045, 12, 8]} /><HouseMaterial color={P.brass} finish="metal" /></mesh>
   </group>;
 }
 
@@ -109,11 +132,11 @@ export function HouseEntryDetails() {
       <HouseCurve name="BACKPACK_CARRY_LOOP" points={[[-0.13, 1, 0], [-0.12, 1.15, 0], [0, 1.18, 0], [0.12, 1.15, 0], [0.13, 1, 0]]} radius={0.031} color={P.woodDark} finish="fabric" />
       <HouseCurve name="BACKPACK_LOOSE_STRAP" points={[[0.27, 0.95, -0.19], [0.45, 0.67, -0.24], [0.52, 0.25, -0.13], [0.46, 0.07, 0.12], [0.32, 0.3, 0.1]]} radius={0.036} color={P.woodDark} finish="fabric" />
     </group>
-    <mesh name="ENTRY_KEY_BOWL" position={[0.96, 0.87, 0.03]}>
+    <mesh name="ENTRY_KEY_BOWL" position={[0.25, 0.87, 0.03]}>
       <sphereGeometry args={[0.23, 24, 12, 0, Math.PI * 2, Math.PI * 0.48, Math.PI * 0.45]} />
       <HouseMaterial color={P.clay} finish="ceramic" side={2} />
     </mesh>
-    <mesh name="ENTRY_KEY_RING" position={[0.96, 0.91, 0.03]} rotation={[Math.PI / 2, 0, 0]}>
+    <mesh name="ENTRY_KEY_RING" position={[0.25, 0.91, 0.03]} rotation={[Math.PI / 2, 0, 0]}>
       <torusGeometry args={[0.071, 0.008, 6, 16]} /><HouseMaterial color={P.brass} finish="metal" />
     </mesh>
     {[-0.13, 0.15].map((x, i) => <group key={i} name="EVERYDAY_SHOES_UNDER_BENCH" position={[x + 0.68, 0.1, 0.03]} rotation={[0, i * 0.15 - 0.05, 0]}>
@@ -147,6 +170,7 @@ export function HousePersonalDetails() {
   return <group name="HOUSE_PERSONAL_OBJECTS_VISUAL_PROTOTYPE">
     <Bookshelf />
     <ReferenceBoard />
+    <WallClock />
     <WallStudies />
     <HouseEntryDetails />
   </group>;

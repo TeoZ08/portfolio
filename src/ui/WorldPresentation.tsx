@@ -4,9 +4,30 @@ import { useEffect } from "react";
 import { Desktop } from "@/computer/Desktop";
 import { requestCameraRecenter, useExperienceState, requestWorldInteraction, touchMovement } from "@/systems/experience-state";
 import { useInteractionDebugState } from "@/world/interactions/interaction-state";
-import { HOUSE_COMPUTER_TARGET_ID } from "@/world/regions/house/house-interaction-targets";
+import {
+  HOUSE_BOOKSHELF_TARGET_ID,
+  HOUSE_COMPUTER_TARGET_ID,
+  HOUSE_REFERENCE_BOARD_TARGET_ID,
+} from "@/world/regions/house/house-interaction-targets";
 import { DevPanel } from "./DevPanel";
 import { PauseMenu } from "./PauseMenu";
+
+const HOUSE_INSPECTIONS = {
+  [HOUSE_REFERENCE_BOARD_TARGET_ID]: {
+    title: "Mural de referências",
+    lines: [
+      "Estudos de computação conectam redes, inteligência artificial e arquitetura.",
+      "Papéis e cadernos registram aprendizados e atividades de extensão.",
+    ],
+  },
+  [HOUSE_BOOKSHELF_TARGET_ID]: {
+    title: "Estante de estudos",
+    lines: [
+      "Livros e cadernos mantêm o aprendizado sempre ao alcance.",
+      "Cartões de idiomas dividem espaço com anotações de estudo.",
+    ],
+  },
+} as const;
 
 export function WorldPresentation() {
   const label=useInteractionDebugState(state=>state.candidateLabel);
@@ -15,6 +36,9 @@ export function WorldPresentation() {
   const debugVisible=useExperienceState(state=>state.debugVisible);
   const menuOpen=useExperienceState(state=>state.overlay === "menu");
   const deviceActive=useExperienceState(state=>state.deviceActive);
+  const inspection=status==="using"
+    ? HOUSE_INSPECTIONS[activeTargetId as keyof typeof HOUSE_INSPECTIONS]
+    : undefined;
   useEffect(()=>{
     const shouldUseComputer=status==="using" && activeTargetId===HOUSE_COMPUTER_TARGET_ID;
     useExperienceState.getState().setDevice(shouldUseComputer);
@@ -47,6 +71,12 @@ export function WorldPresentation() {
     {!deviceActive && <button className="world-menu-access" aria-label="Pausa e arquivos (Escape)" disabled={status!=="idle"} onClick={()=>useExperienceState.getState().openMenu()}><span aria-hidden="true">···</span><span className="world-menu-access-label">Pausa e arquivos</span></button>}
     {!menuOpen && !deviceActive && <button type="button" className="camera-help" onClick={requestCameraRecenter} aria-keyshortcuts="C" aria-label="Recentralizar câmera" title="Arraste: girar · trackpad: orbitar · roda: zoom · C: recentralizar"><span aria-hidden="true">↻</span> Câmera <kbd>C</kbd></button>}
     {!menuOpen && !deviceActive && hint && <button className="world-interaction-prompt" onClick={()=>requestWorldInteraction()}><kbd>E</kbd>{hint}</button>}
+    {!menuOpen && !deviceActive && inspection && <aside className="world-inspection-card" aria-live="polite" aria-labelledby="world-inspection-title">
+      <span className="world-inspection-overline">Detalhe do quarto</span>
+      <h2 id="world-inspection-title">{inspection.title}</h2>
+      {inspection.lines.map(line=><p key={line}>{line}</p>)}
+      <button type="button" onClick={()=>requestWorldInteraction(true)}><span>Voltar</span><kbd>Esc</kbd></button>
+    </aside>}
     {!menuOpen && !deviceActive && <div className="touch-movement" aria-label="Controles de movimento">
       {([['↑',0,-1,'Frente'],['←',-1,0,'Esquerda'],['↓',0,1,'Trás'],['→',1,0,'Direita']] as const).map(([symbol,x,z,title])=><button key={title} aria-label={title} onPointerDown={event=>{event.currentTarget.setPointerCapture(event.pointerId);touchMovement.x=x;touchMovement.z=z;}} onPointerUp={()=>{touchMovement.x=0;touchMovement.z=0;}} onPointerCancel={()=>{touchMovement.x=0;touchMovement.z=0;}} onLostPointerCapture={()=>{touchMovement.x=0;touchMovement.z=0;}}>{symbol}</button>)}
     </div>}

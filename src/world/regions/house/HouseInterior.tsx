@@ -4,8 +4,11 @@ import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useExperienceState } from "@/systems/experience-state";
 
 import {
+  HOUSE_BOOKSHELF_INTERACTION_POINT,
   HOUSE_COMPUTER_INTERACTION_POINT,
+  HOUSE_ENTRY_BENCH_INTERACTION_POINT,
   HOUSE_INTERIOR_ENTRY_POINT,
+  HOUSE_REFERENCE_BOARD_INTERACTION_POINT,
 } from "./house-layout";
 import { HouseRoom } from "./HouseRoom";
 import { HouseShell } from "./HouseShell";
@@ -50,6 +53,16 @@ export function HouseInterior() {
         <sphereGeometry args={[0.1, 8, 8]} />
         <meshBasicMaterial color={P.devMarker} wireframe />
       </mesh>
+      {[
+        ["DEV_HOUSE_ENTRY_BENCH_INTERACTION_POINT", HOUSE_ENTRY_BENCH_INTERACTION_POINT],
+        ["DEV_HOUSE_REFERENCE_BOARD_INTERACTION_POINT", HOUSE_REFERENCE_BOARD_INTERACTION_POINT],
+        ["DEV_HOUSE_BOOKSHELF_INTERACTION_POINT", HOUSE_BOOKSHELF_INTERACTION_POINT],
+      ].map(([name, position]) => (
+        <mesh key={name as string} name={name as string} position={position as readonly [number, number, number]} visible={showHelpers}>
+          <sphereGeometry args={[0.1, 8, 8]} />
+          <meshBasicMaterial color={P.devMarker} wireframe />
+        </mesh>
+      ))}
     </group>
   );
 }

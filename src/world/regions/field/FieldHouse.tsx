@@ -52,6 +52,53 @@ function Window({ position, rotationY = 0, warm = false }: {
   );
 }
 
+function EntranceDetails() {
+  return <group name="HOUSE_AUTHORED_ENTRANCE_DETAILS">
+    <group name="HOUSE_WOVEN_WELCOME_MAT" position={[0, 0.105, 6.94]}>
+      <mesh receiveShadow>
+        <boxGeometry args={[2.12, 0.035, 0.72]} />
+        <meshStandardMaterial color={P.pathEdge} roughness={1} />
+      </mesh>
+      {[-0.72, -0.36, 0, 0.36, 0.72].map(x => <mesh key={x} position={[x, 0.022, 0]}>
+        <boxGeometry args={[0.055, 0.012, 0.62]} />
+        <meshStandardMaterial color={P.pathLight} roughness={1} />
+      </mesh>)}
+      {[-1, 1].flatMap(side => [-0.27, -0.09, 0.09, 0.27].map(z => <mesh key={`${side}:${z}`} position={[side * 1.11, 0, z]}>
+        <boxGeometry args={[0.16, 0.018, 0.025]} />
+        <meshStandardMaterial color={P.pathEdge} roughness={1} />
+      </mesh>))}
+    </group>
+    <group name="HOUSE_CLAY_PORCH_PLANTER" position={[2.35, 0, 6.73]}>
+      <mesh position={[0, 0.33, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.39, 0.31, 0.66, 12]} />
+        <meshStandardMaterial color={P.roofLight} roughness={0.94} />
+      </mesh>
+      <mesh position={[0, 0.67, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.36, 16]} />
+        <meshStandardMaterial color={P.soil} roughness={1} />
+      </mesh>
+      {[
+        [-0.18, 0.86, 0.02, 0.28],
+        [0.15, 0.95, -0.08, 0.32],
+        [0.02, 1.12, 0.13, 0.3],
+        [-0.04, 1.25, -0.03, 0.26],
+      ].map(([x, y, z, scale], index) => <mesh key={index} position={[x, y, z]} scale={[scale, scale * 1.35, scale]} castShadow>
+        <dodecahedronGeometry args={[1, 0]} />
+        <meshStandardMaterial color={index % 2 ? P.foliage : P.foliageLight} roughness={1} />
+      </mesh>)}
+    </group>
+    <group name="HOUSE_WARM_PORCH_LANTERN" position={[0, 2.72, 6.84]}>
+      <Timber position={[0, 0.3, -0.1]} size={[0.08, 0.5, 0.08]} color={P.woodDark} />
+      <Timber position={[0, 0.53, 0.06]} size={[0.08, 0.08, 0.32]} color={P.woodDark} />
+      <mesh position={[0, 0.08, 0.12]} castShadow>
+        <cylinderGeometry args={[0.18, 0.24, 0.42, 8]} />
+        <meshStandardMaterial color={P.windowGlow} emissive={P.windowGlow} emissiveIntensity={0.65} roughness={0.72} />
+      </mesh>
+      <pointLight color={P.windowGlow} position={[0, 0.05, 0.2]} intensity={0.75} distance={4} decay={2} />
+    </group>
+  </group>;
+}
+
 export function FieldHouse() {
   const showHelpers = useExperienceState(state => state.debugVisible);
   return (
@@ -102,6 +149,7 @@ export function FieldHouse() {
       <Window position={[-8.09, 2.43, 0.7]} rotationY={-Math.PI / 2} />
       <Window position={[8.09, 2.43, -1.8]} rotationY={Math.PI / 2} />
       <Window position={[-2.8, 2.43, -6.09]} rotationY={Math.PI} />
+      <EntranceDetails />
       <mesh
         name="DEV_HOUSE_DOOR_INTERACTION_POINT"
         position={DOOR_MARKER_POSITION}

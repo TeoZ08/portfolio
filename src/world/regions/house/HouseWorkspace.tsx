@@ -88,6 +88,19 @@ function DeskChair() {
   </group>;
 }
 
+function WorkspaceSmallDetails() {
+  return <group name="HOUSE_WORKSPACE_SMALL_DETAILS">
+    <mesh name="MUG_WOVEN_COASTER" position={[5.67, 1.568, -4.8]} receiveShadow>
+      <cylinderGeometry args={[0.2, 0.2, 0.018, 24]} />
+      <HouseMaterial color={P.ochre} finish="fabric" />
+    </mesh>
+    <group name="TINY_USB_DRIVE" position={[3.55, 1.59, -5.43]} rotation={[0, -0.18, 0]}>
+      <Part name="USB_DRIVE_BODY" position={[0, 0.025, 0]} size={[0.18, 0.05, 0.36]} color={P.slate} finish="paint" radius={0.018} />
+      <Part name="USB_DRIVE_CONNECTOR" position={[0, 0.021, -0.23]} size={[0.11, 0.035, 0.13]} color={P.metal} finish="metal" radius={0.008} />
+    </group>
+  </group>;
+}
+
 export function HouseWorkspace() {
   return <group name="HOUSE_WORKSPACE_VISUAL_PROTOTYPE">
     <Part name="DESK_SOLID_OAK_TOP" position={[4.25, 1.43, -5.18]} size={[4.28, 0.25, 1.26]} color={P.woodLight} radius={0.055} castShadow />
@@ -102,6 +115,7 @@ export function HouseWorkspace() {
     <Computer />
     <StudyNotebook />
     <DeskLamp />
+    <WorkspaceSmallDetails />
     <HouseMug position={[5.67, 1.563, -4.8]} />
     <HouseHeadphones position={[3.03, 1.64, -5.48]} />
     <HouseBook position={[2.58, 1.65, -5.48]} size={[0.61, 0.13, 0.56]} color={P.slate} rotation={[0, -0.12, 0]} />
