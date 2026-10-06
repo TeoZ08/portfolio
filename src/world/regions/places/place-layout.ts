@@ -2,7 +2,7 @@ export const PLACE_LAYOUT = {
   workshop: { x: 30, z: -31, yaw: -0.38, width: 10.5, depth: 7.5 },
   university: { x: -19, z: -65, yaw: 0.12, width: 14, depth: 8 },
   community: { x: 28, z: -61, yaw: -0.17, width: 10, depth: 8 },
-  dojo: { x: -31, z: -87, yaw: 0.3, width: 11, depth: 8 },
+  dojo: { x: -31, z: -87, yaw: 0.3, width: 17, depth: 17.5 },
   hill: { x: 8, z: -88, yaw: Math.PI, width: 8, depth: 5 },
 } as const;
 
