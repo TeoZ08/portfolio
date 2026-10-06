@@ -23,19 +23,24 @@ export function VisitorAvatar({ motionRef, controlRef }: { motionRef: PlayerMoti
 
 function VisitorSilhouette({ motionRef, controlRef }: { motionRef: PlayerMotionRef; controlRef: PlayerControlRef }) {
   const leftLeg=useRef<Limb>(null),rightLeg=useRef<Limb>(null),leftArm=useRef<Limb>(null),rightArm=useRef<Limb>(null),torso=useRef<Limb>(null);
-  const phase=useRef(0),blend=useRef(0),seat=useRef(0);
+  const phase=useRef(0),blend=useRef(0),seat=useRef(0),sprint=useRef(0),airborne=useRef(0);
   useFrame((_,delta)=>{
     const speed=Math.hypot(motionRef.current.velocity.x,motionRef.current.velocity.z);
     const alpha=1-Math.exp(-12*Math.min(delta,.1));
     blend.current+=(Math.min(1,speed/4)-blend.current)*alpha;
     seat.current+=((controlRef.current.physicsLocked?1:0)-seat.current)*alpha;
+    sprint.current+=((motionRef.current.sprinting?1:0)-sprint.current)*alpha;
+    airborne.current+=((motionRef.current.airborne?1:0)-airborne.current)*alpha;
     phase.current+=speed*Math.min(delta,.1)*3.1;
     const swing=Math.sin(phase.current)*.46*blend.current*(1-seat.current);
     if(leftLeg.current)leftLeg.current.rotation.x=swing+seat.current*1.25;
     if(rightLeg.current)rightLeg.current.rotation.x=-swing+seat.current*1.25;
     if(leftArm.current)leftArm.current.rotation.x=-swing*.6+seat.current*.46;
     if(rightArm.current)rightArm.current.rotation.x=swing*.6+seat.current*.46;
-    if(torso.current)torso.current.position.y=Math.cos(phase.current*2)*.012*blend.current+seat.current*.06;
+    if(torso.current){
+      torso.current.position.y=Math.cos(phase.current*2)*.012*blend.current+seat.current*.06+airborne.current*.025;
+      torso.current.rotation.x=-sprint.current*.055-airborne.current*.02;
+    }
   });
   return <group name="VISITOR_STYLIZED_PROTOTYPE">
     <group ref={torso}>

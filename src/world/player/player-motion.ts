@@ -10,6 +10,8 @@ export type PlayerMotionState = {
   rotationY: number;
   grounded: boolean;
   moving: boolean;
+  sprinting: boolean;
+  airborne: boolean;
 };
 
 export type PlayerMotionRef = {
@@ -33,6 +35,8 @@ export function createPlayerMotionState(): PlayerMotionState {
     rotationY: 0,
     grounded: false,
     moving: false,
+    sprinting: false,
+    airborne: true,
   };
 }
 
@@ -46,4 +50,6 @@ export function resetPlayerMotionState(state: PlayerMotionState) {
   state.rotationY = 0;
   state.grounded = false;
   state.moving = false;
+  state.sprinting = false;
+  state.airborne = true;
 }

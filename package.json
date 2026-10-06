@@ -12,7 +12,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test:camera": "node --experimental-strip-types --test scripts/camera-controls.test.mjs"
+    "test:camera": "node --experimental-strip-types --test scripts/camera-controls.test.mjs",
+    "test:movement": "node --experimental-strip-types --test scripts/player-traversal.test.mjs"
   },
   "keywords": [],
   "author": "",

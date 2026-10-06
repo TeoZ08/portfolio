@@ -52,7 +52,9 @@ export function AnimatedVisitor({ motionRef, controlRef }: { motionRef: PlayerMo
       if (pose === "seated-pose") { next.time = .35; next.paused = true; }
       state.current = pose;
     }
-    state.actions.walk.timeScale = Math.min(1.65, Math.max(.55, speed / 2.8));
+    // The asset has no run/jump clips. Keep its authored walk and scale the
+    // cadence naturally so sprinting reads clearly without inventing a pose.
+    state.actions.walk.timeScale = Math.min(2.2, Math.max(.55, speed / 3.1));
     state.mixer.update(Math.min(rawDelta, .1));
   });
 

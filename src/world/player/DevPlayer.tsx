@@ -25,11 +25,15 @@ import {
   resetPlayerMotionState,
   type PlayerMotionRef,
 } from "@/world/player/player-motion";
+import {
+  canStartJump,
+  getDashHopSpeed,
+  getManualTraversalSpeed,
+  PLAYER_TRAVERSAL,
+} from "@/world/player/player-traversal";
 
 const PLAYER_CAPSULE_HALF_HEIGHT = 0.5;
 const PLAYER_CAPSULE_RADIUS = 0.35;
-const PLAYER_SPEED = 4;
-const GRAVITY = -20;
 const GROUND_STICK_VELOCITY = -2;
 const CHARACTER_CONTROLLER_OFFSET = 0.01;
 const MAX_SLOPE_CLIMB_ANGLE = Math.PI / 4;
@@ -62,6 +66,11 @@ type PlayerRotationScratch = {
   y: number;
   z: number;
   w: number;
+};
+
+type PlanarVelocity = {
+  x: number;
+  z: number;
 };
 
 type DevVisualGroup = {
@@ -102,6 +111,27 @@ function moveTowardsAngle(current: number, target: number, maxDelta: number) {
   return current + Math.sign(delta) * maxDelta;
 }
 
+function movePlanarVelocityTowards(
+  velocity: PlanarVelocity,
+  targetX: number,
+  targetZ: number,
+  maxDelta: number,
+) {
+  const deltaX = targetX - velocity.x;
+  const deltaZ = targetZ - velocity.z;
+  const distance = Math.hypot(deltaX, deltaZ);
+
+  if (distance <= maxDelta || distance <= 0.0001) {
+    velocity.x = targetX;
+    velocity.z = targetZ;
+    return;
+  }
+
+  const scale = maxDelta / distance;
+  velocity.x += deltaX * scale;
+  velocity.z += deltaZ * scale;
+}
+
 export function DevPlayer({
   solidColor,
   cameraViewRef,
@@ -116,6 +146,10 @@ export function DevPlayer({
   const sittingVisualRef = useRef(false);
   const characterControllerRef = useRef<CharacterController | null>(null);
   const verticalVelocityRef = useRef(0);
+  const horizontalVelocityRef = useRef<PlanarVelocity>({ x: 0, z: 0 });
+  const dashDirectionRef = useRef<PlanarVelocity>({ x: 0, z: -1 });
+  const dashRemainingRef = useRef(0);
+  const jumpCooldownRef = useRef(0);
   const groundedRef = useRef(false);
   const debugElapsedRef = useRef(0);
   const stepScratchRef = useRef<PlayerStepScratch>({
@@ -189,9 +223,17 @@ export function DevPlayer({
       const control = playerControlRef.current;
       const physicsLocked = control.physicsLocked;
       const transitionRequest = control.transitionRequest;
+      // Read every frame so blocked interaction states consume transient edges
+      // instead of releasing a stale jump after control returns to the player.
+      const rawInput = readInput();
       const input =
-        control.manualInputEnabled && !physicsLocked ? readInput() : null;
+        control.manualInputEnabled && !physicsLocked && !rawInput.blocked
+          ? rawInput
+          : null;
       let verticalVelocity = verticalVelocityRef.current;
+      const horizontalVelocity = horizontalVelocityRef.current;
+      jumpCooldownRef.current = Math.max(0, jumpCooldownRef.current - delta);
+      dashRemainingRef.current = Math.max(0, dashRemainingRef.current - delta);
 
       const currentPosition = body.translation();
       const scratch = stepScratchRef.current;
@@ -202,6 +244,8 @@ export function DevPlayer({
       let movementZ = 0;
       let grounded = groundedRef.current;
       let moving = false;
+      let sprinting = false;
+      let jumpStarted = false;
 
       if (transitionRequest !== null) {
         nextPosition.x = transitionRequest.position[0];
@@ -209,20 +253,43 @@ export function DevPlayer({
         nextPosition.z = transitionRequest.position[2];
         control.transitionRequest = null;
         verticalVelocity = 0;
+        horizontalVelocity.x = 0;
+        horizontalVelocity.z = 0;
+        dashRemainingRef.current = 0;
         grounded = true;
       } else {
         if (physicsLocked) {
           verticalVelocity = 0;
+          horizontalVelocity.x = 0;
+          horizontalVelocity.z = 0;
+          dashRemainingRef.current = 0;
         } else {
           if (groundedRef.current && verticalVelocity < 0) {
             verticalVelocity = GROUND_STICK_VELOCITY;
           }
 
-          verticalVelocity += GRAVITY * delta;
+          jumpStarted = canStartJump({
+            blocked: !control.manualInputEnabled,
+            cooldownRemaining: jumpCooldownRef.current,
+            grounded: groundedRef.current,
+            jumpPressed: rawInput.jumpPressed,
+          });
+
+          if (jumpStarted) {
+            verticalVelocity = PLAYER_TRAVERSAL.jumpVelocity;
+            jumpCooldownRef.current = PLAYER_TRAVERSAL.jumpCooldown;
+            grounded = false;
+          }
+
+          verticalVelocity += PLAYER_TRAVERSAL.gravity * delta;
         }
 
         const manualSideInput = input?.x ?? 0;
         const manualForwardInput = -(input?.z ?? 0);
+        const manualInputMagnitude = Math.hypot(
+          manualSideInput,
+          manualForwardInput,
+        );
         const cameraView = cameraViewRef.current;
         const manualVelocityX =
           manualForwardInput * cameraView.forwardX +
@@ -230,11 +297,74 @@ export function DevPlayer({
         const manualVelocityZ =
           manualForwardInput * cameraView.forwardZ +
           manualSideInput * cameraView.rightZ;
+        sprinting = Boolean(
+          input?.sprinting &&
+          manualInputMagnitude >= PLAYER_TRAVERSAL.dashMinimumInput,
+        );
+
+        if (control.manualInputEnabled && !physicsLocked && !rawInput.blocked) {
+          const dashHopSpeed = getDashHopSpeed({
+            blocked: false,
+            cooldownRemaining: jumpStarted ? 0 : jumpCooldownRef.current,
+            grounded: jumpStarted ? true : groundedRef.current,
+            inputMagnitude: manualInputMagnitude,
+            jumpPressed: jumpStarted,
+            sprinting,
+          });
+
+          if (dashHopSpeed !== null && manualInputMagnitude > 0) {
+            const inverseInputMagnitude = 1 / manualInputMagnitude;
+            dashDirectionRef.current.x =
+              manualVelocityX * inverseInputMagnitude;
+            dashDirectionRef.current.z =
+              manualVelocityZ * inverseInputMagnitude;
+            horizontalVelocity.x =
+              dashDirectionRef.current.x * dashHopSpeed;
+            horizontalVelocity.z =
+              dashDirectionRef.current.z * dashHopSpeed;
+            dashRemainingRef.current = PLAYER_TRAVERSAL.dashHopDuration;
+          }
+
+          const traversalSpeed = getManualTraversalSpeed(
+            manualInputMagnitude,
+            sprinting,
+          );
+          const targetVelocityX = dashRemainingRef.current > 0
+            ? dashDirectionRef.current.x * PLAYER_TRAVERSAL.dashHopSpeed
+            : manualVelocityX * traversalSpeed;
+          const targetVelocityZ = dashRemainingRef.current > 0
+            ? dashDirectionRef.current.z * PLAYER_TRAVERSAL.dashHopSpeed
+            : manualVelocityZ * traversalSpeed;
+          const targetSpeed = Math.hypot(targetVelocityX, targetVelocityZ);
+          const currentSpeed = Math.hypot(
+            horizontalVelocity.x,
+            horizontalVelocity.z,
+          );
+          const response = targetSpeed > currentSpeed
+            ? PLAYER_TRAVERSAL.horizontalAcceleration
+            : PLAYER_TRAVERSAL.horizontalDeceleration;
+
+          movePlanarVelocityTowards(
+            horizontalVelocity,
+            targetVelocityX,
+            targetVelocityZ,
+            response * delta,
+          );
+        } else {
+          horizontalVelocity.x = 0;
+          horizontalVelocity.z = 0;
+          dashRemainingRef.current = 0;
+        }
+
         const horizontalVelocityX = control.manualInputEnabled
-          ? manualVelocityX * PLAYER_SPEED
+          ? rawInput.blocked
+            ? 0
+            : horizontalVelocity.x
           : control.desiredVelocity.x;
         const horizontalVelocityZ = control.manualInputEnabled
-          ? manualVelocityZ * PLAYER_SPEED
+          ? rawInput.blocked
+            ? 0
+            : horizontalVelocity.z
           : control.desiredVelocity.z;
 
         desiredTranslation.x = physicsLocked
@@ -262,7 +392,9 @@ export function DevPlayer({
           : currentPosition.z + movementZ;
 
         const computedGrounded = characterController.computedGrounded();
-        grounded = physicsLocked
+        grounded = jumpStarted
+          ? false
+          : physicsLocked
           ? groundedRef.current || computedGrounded
           : computedGrounded;
         moving =
@@ -316,6 +448,8 @@ export function DevPlayer({
       motion.rotationY = nextRotationY;
       motion.grounded = grounded;
       motion.moving = moving;
+      motion.sprinting = sprinting && moving;
+      motion.airborne = !grounded;
 
       if (sittingVisualRef.current !== physicsLocked) {
         sittingVisualRef.current = physicsLocked;

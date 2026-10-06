@@ -17,9 +17,12 @@ const MOVEMENT_KEYS = new Set([
 export type PlayerInput = {
   x: number;
   z: number;
+  sprinting: boolean;
+  jumpPressed: boolean;
+  blocked: boolean;
 };
 
-function isFormControl(target: EventTarget | null) {
+function isUiControl(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) {
     return false;
   }
@@ -28,51 +31,81 @@ function isFormControl(target: EventTarget | null) {
     target instanceof HTMLInputElement ||
     target instanceof HTMLTextAreaElement ||
     target instanceof HTMLSelectElement ||
+    target instanceof HTMLButtonElement ||
+    target instanceof HTMLAnchorElement ||
     target.isContentEditable
   );
 }
 
 export function usePlayerInput() {
   const pressedKeysRef = useRef<Set<string>>(new Set());
-  const inputRef = useRef<PlayerInput>({ x: 0, z: 0 });
+  const jumpHeldRef = useRef(false);
+  const jumpQueuedRef = useRef(false);
+  const inputRef = useRef<PlayerInput>({
+    x: 0,
+    z: 0,
+    sprinting: false,
+    jumpPressed: false,
+    blocked: false,
+  });
 
   useEffect(() => {
-    const clearPressedKeys = () => {
+    const clearInput = () => {
       pressedKeysRef.current.clear();
+      jumpHeldRef.current = false;
+      jumpQueuedRef.current = false;
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
+      const jumpKey = event.code === "Space" || key === " ";
+      const sprintKey = key === "shift";
 
-      if (!MOVEMENT_KEYS.has(key) || isFormControl(event.target)) {
+      if (
+        (!MOVEMENT_KEYS.has(key) && !jumpKey && !sprintKey) ||
+        isUiControl(event.target) ||
+        worldInputBlocked()
+      ) {
         return;
       }
 
-      pressedKeysRef.current.add(key);
+      if (jumpKey) {
+        if (!jumpHeldRef.current && !event.repeat) {
+          jumpQueuedRef.current = true;
+        }
+        jumpHeldRef.current = true;
+      } else {
+        pressedKeysRef.current.add(key);
+      }
       event.preventDefault();
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
-      pressedKeysRef.current.delete(event.key.toLowerCase());
+      const key = event.key.toLowerCase();
+      if (event.code === "Space" || key === " ") {
+        jumpHeldRef.current = false;
+      } else {
+        pressedKeysRef.current.delete(key);
+      }
     };
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        clearPressedKeys();
+        clearInput();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
-    window.addEventListener("blur", clearPressedKeys);
+    window.addEventListener("blur", clearInput);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
-      window.removeEventListener("blur", clearPressedKeys);
+      window.removeEventListener("blur", clearInput);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      clearPressedKeys();
+      clearInput();
     };
   }, []);
 
@@ -81,7 +114,14 @@ export function usePlayerInput() {
     const input = inputRef.current;
 
     if (worldInputBlocked()) {
-      pressedKeys.clear(); input.x=0; input.z=0;
+      pressedKeys.clear();
+      jumpHeldRef.current = false;
+      jumpQueuedRef.current = false;
+      input.x = 0;
+      input.z = 0;
+      input.sprinting = false;
+      input.jumpPressed = false;
+      input.blocked = true;
       return input;
     }
 
@@ -100,6 +140,11 @@ export function usePlayerInput() {
       input.x /= magnitude;
       input.z /= magnitude;
     }
+
+    input.sprinting = pressedKeys.has("shift");
+    input.jumpPressed = jumpQueuedRef.current;
+    input.blocked = false;
+    jumpQueuedRef.current = false;
 
     return input;
   }, []);
