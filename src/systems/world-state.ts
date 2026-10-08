@@ -32,6 +32,6 @@ export const useWorldState = create<WorldState>((set) => ({
   beginRegionTransition: (currentRegion) =>
     set({ currentRegion, transitionActive: true }),
   completeRegionTransition: () => set({ transitionActive: false }),
-  timeOfDay: 12,
+  timeOfDay: 17,
   setTimeOfDay: (value) => set({ timeOfDay: clampTimeOfDay(value) }),
 }));

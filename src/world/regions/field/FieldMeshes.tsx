@@ -57,9 +57,14 @@ export function FieldInstances({
       <meshStandardMaterial roughness={roughness} metalness={0} side={doubleSided ? 2 : 0}
         colorWrite={!shadowOnly} depthWrite={!shadowOnly}
         customProgramCacheKey={() => `field-foliage-${sway}`}
-        onBeforeCompile={(shader: { uniforms: Record<string, unknown>; vertexShader: string }) => {
+        onBeforeCompile={(shader: { uniforms: Record<string, unknown>; vertexShader: string; fragmentShader: string }) => {
           if (!sway) return;
           shader.uniforms.uFieldBreeze = breeze.current;
+          // Keep nearby foliage from filling the lens when a path passes a tree.
+          shader.fragmentShader = shader.fragmentShader.replace("#include <alphatest_fragment>", `
+            #include <alphatest_fragment>
+            if (length(vViewPosition) < 1.6) discard;
+          `);
           shader.vertexShader = `uniform float uFieldBreeze;\n${shader.vertexShader}`.replace("#include <begin_vertex>", `#include <begin_vertex>
             #ifdef USE_INSTANCING
               float phase = instanceMatrix[3].x * .47 + instanceMatrix[3].z * .32;

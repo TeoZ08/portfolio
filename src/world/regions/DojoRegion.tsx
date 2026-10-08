@@ -24,7 +24,7 @@ export function DojoRegion() {
       <Part name="DOJO_TIMBER_WAINSCOT" position={[0, .72, -3.73]} size={[10.9, 1.13, .055]} color={P.songahmTimber} />
       {[-4.8, -2.4, 0, 2.4, 4.8].map(x => <Part key={x} name="DOJO_WALL_TIMBER_JOINERY" position={[x, 1.6, -3.69]} size={[.13, 2.95, .13]} color={P.songahmTimber} castShadow />)}
       <Bench position={[-3.8, .13, 3.03]} width={2.8} back={false} />
-      <group name="DOBOK_FOLDED_ON_BENCH" position={[-3.8, .72, 3.03]}>
+      <group name="DOBOK_FOLDED_ON_BENCH" position={[-3.8, .98, 3.03]}>
         <SoftObject name="DOBOK_FOLDED_JACKET" position={[0, 0, 0]} size={[.88, .21, .62]} color={P.paper} />
         <Part name="DOBOK_COLLAR" position={[0, .107, -.1]} size={[.075, .025, .45]} rotation={[0, -.4, 0]} color={P.canvas} finish="fabric" />
         <Part name="DOBOK_SECOND_COLLAR" position={[.13, .106, -.1]} size={[.075, .025, .45]} rotation={[0, .4, 0]} color={P.canvas} finish="fabric" />

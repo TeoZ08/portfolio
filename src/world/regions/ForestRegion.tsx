@@ -7,6 +7,7 @@ import { tubeSurface } from "./house/house-geometry";
 import { PLACE_PALETTE as P, Bench, Place } from "./places/PlaceObjects";
 import { CylinderCollider, RigidBody } from "@react-three/rapier";
 import { Suspense } from "react";
+import { WindChime } from "./forest/WindChime";
 import { ForestAssets } from "./forest/ForestAssets";
 import { FOREST_PALETTE as F } from "./forest/forest-dressing";
 import { AssetBoundary } from "@/world/assets/AssetBoundary";
@@ -61,6 +62,7 @@ export function ForestRegion() {
       {ANCHORS.map(([x,z,s])=><CylinderCollider key={`${x}:${z}`} args={[1.4*s,.23*s]} position={[x,surfaceHeight(x,z)+1.4*s,z]} />)}
     </RigidBody>
     <Place name="QUIET_FOREST_BENCH" x={-36.8} z={-69.4} yaw={1.15}><Bench position={[0,.03,0]} width={2.8} /></Place>
+    <WindChime />
     <AssetBoundary><Suspense fallback={null}><ForestAssets /></Suspense></AssetBoundary>
   </group>;
 }

@@ -265,7 +265,7 @@ export function CameraRig({
     if (presetChanged || !manualCamera.initialized) {
       const initial = getCameraDefaultView(preset);
       const shouldRestoreFieldOrientation =
-        preset.mode === "follow" && fieldOrientationRef.current.valid;
+        preset.mode === "follow" && preset.name === "EXPLORE" && fieldOrientationRef.current.valid;
       const yaw = shouldRestoreFieldOrientation
         ? fieldOrientationRef.current.yaw
         : initial.yaw;
@@ -289,7 +289,7 @@ export function CameraRig({
       manualCamera.initialized = true;
       activePresetKeyRef.current = presetKey;
 
-      if (preset.mode === "follow") {
+      if (preset.mode === "follow" && preset.name === "EXPLORE") {
         fieldOrientationRef.current.yaw = manualCamera.currentYaw;
         fieldOrientationRef.current.pitch = manualCamera.currentPitch;
         fieldOrientationRef.current.valid = true;
@@ -400,7 +400,7 @@ export function CameraRig({
         (manualCamera.targetRadius - manualCamera.currentRadius) *
         getDampingAlpha(preset.zoomDamping * dampingMultiplier, delta);
 
-      if (preset.mode === "follow") {
+      if (preset.mode === "follow" && preset.name === "EXPLORE") {
         fieldOrientationRef.current.yaw = manualCamera.targetYaw;
         fieldOrientationRef.current.pitch = manualCamera.targetPitch;
       }

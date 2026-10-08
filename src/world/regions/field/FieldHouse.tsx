@@ -8,6 +8,7 @@ import { makeSurface, organicEllipsoid, type Point3 } from "./field-geometry";
 import { makeHouseDetails, makeRoofTile, ROOF_PITCH, ROOF_SLOPE_LENGTH } from "./field-house-details";
 import { HOUSE_EXTERIOR_DOOR_INTERACTION_POINT } from "./field-interaction-targets";
 import { HOUSE_CENTER } from "./field-layout";
+import { FIELD_SCALE } from "../world-scale";
 import { FIELD_PALETTE as P } from "./field-palette";
 
 const DETAILS = makeHouseDetails();
@@ -16,8 +17,8 @@ const PLINTH_STONE = organicEllipsoid(10, 6, 0.075);
 const GABLE = makeSurface([0, 5.8, -6, 0, 5.8, 6, 0, 8.8, 0], [0, 1, 2]);
 const DOOR_MARKER_POSITION: Point3 = [
   0,
-  HOUSE_EXTERIOR_DOOR_INTERACTION_POINT[1],
-  HOUSE_EXTERIOR_DOOR_INTERACTION_POINT[2] - HOUSE_CENTER[1],
+  HOUSE_EXTERIOR_DOOR_INTERACTION_POINT[1] / FIELD_SCALE,
+  HOUSE_EXTERIOR_DOOR_INTERACTION_POINT[2] / FIELD_SCALE - HOUSE_CENTER[1],
 ];
 
 function Timber({ position, size, color = P.wood }: {
@@ -110,7 +111,8 @@ export function FieldHouse() {
         position={[0, 3.5, 0]}
       >
         <CuboidCollider args={[8, 3.5, 6]} />
-        <CuboidCollider args={[1.55, 0.045, 0.55]} position={[0, -3.455, 6.48]} />
+        <CuboidCollider args={[2.6, 0.045, 0.8]} position={[0, -3.455, 6.73]} />
+        {[-2.18, 2.18].map(x => <CuboidCollider key={x} args={[.065, 1.53, .07]} position={[x, -1.97, 7.41]} />)}
       </RigidBody>
       <mesh name="HOUSE_LIME_PLASTER" position={[0, 2.95, 0]} castShadow receiveShadow>
         <boxGeometry args={[16, 5.8, 12]} />
@@ -136,13 +138,14 @@ export function FieldHouse() {
         {[-0.58, -0.29, 0, 0.29, 0.58].map((x, i) =>
           <Timber key={x} position={[x, 1.36, 0.11]} size={[0.278, 2.6, 0.06]} color={i % 2 ? P.wood : P.woodLight} />)}
         <Timber position={[-0.56, 1.25, 0.2]} size={[0.06, 0.17, 0.1]} color={P.woodDark} />
-        <Timber position={[0, 0.045, 0.4]} size={[3.1, 0.09, 1.1]} color={P.stoneLight} />
+        <Timber position={[0, 0.045, 0.65]} size={[5.2, 0.09, 1.6]} color={P.stoneLight} />
         <mesh position={[0, 3.18, 0.62]} rotation={[0.15, 0, 0]} castShadow receiveShadow>
-          <boxGeometry args={[3.7, 0.17, 1.9]} />
+          <boxGeometry args={[5.2, 0.17, 2.2]} />
           <meshStandardMaterial color={P.roof} roughness={1} />
         </mesh>
         <Timber position={[-1.38, 2.91, 0.6]} size={[0.12, 0.34, 1.18]} />
         <Timber position={[1.38, 2.91, 0.6]} size={[0.12, 0.34, 1.18]} />
+        {[-2.18, 2.18].map(x => <Timber key={x} position={[x, 1.53, 1.33]} size={[.13, 3.06, .14]} color={P.wood} />)}
       </group>
       <Window position={[-4.6, 2.43, 6.09]} />
       <Window position={[4.45, 2.43, 6.09]} warm />

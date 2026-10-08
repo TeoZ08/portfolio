@@ -13,6 +13,7 @@ import {
 import { HouseRoom } from "./HouseRoom";
 import { HouseShell } from "./HouseShell";
 import { HouseLighting } from "./HouseLighting";
+import { HOUSE_SCALE } from "../world-scale";
 import { HOUSE_PALETTE as P } from "./house-palette";
 
 function InteriorColliders() {
@@ -45,24 +46,26 @@ export function HouseInterior() {
       <InteriorColliders />
       <HouseShell />
       <HouseRoom />
-      <mesh name="DEV_HOUSE_EXIT_DOOR_INTERACTION_POINT" position={HOUSE_INTERIOR_ENTRY_POINT} visible={showHelpers}>
-        <sphereGeometry args={[0.1, 8, 8]} />
-        <meshBasicMaterial color={P.devMarker} wireframe />
-      </mesh>
-      <mesh name="DEV_HOUSE_COMPUTER_INTERACTION_POINT" position={HOUSE_COMPUTER_INTERACTION_POINT} visible={showHelpers}>
-        <sphereGeometry args={[0.1, 8, 8]} />
-        <meshBasicMaterial color={P.devMarker} wireframe />
-      </mesh>
-      {[
-        ["DEV_HOUSE_ENTRY_BENCH_INTERACTION_POINT", HOUSE_ENTRY_BENCH_INTERACTION_POINT],
-        ["DEV_HOUSE_REFERENCE_BOARD_INTERACTION_POINT", HOUSE_REFERENCE_BOARD_INTERACTION_POINT],
-        ["DEV_HOUSE_BOOKSHELF_INTERACTION_POINT", HOUSE_BOOKSHELF_INTERACTION_POINT],
-      ].map(([name, position]) => (
-        <mesh key={name as string} name={name as string} position={position as readonly [number, number, number]} visible={showHelpers}>
+      <group scale={1 / HOUSE_SCALE}>
+        <mesh name="DEV_HOUSE_EXIT_DOOR_INTERACTION_POINT" position={HOUSE_INTERIOR_ENTRY_POINT} visible={showHelpers}>
           <sphereGeometry args={[0.1, 8, 8]} />
           <meshBasicMaterial color={P.devMarker} wireframe />
         </mesh>
-      ))}
+        <mesh name="DEV_HOUSE_COMPUTER_INTERACTION_POINT" position={HOUSE_COMPUTER_INTERACTION_POINT} visible={showHelpers}>
+          <sphereGeometry args={[0.1, 8, 8]} />
+          <meshBasicMaterial color={P.devMarker} wireframe />
+        </mesh>
+        {[
+          ["DEV_HOUSE_ENTRY_BENCH_INTERACTION_POINT", HOUSE_ENTRY_BENCH_INTERACTION_POINT],
+          ["DEV_HOUSE_REFERENCE_BOARD_INTERACTION_POINT", HOUSE_REFERENCE_BOARD_INTERACTION_POINT],
+          ["DEV_HOUSE_BOOKSHELF_INTERACTION_POINT", HOUSE_BOOKSHELF_INTERACTION_POINT],
+        ].map(([name, position]) => (
+          <mesh key={name as string} name={name as string} position={position as readonly [number, number, number]} visible={showHelpers}>
+            <sphereGeometry args={[0.1, 8, 8]} />
+            <meshBasicMaterial color={P.devMarker} wireframe />
+          </mesh>
+        ))}
+      </group>
     </group>
   );
 }

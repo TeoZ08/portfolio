@@ -85,6 +85,7 @@ export function WorldCanvas({
   return (
     <section
       className="world-canvas"
+      tabIndex={-1}
       aria-label={canvasLabel}
       data-current-region={currentRegion}
       data-playground={

@@ -52,7 +52,7 @@ export function TimberPost({ x, z, height = 3.65 }: { x: number; z: number; heig
 export function Bench({ position, rotationY = 0, width = 3.2, back = true }: {
   position: [number, number, number]; rotationY?: number; width?: number; back?: boolean;
 }) {
-  return <group position={position} rotation={[0, rotationY, 0]} scale={[1, .6, 1]} name="TIMBER_BENCH">
+  return <group position={position} rotation={[0, rotationY, 0]} name="TIMBER_BENCH">
     <Solid name="BENCH_COLLIDER" position={[0, .4, 0]} size={[width, .8, .6]} visual={false} />
     {[-.22, 0, .22].map(z => <Part key={z} name="BENCH_WORN_SEAT_BOARD" position={[0, .74, z]} size={[width, .1, .2]} color={P.woodLight} radius={.045} castShadow />)}
     {[-1, 1].map(side => <group key={side}><Part name="BENCH_LEG" position={[side * (width / 2 - .35), .36, 0]} size={[.2, .72, .62]} color={P.woodDark} castShadow />{back && <Part name="BENCH_BACK_UPRIGHT" position={[side * (width / 2 - .35), .94, .33]} size={[.12, 1.1, .12]} color={P.wood} rotation={[.09, 0, 0]} />}</group>)}

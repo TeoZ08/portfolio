@@ -17,7 +17,7 @@ type CameraPresetBase = {
 export type CameraPreset =
   | (CameraPresetBase & {
       mode: "follow";
-      name: "EXPLORE";
+      name: "EXPLORE" | "VISTA" | "PRACTICE" | "COMMUNITY";
     })
   | (CameraPresetBase & {
       fixedLookAt: readonly [number, number, number];
@@ -48,19 +48,19 @@ export const INTERIOR_CAMERA_PRESET: CameraPreset = {
   name: "INTERIOR",
   // From the entrance at room height, not above an exposed dollhouse. The
   // shell continues behind the playable threshold to enclose this view.
-  offset: [1.8, 2.65, 10.4],
-  initialPosition: [1.8, 3.8, 9.2],
-  fixedLookAt: [0, 1.15, -1.2],
+  offset: [1.3, 2.1, 8.0],
+  initialPosition: [1.3, 2.95, 7.6],
+  fixedLookAt: [0, .85, -.4],
   targetHeightOffset: 0.65,
   lookAheadDistance: 0,
   lookAheadReferenceSpeed: 4,
   lookAheadDamping: 8,
   cameraPositionDamping: 7,
-  // Keep the lens below the 4.5 m ceiling and within the entry-side enclosure.
-  manualPitchLimits: [Math.PI * 10 / 180, Math.PI * 16 / 180],
+  // Keep the lens below the rescaled 3.24 m ceiling and within the entry-side enclosure.
+  manualPitchLimits: [Math.PI * 12 / 180, Math.PI * 16 / 180],
   manualYawLimits: [-0.42, 0.38],
   manualRotationDamping: 10,
-  radiusLimits: [8.75, 11.5],
+  radiusLimits: [7.6, 8.5],
   zoomDamping: 9.5,
-  fov: 58,
+  fov: 62,
 };

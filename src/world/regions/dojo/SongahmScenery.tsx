@@ -1,5 +1,7 @@
 "use client";
 
+import { FieldGeometry } from "../field/FieldMeshes";
+import { makeSurface, organicEllipsoid } from "../field/field-geometry";
 import { HouseMaterial } from "../house/HouseMaterial";
 import { PLACE_PALETTE as P } from "../places/PlaceObjects";
 
@@ -11,9 +13,31 @@ type MountainMassProps = {
   rotationY?: number;
 };
 
+// Stratified, off-centre shoulders: no regular cone silhouette.
+function makeCliff() {
+  const vertices: number[] = [], indices: number[] = [];
+  const rings = [[-1,1],[-.5,.98],[0,.76],[.38,.65],[.7,.36],[.92,.22],[1,.035]];
+  const segments = 17;
+  rings.forEach(([height,radius],row) => {
+    for (let i=0;i<=segments;i++) {
+      const a=i/segments*Math.PI*2;
+      const shoulder=radius*(1+.18*Math.sin(a*3+row*.45)+.09*Math.cos(a*5-row*.7));
+      vertices.push(Math.cos(a)*shoulder+.13*height, height,
+        Math.sin(a)*shoulder+.08*Math.sin(row*.8));
+      if(row<rings.length-1 && i<segments) {
+        const n=row*(segments+1)+i, b=n+segments+1;
+        indices.push(n,b,n+1,n+1,b,b+1);
+      }
+    }
+  });
+  return makeSurface(vertices,indices);
+}
+const CLIFF = makeCliff();
+const PINE_CROWN = organicEllipsoid(11,6,.19);
+
 function MountainMass({ name, position, scale, color, rotationY = 0 }: MountainMassProps) {
   return <mesh name={name} position={position} scale={scale} rotation={[0, rotationY, 0]}>
-    <coneGeometry args={[1, 2, 5]} />
+    <FieldGeometry data={CLIFF} />
     <HouseMaterial color={color} />
   </mesh>;
 }
@@ -24,7 +48,7 @@ function RidgePine({ position, scale = 1, color = P.foliageShade }: {
   return <group position={position} scale={scale} name="SONGAHM_DISTANT_RIDGE_PINE">
     <mesh position={[0, 1.25, 0]}><cylinderGeometry args={[.08, .13, 2.5, 5]} /><HouseMaterial color={P.woodDark} /></mesh>
     {[[1.7, .78, .85], [2.25, .6, .7], [2.72, .4, .58]].map(([y, radius, height]) =>
-      <mesh key={y} position={[0, y, 0]}><coneGeometry args={[radius, height, 6]} /><HouseMaterial color={color} /></mesh>)}
+      <mesh key={y} position={[.16*Math.sin(y*4), y, 0]} scale={[radius, height*.24, radius*.65]}><FieldGeometry data={PINE_CROWN} /><HouseMaterial color={color} /></mesh>)}
   </group>;
 }
 

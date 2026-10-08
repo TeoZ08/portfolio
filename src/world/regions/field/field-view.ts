@@ -5,13 +5,37 @@ import { EXPLORE_CAMERA_PRESET, type CameraPreset } from "@/world/camera/camera-
 // the original prototype.
 export const FIELD_CAMERA_COMPOSITION: CameraPreset = {
   ...EXPLORE_CAMERA_PRESET,
-  offset: [7.5, 4.8, 9.5],
-  initialPosition: [7.5, 7.5, 14],
-  targetHeightOffset: 1.8,
+  offset: [4.4, 2.7, 5.6],
+  initialPosition: [4.4, 4.8, 10.1],
+  targetHeightOffset: 1.05,
   cameraPositionDamping: 6.5,
   manualPitchLimits: [Math.PI * 18 / 180, Math.PI * 48 / 180],
   manualRotationDamping: 12,
-  radiusLimits: [9.5, 16],
+  radiusLimits: [5.8, 12],
   zoomDamping: 9,
-  fov: 60,
+  fov: 48,
+};
+
+export const HILL_CAMERA_COMPOSITION: CameraPreset = {
+  ...FIELD_CAMERA_COMPOSITION,
+  mode: "follow", name: "VISTA", offset: [-3.2, 1.8, -5.3],
+  initialPosition: [-3.2, 1.8, -5.3], targetHeightOffset: .65,
+  lookAheadDistance: 0, radiusLimits: [5.5, 10],
+  manualPitchLimits: [Math.PI * 8 / 180, Math.PI * 35 / 180], fov: 52,
+};
+
+export const PRACTICE_CAMERA_COMPOSITION: CameraPreset = {
+  ...FIELD_CAMERA_COMPOSITION,
+  mode: "follow", name: "PRACTICE", offset: [2.5, .65, 1],
+  initialPosition: [2.5, .65, 1], targetHeightOffset: -.15,
+  lookAheadDistance: 0, radiusLimits: [2.6, 3.5],
+  manualPitchLimits: [Math.PI * 4 / 180, Math.PI * 18 / 180], fov: 66,
+};
+
+export const COMMUNITY_CAMERA_COMPOSITION: CameraPreset = {
+  ...FIELD_CAMERA_COMPOSITION,
+  mode: "follow", name: "COMMUNITY", offset: [-2.7, .7, 2],
+  initialPosition: [-2.7, .7, 2], targetHeightOffset: .2,
+  lookAheadDistance: 0, radiusLimits: [3, 6],
+  manualPitchLimits: [Math.PI * 5 / 180, Math.PI * 24 / 180], fov: 62,
 };

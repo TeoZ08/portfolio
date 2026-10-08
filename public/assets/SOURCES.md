@@ -6,6 +6,26 @@ a declaração de uso pessoal não é tratada como substituta de uma licença.
 
 ## Usados no mundo
 
+### Avatar Matteo v2 — modelo original
+
+O avatar ativo é `characters/matteo-v2.glb`, criado pelo script
+`scripts/build-matteo-avatar.py`, com fonte editável em
+`assets/characters/matteo-v2.blend`. A direção foi aprovada pelo usuário a partir
+de um estudo visual baseado nas próprias fotografias. As fotos não são copiadas
+para o repositório, incorporadas ao GLB ou requisitadas pelo navegador.
+
+Modelo em metros, materiais foscos sem texturas, malha única com 11 grupos de
+material e esqueleto original de 16 ossos. Clips: `idle`, `walk`, `run`, `jump`
+(pose mantida no ar) e `seated-pose` (pose estática). Os clips não deslocam a raiz
+horizontalmente: posição, orientação e colisões continuam pertencendo ao Rapier.
+A revisão v2 ajusta cabelo ondulado, pele, roupa e pose sentada.
+A v1 foi preservada como referência da revisão. O modelo é uma interpretação jogável, não uma reprodução final do
+concept art aprovado. Não utiliza malha nem animações KayKit.
+
+O antigo `characters/visitor.glb` e suas licenças permanecem preservados como
+reserva; o avatar ativo não carrega esse arquivo. A tabela abaixo registra a
+seleção original e os demais assets ainda utilizados.
+
 | Origem | Seleção | Destino | Licença incluída |
 | --- | --- | --- | --- |
 | KayKit_Adventurers_2.0_FREE.zip | Ranger, sem aljava | `characters/visitor.glb` | CC0; `characters/KayKit-Adventurers-LICENSE.txt` |
@@ -61,3 +81,19 @@ antes de redistribuir esses arquivos fora deste projeto pessoal.
 O script importa somente a seleção acima, reduz as texturas e agrupa os clips
 necessários no GLB. Utiliza Three já instalado e Sharp fornecido por Next.js
 apenas offline; não acrescenta loaders ou bibliotecas ao bundle do navegador.
+
+## Matteo avatar v4 — anatomical head
+
+- Runtime: `characters/matteo-v4.glb`; editable source: `assets/characters/matteo-v4.blend`.
+- Build: `scripts/build-matteo-avatar.py`. Original clothing, hair, rig and in-place animation studies authored for this portfolio.
+- Head topology adapted from the MakeHuman hm08 base mesh, explicitly released under **CC0 in September 2020**. Source: https://github.com/makehumancommunity/makehuman/blob/master/makehuman/data/3dobjs/base.obj
+- The repository retains only the head subset at `assets/characters/source/makehuman-head.obj` and the asset license at `assets/characters/source/MAKEHUMAN-CC0.md`. MakeHuman application code was not incorporated.
+- Copyright holders listed in the source asset: Data Collection AB, Joel Palmius, Jonas Hauquier (2020). No user photographs are embedded.
+- The `practice` animation is a free movement study, not an official Songahm form.
+
+## Public editorial sources — final portfolio pass
+
+- Portal supplied by Matteo: https://pet-sistemas.github.io/unapi-oficinas/
+- Public project documentation: https://github.com/TeoZ08/homeUnapi/blob/main/README.md
+- Jarvis: https://github.com/TeoZ08/jarvis-academico and https://teoz08-jarvis-academico.hf.space
+- The notebook searches quoted portfolio paragraphs locally; it does not call or simulate the remote Jarvis agent.

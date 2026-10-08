@@ -8,12 +8,12 @@ import { clone } from "three/addons/utils/SkeletonUtils.js";
 import { useExperienceState } from "@/systems/experience-state";
 import type { PlayerMotionRef } from "./player-motion";
 import type { PlayerControlRef } from "./player-control";
+import { AVATAR_POSES, getAvatarCadence, getAvatarPose, type AvatarPose } from "./avatar-animation";
 
-type Pose = "idle" | "walk" | "seated-pose";
-type AnimationState = { mixer: AnimationMixer; actions: Record<Pose, AnimationAction>; current: Pose };
+type AnimationState = { mixer: AnimationMixer; actions: Record<AvatarPose, AnimationAction>; current: AvatarPose };
 
 export function AnimatedVisitor({ motionRef, controlRef }: { motionRef: PlayerMotionRef; controlRef: PlayerControlRef }) {
-  const gltf = useLoader(GLTFLoader, "/assets/characters/visitor.glb");
+  const gltf = useLoader(GLTFLoader, "/assets/characters/matteo-v4.glb");
   const model = useMemo(() => {
     const model = clone(gltf.scene);
     model.traverse(object => {
@@ -26,8 +26,10 @@ export function AnimatedVisitor({ motionRef, controlRef }: { motionRef: PlayerMo
 
   useEffect(() => {
     const mixer = new AnimationMixer(model);
-    const actions = Object.fromEntries(gltf.animations.map(clip => [clip.name, mixer.clipAction(clip)])) as Record<Pose, AnimationAction>;
-    if (!actions.idle || !actions.walk || !actions["seated-pose"]) return;
+    const actions = Object.fromEntries(gltf.animations.map(clip => [clip.name, mixer.clipAction(clip)])) as Record<AvatarPose, AnimationAction>;
+    if (AVATAR_POSES.some(pose => !actions[pose])) {
+      throw new Error("Matteo avatar is missing a required animation clip");
+    }
     actions.idle.play();
     mixer.update(0);
     animation.current = { mixer, actions, current: "idle" };
@@ -43,24 +45,25 @@ export function AnimatedVisitor({ motionRef, controlRef }: { motionRef: PlayerMo
     const state = animation.current;
     if (!state || useExperienceState.getState().overlay) return;
     const speed = Math.hypot(motionRef.current.velocity.x, motionRef.current.velocity.z);
-    const pose: Pose = controlRef.current.physicsLocked ? "seated-pose" : speed > .12 ? "walk" : "idle";
+    const pose = getAvatarPose(motionRef.current, controlRef.current);
     if (pose !== state.current) {
       const next = state.actions[pose];
       next.reset().play();
       next.crossFadeFrom(state.actions[state.current], useExperienceState.getState().reducedMotion ? 0 : .18, false);
-      // One fixed sitting pose; interaction state/position remain owned by Rapier.
-      if (pose === "seated-pose") { next.time = .35; next.paused = true; }
+      // Seated and airborne poses are authored holds, not looping locomotion.
+      if (pose === "seated-pose" || pose === "jump") { next.time = 0; next.paused = true; }
       state.current = pose;
     }
-    // The asset has no run/jump clips. Keep its authored walk and scale the
-    // cadence naturally so sprinting reads clearly without inventing a pose.
-    state.actions.walk.timeScale = Math.min(2.2, Math.max(.55, speed / 3.1));
+    state.actions.walk.timeScale = getAvatarCadence("walk", speed);
+    state.actions.run.timeScale = getAvatarCadence("run", speed);
+    const reducedMotion = useExperienceState.getState().reducedMotion;
+    state.actions.practice.paused = reducedMotion;
     state.mixer.update(Math.min(rawDelta, .1));
   });
 
-  // KayKit faces +Z and is 2.27 m tall. Match the current capsule's -Z forward
-  // and foot plane; the visual never writes a world position or physical yaw.
-  return <group name="VISITOR_KAYKIT_TRAVELLER" position={[0, -.84, 0]} rotation={[0, Math.PI, 0]} scale={.78} dispose={null}>
+  // Original model is authored at metre scale, facing +Z after glTF export.
+  // Match the capsule's -Z forward and foot plane without changing physics.
+  return <group name="MATTEO_AVATAR_V4" position={[0, -.84, 0]} rotation={[0, Math.PI, 0]} dispose={null}>
     <primitive object={model} />
   </group>;
 }

@@ -43,6 +43,12 @@ export function UniversityRegion() {
     <Worktable position={[2.5, .13, 1.15]} width={3.3} depth={1.6} height={.8} />
     {[-2.5, 2.5].map((x, i) => <group key={x}><Bench position={[x, .13, 2.8]} width={2.9} back={false} /><HouseBook position={[x - .6, 1.08, 1.13]} rotation={[0, .13, 0]} color={i ? P.clay : P.sage} /><HouseBook position={[x + .37, 1.04, .81]} rotation={[0, -.17, 0]} color={P.paper} size={[.77, .07, .99]} /></group>)}
     <HousePlant position={[-6.04, .13, 2.4]} scale={2.65} /><HousePlant position={[6.04, .13, 2.4]} scale={2.65} />
+    <group name="JARVIS_READING_STAND" position={[0, .13, -3.25]}>
+      <Part name="READING_STAND_POST" position={[0, .54, 0]} size={[.12, 1.08, .12]} color={P.woodDark} />
+      <Part name="READING_STAND_TOP" position={[0, 1.1, 0]} size={[1.05, .1, .62]} color={P.woodLight} rotation={[.18, 0, 0]} />
+      <HouseBook position={[0, 1.2, 0]} color={P.sage} size={[.7, .08, .48]} />
+      <WorldLettering text="Jarvis" subtitle="Consultar o caderno · E" position={[0, .8, .12]} width={.86} />
+    </group>
     <UniversityDetails />
   </Place>;
 }

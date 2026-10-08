@@ -9,6 +9,7 @@ export type PlayerTransitionRequest = {
 };
 
 export type PlayerControlState = {
+  pose?: "practice" | null;
   manualInputEnabled: boolean;
   physicsLocked: boolean;
   desiredVelocity: PlayerControlVector;
@@ -22,6 +23,7 @@ export type PlayerControlRef = {
 
 export function createPlayerControlState(): PlayerControlState {
   return {
+    pose: null,
     manualInputEnabled: true,
     physicsLocked: false,
     desiredVelocity: { x: 0, z: 0 },
@@ -31,6 +33,7 @@ export function createPlayerControlState(): PlayerControlState {
 }
 
 export function resetPlayerControlState(state: PlayerControlState) {
+  state.pose = null;
   state.manualInputEnabled = true;
   state.physicsLocked = false;
   state.desiredVelocity.x = 0;

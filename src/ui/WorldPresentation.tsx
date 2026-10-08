@@ -11,6 +11,8 @@ import {
 } from "@/world/regions/house/house-interaction-targets";
 import { DevPanel } from "./DevPanel";
 import { PauseMenu } from "./PauseMenu";
+import { Arrival, ExperiencePreferences } from "./Arrival";
+import { PlaceExperience } from "./PlaceExperience";
 
 const HOUSE_INSPECTIONS = {
   [HOUSE_REFERENCE_BOARD_TARGET_ID]: {
@@ -64,8 +66,13 @@ export function WorldPresentation() {
     window.addEventListener("keydown",keyboard,true);
     const clear=()=>{touchMovement.x=0;touchMovement.z=0;};
     window.addEventListener("blur",clear);document.addEventListener("visibilitychange",clear);
-    return()=>{window.removeEventListener("keydown",keyboard,true);window.removeEventListener("blur",clear);document.removeEventListener("visibilitychange",clear);clear();const state=useExperienceState.getState();state.closeOverlay();state.setDevice(false);};
+    return()=>{window.removeEventListener("keydown",keyboard,true);window.removeEventListener("blur",clear);document.removeEventListener("visibilitychange",clear);clear();};
   },[]);
+  useEffect(() => {
+    if (status === "idle" && !menuOpen && !deviceActive) {
+      document.querySelector<HTMLElement>(".world-canvas")?.focus({ preventScroll: true });
+    }
+  }, [status, menuOpen, deviceActive]);
   const hint=status==="idle"?label:status==="approaching"?"Cancelar aproximação":status==="entering"||status==="exiting"?null:"Voltar a explorar";
   return <div className="world-presentation" data-world-ui>
     {!deviceActive && <button className="world-menu-access" aria-label="Pausa e arquivos (Escape)" disabled={status!=="idle"} onClick={()=>useExperienceState.getState().openMenu()}><span aria-hidden="true">···</span><span className="world-menu-access-label">Pausa e arquivos</span></button>}
@@ -78,9 +85,12 @@ export function WorldPresentation() {
       {inspection.lines.map(line=><p key={line}>{line}</p>)}
       <button type="button" onClick={()=>requestWorldInteraction(true)}><span>Voltar</span><kbd>Esc</kbd></button>
     </aside>}
-    {!menuOpen && !deviceActive && <div className="touch-movement" aria-label="Controles de movimento">
+    {!menuOpen && !deviceActive && status === "idle" && <div className="touch-movement" aria-label="Controles de movimento">
       {([['↑',0,-1,'Frente'],['←',-1,0,'Esquerda'],['↓',0,1,'Trás'],['→',1,0,'Direita']] as const).map(([symbol,x,z,title])=><button key={title} aria-label={title} onPointerDown={event=>{event.currentTarget.setPointerCapture(event.pointerId);touchMovement.x=x;touchMovement.z=z;}} onPointerUp={()=>{touchMovement.x=0;touchMovement.z=0;}} onPointerCancel={()=>{touchMovement.x=0;touchMovement.z=0;}} onLostPointerCapture={()=>{touchMovement.x=0;touchMovement.z=0;}}>{symbol}</button>)}
     </div>}
+    {status === "using" && !menuOpen && <PlaceExperience targetId={activeTargetId} />}
+    <ExperiencePreferences />
+    <Arrival />
     <PauseMenu open={menuOpen} />
     {deviceActive && <div className="world-device-overlay" aria-label="Computador do quarto"><Desktop onExit={()=>requestWorldInteraction(true)} /></div>}
     {process.env.NODE_ENV!=="production"&&debugVisible&&!deviceActive&&<DevPanel title="DEV / Mundo · F2 para ocultar" />}

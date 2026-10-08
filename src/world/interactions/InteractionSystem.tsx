@@ -1,12 +1,14 @@
 "use client";
 
+import { findWorldDestination } from "@/world/regions/field/world-destinations";
+
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 import type {
   CameraResyncRef,
   DevFrameUpdatesRef,
 } from "@/world/DevFrameLoop";
-import { useExperienceState } from "@/systems/experience-state";
+import { CAMERA_RECENTER_EVENT, useExperienceState } from "@/systems/experience-state";
 import type { PlayerControlRef } from "@/world/player/player-control";
 import type { PlayerMotionRef } from "@/world/player/player-motion";
 import {
@@ -125,6 +127,7 @@ function publishRuntimeState(runtime: InteractionRuntimeState) {
 
 function setPlayerControlIdle(playerControlRef: PlayerControlRef) {
   const control = playerControlRef.current;
+  control.pose = null;
   control.manualInputEnabled = true;
   control.physicsLocked = false;
   control.desiredVelocity.x = 0;
@@ -357,12 +360,25 @@ export function InteractionSystem({
         }
 
         if (activeTarget.action.type === "use") {
-          runtime.status = "using";
           setPlayerControlUsing(
             playerControlRef,
             activeTarget.action.useRotationY,
             activeTarget.action.seated ?? false,
           );
+          playerControlRef.current.pose = activeTarget.id === "DOJO_PRACTICE" ? "practice" : null;
+          if (activeTarget.action.seated && activeTarget.action.seatPoint) {
+            if (!runtime.transitionQueued) {
+              playerControlRef.current.transitionRequest = {
+                position: activeTarget.action.seatPoint,
+                rotationY: activeTarget.action.useRotationY,
+              };
+              runtime.transitionQueued = true;
+              return;
+            }
+            if (playerControlRef.current.transitionRequest !== null) return;
+          }
+          runtime.status = "using";
+          runtime.transitionQueued = false;
           publishRuntimeState(runtime);
           return;
         }
@@ -397,6 +413,7 @@ export function InteractionSystem({
             activeTarget.action.useRotationY,
             activeTarget.action.seated ?? false,
           );
+          playerControlRef.current.pose = activeTarget.id === "DOJO_PRACTICE" ? "practice" : null;
           return;
         }
 
@@ -420,10 +437,11 @@ export function InteractionSystem({
         positionErrorSquared <= positionToleranceSquared;
 
       if (runtime.status === "exiting") {
-        if (activeTarget.action.type === "sit") {
+        if (activeTarget.action.type === "sit" ||
+          (activeTarget.action.type === "use" && activeTarget.action.seated && activeTarget.action.seatPoint)) {
           setPlayerControlLocked(
             playerControlRef,
-            activeTarget.action.seatRotationY,
+            activeTarget.action.type === "sit" ? activeTarget.action.seatRotationY : activeTarget.action.useRotationY,
           );
 
           if (!runtime.transitionQueued) {
@@ -561,7 +579,7 @@ export function InteractionSystem({
 
       // The HTML device layer owns its own Escape navigation while it is
       // open. Do not let the world interaction state consume that key too.
-      if (useExperienceState.getState().deviceActive) {
+      if (useExperienceState.getState().deviceActive || useExperienceState.getState().overlay !== null) {
         return;
       }
 
@@ -589,6 +607,25 @@ export function InteractionSystem({
       runtime.cancelRequested = false;
     };
 
+    const travelFromMap = (event: Event) => {
+      if (runtime.status !== "idle") return;
+      const destination = findWorldDestination((event as CustomEvent).detail);
+      if (!destination) return;
+      window.dispatchEvent(new CustomEvent(CAMERA_RECENTER_EVENT));
+      runtime.activeTarget = {
+        ...destination,
+        id: "MAP_TRAVEL",
+        action: { type: "enter", destinationRegion: "FIELD", destinationPoint: destination.interactionPoint,
+          destinationRotationY: destination.interactionRotationY },
+      };
+      runtime.status = "aligned";
+      runtime.interactRequested = false;
+      runtime.cancelRequested = false;
+      runtime.transitionQueued = false;
+      runtime.transitionElapsed = 0;
+      publishRuntimeState(runtime);
+    };
+    window.addEventListener("world:travel", travelFromMap);
     const interactFromButton = () => { runtime.interactRequested = true; };
     const cancelFromButton = () => { runtime.cancelRequested = true; };
     window.addEventListener("world:interact", interactFromButton);
@@ -600,6 +637,7 @@ export function InteractionSystem({
     document.addEventListener("visibilitychange", clearPressedKeys);
 
     return () => {
+      window.removeEventListener("world:travel", travelFromMap);
       window.removeEventListener("world:interact", interactFromButton);
       window.removeEventListener("world:cancel", cancelFromButton);
       window.removeEventListener("keydown", handleKeyDown);

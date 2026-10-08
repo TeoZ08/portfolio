@@ -1,7 +1,9 @@
 "use client";
 
 import { useThree } from "@react-three/fiber";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
+import { useWorldState } from "@/systems/world-state";
+import { useExperienceState } from "@/systems/experience-state";
 import { FieldGeometry } from "./FieldMeshes";
 import { makeSurface } from "./field-geometry";
 import { FIELD_PALETTE as P, linearColor } from "./field-palette";
@@ -36,10 +38,6 @@ function makeHorizon(layer: number) {
 }
 
 const HORIZON = [makeHorizon(0), makeHorizon(1), makeHorizon(2)];
-const SKY_UNIFORMS = {
-  upperColor: { value: linearColor(P.skyHigh) },
-  horizonColor: { value: linearColor(P.horizon) },
-};
 const SKY_VERTEX = `
 varying vec3 vDirection;
 void main() {
@@ -58,6 +56,15 @@ void main() {
 }`;
 
 export function FieldEnvironment() {
+  const time = useWorldState(state => state.timeOfDay);
+  const lowQuality = useExperienceState(state => state.quality === "low");
+  const night = time >= 19 || time < 6;
+  const morning = time < 13 && !night;
+  const upper = night ? "#172d3c" : morning ? "#7fa9b1" : P.skyHigh;
+  const horizon = night ? "#657f83" : morning ? "#d2e0d0" : P.horizon;
+  const skyUniforms = useMemo(() => ({
+    upperColor: { value: linearColor(upper) }, horizonColor: { value: linearColor(horizon) },
+  }), [upper, horizon]);
   const scene = useThree((state) => state.scene);
   const attachFog = useCallback((_parent: unknown, fog: unknown) => {
     const previous = scene.fog;
@@ -66,17 +73,17 @@ export function FieldEnvironment() {
   }, [scene]);
   return (
     <group name="FIELD_GOLDEN_HOUR_PROTOTYPE">
-      <fog attach={attachFog} args={[P.sky, 85, 280]} />
-      <hemisphereLight args={[P.fill, FIELD_LIGHTING.groundFill, 1.8]} />
-      <directionalLight name="FIELD_LATE_AFTERNOON_SUN" position={[-34, 22, 18]}
-        color={P.sun} intensity={2.7} castShadow
-        shadow-mapSize={[4096, 4096]} shadow-camera-left={-65} shadow-camera-right={65}
+      <fog attach={attachFog} args={[horizon, night ? 40 : 55, night ? 155 : 210]} />
+      <hemisphereLight args={[night ? "#a7bac9" : P.fill, FIELD_LIGHTING.groundFill, night ? .8 : 1.6]} />
+      <directionalLight name="FIELD_LATE_AFTERNOON_SUN" position={night ? [24, 34, -15] : morning ? [30, 38, -24] : [-34, 22, 18]}
+        color={night ? "#a8c6e3" : morning ? "#fff1d2" : P.sun} intensity={night ? .65 : 2.3} castShadow={!lowQuality}
+        shadow-mapSize={lowQuality ? [1024, 1024] : [4096, 4096]} shadow-camera-left={-65} shadow-camera-right={65}
         shadow-camera-top={65} shadow-camera-bottom={-80}
         shadow-camera-near={1} shadow-camera-far={220}
         shadow-bias={-0.0002} shadow-normalBias={0.065} />
       <mesh name="FIELD_SKY" position={[0, 0, -35]}>
         <sphereGeometry args={[450, 24, 16]} />
-        <shaderMaterial uniforms={SKY_UNIFORMS} vertexShader={SKY_VERTEX}
+        <shaderMaterial uniforms={skyUniforms} vertexShader={SKY_VERTEX}
           fragmentShader={SKY_FRAGMENT} side={1} depthWrite={false} />
       </mesh>
       <mesh name="FIELD_DISTANT_GROUND_CONTINUATION" position={[0, -0.65, -35]} rotation={[-Math.PI / 2, 0, 0]}>

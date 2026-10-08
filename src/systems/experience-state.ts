@@ -2,12 +2,15 @@ import { create } from "zustand";
 
 export type ArchiveApp = "projects" | "faculty" | "notes" | "terminal" | "about" | "contact" | "settings";
 type ExperienceState = {
-  overlay: "menu" | "archive" | null;
+  overlay: "menu" | "archive" | "arrival" | null;
   archiveApp: ArchiveApp;
   deviceActive: boolean;
   reducedMotion: boolean;
   quality: "balanced" | "low";
+  ambientSound: boolean;
+  setAmbientSound: (value: boolean) => void;
   debugVisible: boolean;
+  openArrival: () => void;
   openMenu: () => void;
   openArchive: (app?: ArchiveApp) => void;
   closeOverlay: () => void;
@@ -23,7 +26,10 @@ export const useExperienceState = create<ExperienceState>(set => ({
   deviceActive: false,
   reducedMotion: false,
   quality: "balanced",
+  ambientSound: false,
+  setAmbientSound: (ambientSound) => set({ ambientSound }),
   debugVisible: false,
+  openArrival: () => set({ overlay: "arrival" }),
   openMenu: () => set({ overlay: "menu" }),
   openArchive: (archiveApp = "projects") => set({ overlay: "archive", archiveApp }),
   closeOverlay: () => set({ overlay: null }),

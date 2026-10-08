@@ -22,6 +22,7 @@ export type InteractionAction =
       type: "use";
       useRotationY: number;
       seated?: boolean;
+      seatPoint?: readonly [number, number, number];
     }
   | {
       type: "enter";

@@ -10,6 +10,7 @@ import { FIELD_PALETTE as P } from "./field-palette";
 // Short, deliberately incomplete boundaries frame the arriving road. The
 // central route and all previously navigable connections remain unchanged.
 const FENCE_LINES = [
+  [[-4.0, -8.0], [-4.0, -4.5], [-3.8, -.8]],
   [[-3.8, 6.6], [-3.96, 10.6], [-4.12, 14.8], [-4.23, 18.5]],
   [[3.8, 13.8], [3.98, 17.5], [4.28, 21.5]],
 ] as const;
