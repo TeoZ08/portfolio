@@ -8,6 +8,9 @@ import { FieldGeometry } from "./FieldMeshes";
 import { makeSurface } from "./field-geometry";
 import { FIELD_PALETTE as P, linearColor } from "./field-palette";
 import { FIELD_LIGHTING } from "./FieldMaterial";
+import { fieldDaylight } from "./field-daylight";
+import { Object3D, Vector3 } from "three";
+import { FieldClouds } from "./FieldClouds";
 
 function makeHorizon(layer: number) {
   const vertices: number[] = [], triangles: number[] = [], colors: number[] = [];
@@ -47,24 +50,34 @@ void main() {
 const SKY_FRAGMENT = `
 uniform vec3 upperColor;
 uniform vec3 horizonColor;
+uniform vec3 sunDirection;
+uniform vec3 sunColor;
+uniform float night;
 varying vec3 vDirection;
 void main() {
-  float height = smoothstep(-0.04, 0.72, normalize(vDirection).y);
-  gl_FragColor = vec4(mix(horizonColor, upperColor, height), 1.0);
-  #include <tonemapping_fragment>
+  vec3 direction=normalize(vDirection);
+  float height=smoothstep(-.025,.32,direction.y);
+  vec3 sky=mix(horizonColor,upperColor,pow(height,.65));
+  float facing=max(0.0,dot(direction,sunDirection));
+  float halo=pow(facing,48.0)*.18+pow(facing,550.0)*.30;
+  sky=mix(sky,sunColor,halo*(1.0-night*.65));
+  float disc=smoothstep(cos(.023),cos(.019),facing);
+  sky=mix(sky,mix(sunColor,vec3(1),.65),disc);
+  gl_FragColor=vec4(sky,1.0);
   #include <colorspace_fragment>
 }`;
 
 export function FieldEnvironment() {
   const time = useWorldState(state => state.timeOfDay);
   const lowQuality = useExperienceState(state => state.quality === "low");
-  const night = time >= 19 || time < 6;
-  const morning = time < 13 && !night;
-  const upper = night ? "#172d3c" : morning ? "#7fa9b1" : P.skyHigh;
-  const horizon = night ? "#657f83" : morning ? "#d2e0d0" : P.horizon;
+  const daylight = fieldDaylight(time);
+  const sunTarget = useMemo(() => { const target = new Object3D(); target.position.set(0, 0, -35); return target; }, []);
   const skyUniforms = useMemo(() => ({
-    upperColor: { value: linearColor(upper) }, horizonColor: { value: linearColor(horizon) },
-  }), [upper, horizon]);
+    upperColor: { value: linearColor(daylight.upper) },
+    horizonColor: { value: linearColor(daylight.horizon) },
+    sunDirection: { value: new Vector3(...daylight.direction).normalize() },
+    sunColor: { value: linearColor(daylight.sun) }, night: { value: daylight.night ? 1 : 0 },
+  }), [daylight.upper, daylight.horizon, daylight.direction[0], daylight.direction[1], daylight.direction[2], daylight.sun, daylight.night]);
   const scene = useThree((state) => state.scene);
   const attachFog = useCallback((_parent: unknown, fog: unknown) => {
     const previous = scene.fog;
@@ -72,20 +85,23 @@ export function FieldEnvironment() {
     return () => { scene.fog = previous; };
   }, [scene]);
   return (
-    <group name="FIELD_GOLDEN_HOUR_PROTOTYPE">
-      <fog attach={attachFog} args={[horizon, night ? 40 : 55, night ? 155 : 210]} />
-      <hemisphereLight args={[night ? "#a7bac9" : P.fill, FIELD_LIGHTING.groundFill, night ? .8 : 1.6]} />
-      <directionalLight name="FIELD_LATE_AFTERNOON_SUN" position={night ? [24, 34, -15] : morning ? [30, 38, -24] : [-34, 22, 18]}
-        color={night ? "#a8c6e3" : morning ? "#fff1d2" : P.sun} intensity={night ? .65 : 2.3} castShadow={!lowQuality}
-        shadow-mapSize={lowQuality ? [1024, 1024] : [4096, 4096]} shadow-camera-left={-65} shadow-camera-right={65}
-        shadow-camera-top={65} shadow-camera-bottom={-80}
+    <group name="FIELD_PAINTED_DAYLIGHT">
+      <fog attach={attachFog} args={[daylight.horizon, daylight.fogNear, daylight.fogFar]} />
+      <hemisphereLight args={[daylight.night ? "#a7bac9" : "#c3dcf4", FIELD_LIGHTING.groundFill, daylight.fill]} />
+      <directionalLight name="FIELD_COOL_SKY_BOUNCE" position={[35, 55, 65]} color="#d8e9ff" intensity={daylight.night ? .12 : 1.1} />
+      <primitive object={sunTarget} />
+      <directionalLight name="FIELD_VISIBLE_SUN" target={sunTarget} position={[daylight.direction[0] * 100, daylight.direction[1] * 100, -35 + daylight.direction[2] * 100]}
+        color={daylight.sun} intensity={daylight.intensity} castShadow={!lowQuality}
+        shadow-mapSize={lowQuality ? [1024, 1024] : [4096, 4096]} shadow-camera-left={-48} shadow-camera-right={48}
+        shadow-camera-top={45} shadow-camera-bottom={-45}
         shadow-camera-near={1} shadow-camera-far={220}
         shadow-bias={-0.0002} shadow-normalBias={0.065} />
       <mesh name="FIELD_SKY" position={[0, 0, -35]}>
         <sphereGeometry args={[450, 24, 16]} />
         <shaderMaterial uniforms={skyUniforms} vertexShader={SKY_VERTEX}
-          fragmentShader={SKY_FRAGMENT} side={1} depthWrite={false} />
+          fragmentShader={SKY_FRAGMENT} side={1} depthWrite={false} toneMapped={false} />
       </mesh>
+      <FieldClouds hour={time} />
       <mesh name="FIELD_DISTANT_GROUND_CONTINUATION" position={[0, -0.65, -35]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[590, 590]} />
         <meshStandardMaterial color={P.hill} roughness={1} />

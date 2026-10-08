@@ -1,8 +1,8 @@
 // Milestone 005: shared matte palette for the visual prototype, not final assets.
 export const FIELD_PALETTE = {
-  grass: "#596f52",
-  grassLight: "#879574",
-  grassShade: "#425d4d",
+  grass: "#567847",
+  grassLight: "#8da875",
+  grassShade: "#385e49",
   grassDry: "#ae9f6b",
   path: "#b5a07e",
   pathLight: "#c4aa7e",
@@ -22,8 +22,8 @@ export const FIELD_PALETTE = {
   shutter: "#64776b",
   glass: "#7e9b98",
   windowGlow: "#e7b365",
-  foliage: "#526e43",
-  foliageLight: "#7a9063",
+  foliage: "#4b743e",
+  foliageLight: "#83a767",
   foliageShade: "#476750",
   flower: "#e2d6a4",
   flowerGold: "#cdb261",

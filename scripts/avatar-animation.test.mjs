@@ -22,7 +22,7 @@ test("holding sprint without moving stays idle; actual movement selects walk or 
 });
 
 test("shipped GLB has its original rig, required clips and no lateral root motion", () => {
-  const bytes = readFileSync(new URL("../public/assets/characters/matteo-v4.glb", import.meta.url));
+  const bytes = readFileSync(new URL("../public/assets/characters/matteo-v5.glb", import.meta.url));
   const length = bytes.readUInt32LE(12);
   const gltf = JSON.parse(bytes.subarray(20, 20 + length));
   const binary = bytes.subarray(28 + length);
@@ -30,7 +30,7 @@ test("shipped GLB has its original rig, required clips and no lateral root motio
   assert.equal(gltf.skins.length, 1);
   assert.equal(gltf.skins[0].joints.length, 16);
   assert.equal(gltf.meshes.length, 1);
-  assert.ok(bytes.length < 2_100_000, "Avatar exceeds the uncompressed size budget");
+  assert.ok(bytes.length < 1_800_000, "Avatar exceeds the uncompressed size budget");
   assert.equal(gltf.images, undefined, "Do not embed user photographs or external textures");
   const root = gltf.nodes.findIndex(node => node.name === "root");
   for (const clip of gltf.animations) {
@@ -51,7 +51,7 @@ test("shipped GLB has its original rig, required clips and no lateral root motio
 test("animated mesh stays finite and feet do not sink into the floor, including the lowered seat", async () => {
   const { AnimationMixer, Box3 } = await import("three");
   const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
-  const bytes = readFileSync(new URL("../public/assets/characters/matteo-v4.glb", import.meta.url));
+  const bytes = readFileSync(new URL("../public/assets/characters/matteo-v5.glb", import.meta.url));
   const gltf = await new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), "");
   const mixer = new AnimationMixer(gltf.scene);
   for (const clip of gltf.animations) {

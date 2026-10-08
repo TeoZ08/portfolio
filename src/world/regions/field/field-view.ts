@@ -5,15 +5,15 @@ import { EXPLORE_CAMERA_PRESET, type CameraPreset } from "@/world/camera/camera-
 // the original prototype.
 export const FIELD_CAMERA_COMPOSITION: CameraPreset = {
   ...EXPLORE_CAMERA_PRESET,
-  offset: [4.4, 2.7, 5.6],
-  initialPosition: [4.4, 4.8, 10.1],
+  offset: [4.4, 1.7, 5.6],
+  initialPosition: [4.4, 3.6, 10.1],
   targetHeightOffset: 1.05,
   cameraPositionDamping: 6.5,
-  manualPitchLimits: [Math.PI * 18 / 180, Math.PI * 48 / 180],
+  manualPitchLimits: [Math.PI * 8 / 180, Math.PI * 48 / 180],
   manualRotationDamping: 12,
   radiusLimits: [5.8, 12],
   zoomDamping: 9,
-  fov: 48,
+  fov: 54,
 };
 
 export const HILL_CAMERA_COMPOSITION: CameraPreset = {
@@ -26,8 +26,8 @@ export const HILL_CAMERA_COMPOSITION: CameraPreset = {
 
 export const PRACTICE_CAMERA_COMPOSITION: CameraPreset = {
   ...FIELD_CAMERA_COMPOSITION,
-  mode: "follow", name: "PRACTICE", offset: [2.5, .65, 1],
-  initialPosition: [2.5, .65, 1], targetHeightOffset: -.15,
+  mode: "follow", name: "PRACTICE", offset: [-1.8, .65, -2.1],
+  initialPosition: [-1.8, .65, -2.1], targetHeightOffset: -.15,
   lookAheadDistance: 0, radiusLimits: [2.6, 3.5],
   manualPitchLimits: [Math.PI * 4 / 180, Math.PI * 18 / 180], fov: 66,
 };

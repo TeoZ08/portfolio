@@ -63,10 +63,7 @@ function MistBand({ position, scale, opacity }: {
 
 export function SongahmScenery() {
   return <group name="SONGAHM_PAINTERLY_BOUNDARY_SCENERY">
-    <mesh name="SONGAHM_LATE_AFTERNOON_DISC" position={[12, 18, -43]} renderOrder={-1}>
-      <circleGeometry args={[8.5, 48]} />
-      <meshBasicMaterial color={P.songahmCream} transparent opacity={.72} depthWrite={false} />
-    </mesh>
+
 
     <group name="SONGAHM_FAR_PALE_RIDGE">
       <MountainMass name="FAR_CLIFF_LEFT" position={[-24, 9, -39]} scale={[15, 10, 7]} color={P.mountainFar} rotationY={.18} />
@@ -87,10 +84,11 @@ export function SongahmScenery() {
     <group name="SONGAHM_DARK_NEAR_RIDGE">
       <MountainMass name="NEAR_RIDGE_LEFT" position={[-18, 6.2, -21]} scale={[12, 7.2, 6]} color={P.mountainNear} rotationY={.24} />
       <MountainMass name="NEAR_RIDGE_RIGHT" position={[12, 5.2, -23]} scale={[17, 6.2, 6]} color={P.mountainNear} rotationY={-.2} />
-      <RidgePine position={[-23, 12.7, -19]} scale={1.35} />
-      <RidgePine position={[-13.5, 11.1, -18.5]} scale={1.08} />
-      <RidgePine position={[8.5, 10.4, -20.5]} scale={1.22} color={P.mountainNear} />
-      <RidgePine position={[18.5, 8.7, -21]} scale={.96} color={P.mountainNear} />
+      {/* Roots seated on the triangulated cliff surface, not above its silhouette. */}
+      <RidgePine position={[-23, 9.631, -19]} scale={1.35} />
+      <RidgePine position={[-13.5, 6.702, -18.5]} scale={1.08} />
+      <RidgePine position={[8.5, 8.536, -20.5]} scale={1.22} color={P.mountainNear} />
+      <RidgePine position={[18.5, 9.833, -21]} scale={.96} color={P.mountainNear} />
     </group>
 
     <MistBand position={[-10, 5.5, -19]} scale={[17, 1.15, 2.8]} opacity={.13} />

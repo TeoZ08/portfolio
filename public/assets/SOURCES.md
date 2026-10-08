@@ -84,7 +84,7 @@ apenas offline; não acrescenta loaders ou bibliotecas ao bundle do navegador.
 
 ## Matteo avatar v4 — anatomical head
 
-- Runtime: `characters/matteo-v4.glb`; editable source: `assets/characters/matteo-v4.blend`.
+- Archived asset: `characters/matteo-v4.glb`; editable source: `assets/characters/matteo-v4.blend`.
 - Build: `scripts/build-matteo-avatar.py`. Original clothing, hair, rig and in-place animation studies authored for this portfolio.
 - Head topology adapted from the MakeHuman hm08 base mesh, explicitly released under **CC0 in September 2020**. Source: https://github.com/makehumancommunity/makehuman/blob/master/makehuman/data/3dobjs/base.obj
 - The repository retains only the head subset at `assets/characters/source/makehuman-head.obj` and the asset license at `assets/characters/source/MAKEHUMAN-CC0.md`. MakeHuman application code was not incorporated.
@@ -97,3 +97,12 @@ apenas offline; não acrescenta loaders ou bibliotecas ao bundle do navegador.
 - Public project documentation: https://github.com/TeoZ08/homeUnapi/blob/main/README.md
 - Jarvis: https://github.com/TeoZ08/jarvis-academico and https://teoz08-jarvis-academico.hf.space
 - The notebook searches quoted portfolio paragraphs locally; it does not call or simulate the remote Jarvis agent.
+
+## Matteo avatar v5 — original low-poly portrait
+
+- Current runtime: `characters/matteo-v5.glb`; editable source: `assets/characters/matteo-v5.blend`.
+- Generator: `scripts/build-matteo-lowpoly.py`, run with Blender 5.1.1.
+- Original facial planes, eyelids, nose, lips and unified broad wavy hair authored for this portfolio using Matteo's supplied photographs as visual references. No MakeHuman topology is used in v5.
+- The supplied Pinterest screenshot guided the faceted visual language. No downloaded character, texture or third-party mesh from that screenshot is incorporated.
+- Casual clothing, silver accessories, 16-bone rig and the six in-place animations continue from the original portfolio avatar pipeline. The source photographs are not embedded or served by the website.
+- Sky, sun shader and instanced cumulus clouds are procedural local assets, with no HDRI downloads or added runtime dependencies.

@@ -189,3 +189,11 @@ input {
 @media (max-width: 600px) { .place-experience[data-place="DOJO_PRACTICE"] { width: auto; max-height: 35dvh; }.camera-help,.traversal-help { display: none; } }
 
 .place-experience header { position: sticky; top: 0; z-index: 1; background: #f0ecdf; padding-bottom: .5rem; }
+
+/* Let the portrait and movement lead on narrow screens during practice. */
+@media (max-width:600px) {
+  .place-experience[data-place="DOJO_PRACTICE"] { top:auto; bottom:12px; max-height:24dvh; }
+  .place-experience[data-place="DOJO_PRACTICE"] h2 { font-size:22px; margin:12px 0; }
+  .place-experience[data-place="DOJO_PRACTICE"] p { font-size:14px; }
+  .world-presentation:has(.place-experience[data-place="DOJO_PRACTICE"]) .world-interaction-prompt { display:none; }
+}

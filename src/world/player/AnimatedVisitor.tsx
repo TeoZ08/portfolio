@@ -13,7 +13,7 @@ import { AVATAR_POSES, getAvatarCadence, getAvatarPose, type AvatarPose } from "
 type AnimationState = { mixer: AnimationMixer; actions: Record<AvatarPose, AnimationAction>; current: AvatarPose };
 
 export function AnimatedVisitor({ motionRef, controlRef }: { motionRef: PlayerMotionRef; controlRef: PlayerControlRef }) {
-  const gltf = useLoader(GLTFLoader, "/assets/characters/matteo-v4.glb");
+  const gltf = useLoader(GLTFLoader, "/assets/characters/matteo-v5.glb");
   const model = useMemo(() => {
     const model = clone(gltf.scene);
     model.traverse(object => {
@@ -63,7 +63,7 @@ export function AnimatedVisitor({ motionRef, controlRef }: { motionRef: PlayerMo
 
   // Original model is authored at metre scale, facing +Z after glTF export.
   // Match the capsule's -Z forward and foot plane without changing physics.
-  return <group name="MATTEO_AVATAR_V4" position={[0, -.84, 0]} rotation={[0, Math.PI, 0]} dispose={null}>
+  return <group name="MATTEO_AVATAR_V5" position={[0, -.84, 0]} rotation={[0, Math.PI, 0]} dispose={null}>
     <primitive object={model} />
   </group>;
 }
