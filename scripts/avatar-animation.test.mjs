@@ -107,3 +107,30 @@ test("visual seat and dojo calibration preserves the existing collision heights"
   assert.ok(Math.abs(.86 + getAvatarSeatOffset("HOUSE_COMPUTER") + contact - .785 * .72) < .002);
   assert.ok(Math.abs(.86 + getAvatarSeatOffset("HILL_BENCH") + contact + .025 * .72 - .790 * .72) < .002);
 });
+
+test("run arms swing below the chest with moderate elbow flexion", async () => {
+  const { AnimationMixer, Vector3 } = await import("three");
+  const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+  const bytes = readFileSync(new URL("../public/assets/characters/matteo-chibi-v3.glb", import.meta.url));
+  const gltf = await new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), "");
+  const mixer = new AnimationMixer(gltf.scene);
+  const clip = gltf.animations.find(c => c.name === "run");
+  mixer.clipAction(clip).play();
+  for (const side of ["L", "R"]) {
+    const shoulder = gltf.scene.getObjectByName(`upper_arm${side}`);
+    const elbow = gltf.scene.getObjectByName(`forearm${side}`);
+    const hand = gltf.scene.getObjectByName(`hand${side}`);
+    assert.ok(shoulder && elbow && hand, "Expected named arm joints");
+    const travel=[];
+    for(let i=0;i<48;i++) {
+      mixer.setTime(clip.duration*i/48);gltf.scene.updateMatrixWorld(true);
+      const s=shoulder.getWorldPosition(new Vector3()),e=elbow.getWorldPosition(new Vector3()),h=hand.getWorldPosition(new Vector3());
+      const flex=e.clone().sub(s).angleTo(h.clone().sub(e));
+      assert.ok(flex < Math.PI/4, `run: ${side} elbow over 45 degrees`);
+      assert.ok(h.y < s.y-.20, `run: ${side} hand raised toward chest`);
+      travel.push(h.z-s.z);
+    }
+    assert.ok(Math.max(...travel)-Math.min(...travel)>.20, `run: ${side} arm is static`);
+  }
+  mixer.stopAllAction();mixer.uncacheRoot(gltf.scene);
+});

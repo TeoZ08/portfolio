@@ -120,3 +120,9 @@ apenas offline; não acrescenta loaders ou bibliotecas ao bundle do navegador.
 - The supplied Pinterest screenshot guided the faceted visual language. No downloaded character, texture or third-party mesh from that screenshot is incorporated.
 - Casual clothing, silver accessories, 16-bone rig and the six in-place animations continue from the original portfolio avatar pipeline. The source photographs are not embedded or served by the website.
 - Sky, sun shader and instanced cumulus clouds are procedural local assets, with no HDRI downloads or added runtime dependencies.
+
+### GOAL 06 — corrida natural (integrada em produção)
+
+Nesta versão, o GLB chibi mantém a malha/rig CC0 Magicless e cinco clips da versão aprovada. Apenas `run` recebe um refinamento manual de ombros, cotovelos e mãos. A biblioteca Quaternius Universal Animation Library Standard foi avaliada como referência e candidata de retarget (`Jog_Fwd_Loop`), mas a candidata manual foi escolhida por manter braços mais relaxados nas proporções do chibi. Nenhuma malha ou biblioteca Quaternius é incluída no site.
+
+Fonte de avaliação: https://quaternius.com/packs/universalanimationlibrary.html — licença CC0 1.0 Universal confirmada no `License.txt` do pacote. Scripts, .blend, comparativo e licença de avaliação ficam em `work/chibi-run-retarget-v1/` da pasta principal; a biblioteca completa permanece fora do Git.
