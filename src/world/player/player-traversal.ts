@@ -1,6 +1,7 @@
+// Chibi stride calibration; controller, collision, gravity and dash are unchanged.
 export const PLAYER_TRAVERSAL = {
-  walkSpeed: 4.8,
-  sprintSpeed: 7.3,
+  walkSpeed: .8,
+  sprintSpeed: 1.9,
   maximumHorizontalSpeed: 9.4,
   horizontalAcceleration: 28,
   horizontalDeceleration: 34,

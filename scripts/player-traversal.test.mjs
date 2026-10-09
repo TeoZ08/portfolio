@@ -9,8 +9,8 @@ import {
 } from "../src/world/player/player-traversal.ts";
 
 test("selects walk and sprint speeds under the traversal cap", () => {
-  assert.equal(getManualTraversalSpeed(1, false), 4.8);
-  assert.equal(getManualTraversalSpeed(1, true), 7.3);
+  assert.equal(getManualTraversalSpeed(1, false), .8);
+  assert.equal(getManualTraversalSpeed(1, true), 1.9);
   assert.equal(getManualTraversalSpeed(0, true), 0);
   assert.equal(getManualTraversalSpeed(1, true, true), 0);
   assert.ok(

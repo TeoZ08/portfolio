@@ -6,9 +6,23 @@ a declaração de uso pessoal não é tratada como substituta de uma licença.
 
 ## Usados no mundo
 
-### Avatar Matteo v2 — modelo original
+### Avatar ativo nesta feature — Matteo chibi V3
 
-O avatar ativo é `characters/matteo-v2.glb`, criado pelo script
+`characters/matteo-chibi-v3.glb` é uma cópia byte a byte da fonte aprovada
+`work/avatar-chibi-v3/matteo-chibi-v3.glb`, preservada no projeto principal.
+Base **Chibi Model Base**, Magicless, [BlendSwap #82527](https://www.blendswap.com/blend/82527),
+**CC0 1.0**. Registro da licença: `characters/Matteo-Chibi-CC0-LICENSE.html`.
+Rosto, cabelo A e roupas derivados da v2 aprovada; rig/animações da META 03.
+24 ossos, 7.114 triângulos e seis clips: `idle`, `walk`, `run`, `jump`,
+`seated-pose`, `practice`. Sem fotografias ou texturas externas incorporadas.
+Escala uniforme de runtime 1,12; nenhum GLB/blend de origem foi modificado.
+Os arquivos Matteo anteriores permanecem preservados como histórico; os
+registros abaixo descrevem as seleções anteriores, não o avatar ativo da feature.
+
+
+### Histórico: Avatar Matteo v2 — modelo original
+
+O avatar daquela revisão era `characters/matteo-v2.glb`, criado pelo script
 `scripts/build-matteo-avatar.py`, com fonte editável em
 `assets/characters/matteo-v2.blend`. A direção foi aprovada pelo usuário a partir
 de um estudo visual baseado nas próprias fotografias. As fotos não são copiadas

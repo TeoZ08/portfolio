@@ -21,8 +21,8 @@ import type {
   InteractionTarget,
 } from "./interaction-types";
 
-const INTERACTION_APPROACH_SPEED = 2.5;
-const INTERACTION_EXIT_SPEED = 2.5;
+const INTERACTION_APPROACH_SPEED = .8;
+const INTERACTION_EXIT_SPEED = .8;
 const TRANSITION_REPOSITION_DELAY = 0.16;
 const TRANSITION_DURATION = 0.34;
 
