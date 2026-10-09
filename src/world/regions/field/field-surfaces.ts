@@ -3,9 +3,9 @@ import { FIELD_BOUNDS, TERRAIN_COLUMNS, TERRAIN_ROWS, terrainHeight } from "./fi
 import { makeSurface } from "./field-geometry";
 import { FIELD_PALETTE as P, linearColor } from "./field-palette";
 
-const grass = linearColor(P.grass);
-const shade = linearColor(P.grassShade);
-const dry = linearColor(P.grassLight);
+const grass = linearColor("#68784f");
+const shade = linearColor("#4d6044");
+const dry = linearColor("#92916b");
 const forestFloor = linearColor("#45574a");
 
 export function groundColor(x: number, z: number) {

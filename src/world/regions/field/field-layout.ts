@@ -20,7 +20,7 @@ export function terrainHeight(x:number,z:number){
  const hill=PLAN.hill;
  // Broad walkable mound; no detached tower or steep pedestal.
  h+=4.7*Math.exp(-(((x-hill.x)/16)**2)-((z-hill.z)/15)**2);
- const flat=[{...PLAN.house,width:20,depth:24},{...PLAN.gallery,width:PLAN.gallery.width+3,depth:PLAN.gallery.depth+5},{...PLAN.dojo,width:22,depth:24}];
+ const flat=[{...PLAN.house,width:20,depth:24},{...PLAN.gallery,width:PLAN.gallery.width+3,depth:PLAN.gallery.depth+5},{...PLAN.dojo,width:PLAN.dojo.width+3,depth:PLAN.dojo.depth+3}];
  for(const place of flat){
   const dx=x-place.x,dz=z-place.z;
   const a=dx*Math.cos(place.yaw)-dz*Math.sin(place.yaw),b=dx*Math.sin(place.yaw)+dz*Math.cos(place.yaw);

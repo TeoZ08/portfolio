@@ -8,7 +8,7 @@ export const PLAN = {
   arrival: authorPoint(0,26), plaza: authorPoint(0,11),
   house: anchor(-17,10,Math.PI/2,11.52,8.64),
   gallery: anchor(17,10,-Math.PI/2,14,9),
-  dojo: anchor(0,-14,0,12.24,12.6),
+  dojo: anchor(-2,-21,0,29,20),
   hill: anchor(21,-22,Math.PI*.75,5.76,3.6),
   forest: anchor(-15,-5,-Math.PI/2,7,8),
   chime: anchor(-12,-2,-Math.PI/2,1,1),
@@ -23,12 +23,12 @@ export function localPlanPoint(place: {x:number;z:number;yaw:number}, x:number,z
 export const HOUSE_DOOR = localPlanPoint(PLAN.house,0,7.75);
 export const HOUSE_EXIT = localPlanPoint(PLAN.house,0,9.2);
 export const PLAN_ROUTES = [
- {name:"chegada-eixo",width:2.4,points:[[0,26],[-.8,21],[0,16],[0,11],[.7,6],[-.6,1],[0,-4],[0,-9.5]]},
+ {name:"chegada-eixo",width:2.4,points:[[0,26],[-.8,21],[0,16],[0,11],[.7,6],[-.6,1],[0,-4],[-1,-9],[-2,-14.5]]},
  {name:"casa",width:2.4,points:[[0,11],[-4.5,11.7],[-8.5,10.3],[-11.42,10]]},
  {name:"galeria",width:2.4,points:[[0,11],[5,11.4],[9,10.8],[12.5,10]]},
  {name:"bosque",width:1.6,points:[[-10.4,10],[-9.5,5],[-12,-2],[-15,-5],[-10,-8],[-6,-6],[0,-4]]},
  {name:"banco-bosque",width:1.6,points:[[-15,-5],[-17,-5]]},
- {name:"mirante-subida",width:2.4,points:[[0,-4],[7,-5],[12,-10],[16,-17],[21,-22]]},
+ {name:"mirante-subida",width:2.4,points:[[0,-4],[7,-6],[15,-10],[18,-16],[21,-22]]},
  {name:"mirante-descoberta",width:1.6,points:[[21,-22],[26,-17],[26,-10],[23,-4],[16,0],[11,5],[12.5,10]]},
 ] as const;
 function catmull(a:number,b:number,c:number,d:number,t:number){return .5*(2*b+(-a+c)*t+(2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t);}
