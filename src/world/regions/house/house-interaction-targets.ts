@@ -1,3 +1,4 @@
+import { PLAN } from "../masterplan-layout";
 import type { InteractionTarget } from "@/world/interactions/interaction-types";
 
 import {
@@ -24,7 +25,7 @@ export const HOUSE_INTERACTION_TARGETS = [
       type: "enter",
       destinationRegion: "FIELD",
       destinationPoint: HOUSE_FIELD_EXIT_POINT,
-      destinationRotationY: 0,
+      destinationRotationY: PLAN.house.yaw + Math.PI,
     },
     interactionPoint: HOUSE_INTERIOR_DOOR_POINT,
     interactionRotationY: Math.PI,

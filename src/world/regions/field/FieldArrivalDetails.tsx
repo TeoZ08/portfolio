@@ -10,14 +10,12 @@ import { FIELD_PALETTE as P } from "./field-palette";
 // Short, deliberately incomplete boundaries frame the arriving road. The
 // central route and all previously navigable connections remain unchanged.
 const FENCE_LINES = [
-  [[-4.0, -8.0], [-4.0, -4.5], [-3.8, -.8]],
-  [[-3.8, 6.6], [-3.96, 10.6], [-4.12, 14.8], [-4.23, 18.5]],
-  [[3.8, 13.8], [3.98, 17.5], [4.28, 21.5]],
+ [[-5.8,32],[-5.8,36],[-5.6,40]],
+ [[5.8,34],[6,38],[6.1,42]],
 ] as const;
 const STONE = organicEllipsoid(16, 10, .1);
 const STONES: FieldInstance[] = [
-  [-4.08, 5.75, .39], [-4.65, 6.04, .33], [-4.36, 5.96, .29],
-  [4.18, 12.91, .4], [4.76, 13.12, .28], [4.52, 13.49, .3],
+  [-5.8,31,.39],[-6.3,31.5,.33],[5.8,33,.4],[6.2,33.5,.28],
 ].map(([x, z, scale], i) => ({ position: [x, surfaceHeight(x, z) + scale * .34, z],
   scale: [scale * 1.24, scale * .67, scale], rotation: [0, i * .62, .05], color: i % 2 ? P.stone : P.stoneLight }));
 

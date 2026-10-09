@@ -6,19 +6,17 @@ import { seededRandom, surfaceHeight } from "./field/field-layout";
 import { tubeSurface } from "./house/house-geometry";
 import { PLACE_PALETTE as P, Bench, Place } from "./places/PlaceObjects";
 import { CylinderCollider, RigidBody } from "@react-three/rapier";
-import { Suspense } from "react";
+import { authorPoint } from "./masterplan-layout";
+import { FOREST_ANCHOR } from "./field/field-interaction-targets";
 import { WindChime } from "./forest/WindChime";
-import { ForestAssets } from "./forest/ForestAssets";
 import { FOREST_PALETTE as F } from "./forest/forest-dressing";
-import { AssetBoundary } from "@/world/assets/AssetBoundary";
 
+// Existing tree geometry reused; crowns flank the west transition and leave the axis clear.
 const ANCHORS = [
-  [-40,-52,1.12],[-43,-61,1.2],[-38,-67,.87],[-44,-74,1.05],[-40,-83,1.1],
-  [-23,-95,.85],[-13,-98,1.02],[-3,-100,.9],[16,-99,1.15],[24,-92,1.02],
-  [41,-78,1.04],[44,-68,.94],[39,-53,1.15],[43,-41,.9],[38,-17,1.03],
-  [-36,-38,.8],[-31,-55,.68],[34,-83,.76],
-  [-48.8,-61.5,1.04],[-50,-69.5,.93],[-46.7,-76.8,1.1],[-39.8,-77,.8],
-] as const;
+ [-22,0,.95],[-24,-6,1.1],[-22,-12,.95],[-17,-12,.85],[-26,6,1.05],
+ [-27,17,.9],[-28,-18,1.1],[-11,-12,.8],[-23,-22,1],[-30,-5,1.1],
+ [30,18,.9],[32,-5,.8],
+].map(([x,z,s])=>[...authorPoint(x,z),s] as const);
 const random = seededRandom(20260919);
 const LEAF = makeLeafSurface(), CANOPY = organicEllipsoid(16, 10, .14);
 const vertices:number[]=[], triangles:number[]=[];
@@ -35,7 +33,7 @@ const WOOD = makeSurface(vertices, triangles);
 const trunks:FieldInstance[]=[], leaves:FieldInstance[]=[], shadows:FieldInstance[]=[], roots:FieldInstance[]=[];
 for(const [index, [x,z,scale]] of ANCHORS.entries()) {
   const y=surfaceHeight(x,z), yaw=random()*6.28;
-  const grove = x < -30 && z < -49;
+  const grove = x < -15;
   // Alternate spreading and upright silhouettes within the hand-placed grove.
   // Changes are in the authored crowns, not random placement across the field.
   const spread = index % 3 === 0 ? 1.32 : index % 3 === 1 ? .86 : 1.05;
@@ -61,8 +59,8 @@ export function ForestRegion() {
     <RigidBody type="fixed" colliders={false} name="GROVE_TRUNKS_COLLIDERS">
       {ANCHORS.map(([x,z,s])=><CylinderCollider key={`${x}:${z}`} args={[1.4*s,.23*s]} position={[x,surfaceHeight(x,z)+1.4*s,z]} />)}
     </RigidBody>
-    <Place name="QUIET_FOREST_BENCH" x={-36.8} z={-69.4} yaw={1.15}><Bench position={[0,.03,0]} width={2.8} /></Place>
+    <Place name="QUIET_FOREST_BENCH" {...FOREST_ANCHOR}><Bench position={[0,.03,0]} width={2.8} /></Place>
     <WindChime />
-    <AssetBoundary><Suspense fallback={null}><ForestAssets /></Suspense></AssetBoundary>
+    {/* Detailed grove assets stay in their source files for Phase D, not this blockout. */}
   </group>;
 }

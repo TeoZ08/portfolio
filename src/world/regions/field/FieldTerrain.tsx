@@ -3,6 +3,7 @@
 import { CuboidCollider, RigidBody, TrimeshCollider } from "@react-three/rapier";
 import { FieldGeometry } from "./FieldMeshes";
 import { FieldMaterial } from "./FieldMaterial";
+import { FIELD_BOUNDS as B } from "./field-layout";
 import { FIELD_TERRAIN_SURFACE } from "./field-surfaces";
 
 export function FieldTerrain() {
@@ -15,10 +16,10 @@ export function FieldTerrain() {
           <FieldGeometry data={FIELD_TERRAIN_SURFACE} />
           <FieldMaterial vertexColors />
         </mesh>
-        <CuboidCollider args={[0.5, 2.5, 70]} position={[-55, 1, -35]} />
-        <CuboidCollider args={[0.5, 2.5, 70]} position={[55, 1, -35]} />
-        <CuboidCollider args={[55, 2.5, 0.5]} position={[0, 1, -105]} />
-        <CuboidCollider args={[55, 2.5, 0.5]} position={[0, 1, 35]} />
+        <CuboidCollider args={[.5,2.5,(B.maxZ-B.minZ)/2]} position={[B.minX,1,(B.minZ+B.maxZ)/2]} />
+        <CuboidCollider args={[.5,2.5,(B.maxZ-B.minZ)/2]} position={[B.maxX,1,(B.minZ+B.maxZ)/2]} />
+        <CuboidCollider args={[(B.maxX-B.minX)/2,2.5,.5]} position={[(B.minX+B.maxX)/2,1,B.minZ]} />
+        <CuboidCollider args={[(B.maxX-B.minX)/2,2.5,.5]} position={[(B.minX+B.maxX)/2,1,B.maxZ]} />
       </RigidBody>
     </group>
   );

@@ -1,3 +1,6 @@
+import { PLAN } from "../regions/masterplan-layout";
+import { FIELD_SCALE } from "../regions/world-scale";
+
 export type PlayerMotionVector = {
   x: number;
   y: number;
@@ -19,9 +22,9 @@ export type PlayerMotionRef = {
 };
 
 export const DEV_PLAYER_START_POSITION: [number, number, number] = [
-  0,
+  PLAN.arrival[0]*FIELD_SCALE,
   0.9,
-  4.5,
+  PLAN.arrival[1]*FIELD_SCALE,
 ];
 
 export function createPlayerMotionState(): PlayerMotionState {

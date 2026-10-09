@@ -27,7 +27,7 @@ function makeHorizon(layer: number) {
         1.7 * Math.sin(angle * 7 + layer) + 1.1 * Math.sin(angle * 11);
       const ridge = Math.sin(t * Math.PI) ** 1.3;
       const x = Math.cos(angle) * radiusX;
-      const z = -35 + Math.sin(angle) * radiusZ;
+      const z = 0 + Math.sin(angle) * radiusZ;
       vertices.push(x, -0.7 + ridge * peaks, z);
       const variation = 0.93 + 0.07 * Math.sin(angle * 9 + t * 7);
       colors.push(...base.map((c) => c * variation));
@@ -71,7 +71,7 @@ export function FieldEnvironment() {
   const time = useWorldState(state => state.timeOfDay);
   const lowQuality = useExperienceState(state => state.quality === "low");
   const daylight = fieldDaylight(time);
-  const sunTarget = useMemo(() => { const target = new Object3D(); target.position.set(0, 0, -35); return target; }, []);
+  const sunTarget = useMemo(() => { const target = new Object3D(); target.position.set(0, 0, 0); return target; }, []);
   const skyUniforms = useMemo(() => ({
     upperColor: { value: linearColor(daylight.upper) },
     horizonColor: { value: linearColor(daylight.horizon) },
@@ -90,19 +90,19 @@ export function FieldEnvironment() {
       <hemisphereLight args={[daylight.night ? "#a7bac9" : "#c3dcf4", FIELD_LIGHTING.groundFill, daylight.fill]} />
       <directionalLight name="FIELD_COOL_SKY_BOUNCE" position={[35, 55, 65]} color="#d8e9ff" intensity={daylight.night ? .12 : 1.1} />
       <primitive object={sunTarget} />
-      <directionalLight name="FIELD_VISIBLE_SUN" target={sunTarget} position={[daylight.direction[0] * 100, daylight.direction[1] * 100, -35 + daylight.direction[2] * 100]}
+      <directionalLight name="FIELD_VISIBLE_SUN" target={sunTarget} position={[daylight.direction[0] * 100, daylight.direction[1] * 100, 0 + daylight.direction[2] * 100]}
         color={daylight.sun} intensity={daylight.intensity} castShadow={!lowQuality}
         shadow-mapSize={lowQuality ? [1024, 1024] : [4096, 4096]} shadow-camera-left={-48} shadow-camera-right={48}
         shadow-camera-top={45} shadow-camera-bottom={-45}
         shadow-camera-near={1} shadow-camera-far={220}
         shadow-bias={-0.0002} shadow-normalBias={0.065} />
-      <mesh name="FIELD_SKY" position={[0, 0, -35]}>
+      <mesh name="FIELD_SKY" position={[0, 0, 0]}>
         <sphereGeometry args={[450, 24, 16]} />
         <shaderMaterial uniforms={skyUniforms} vertexShader={SKY_VERTEX}
           fragmentShader={SKY_FRAGMENT} side={1} depthWrite={false} toneMapped={false} />
       </mesh>
       <FieldClouds hour={time} />
-      <mesh name="FIELD_DISTANT_GROUND_CONTINUATION" position={[0, -0.65, -35]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh name="FIELD_DISTANT_GROUND_CONTINUATION" position={[0, -0.65, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[590, 590]} />
         <meshStandardMaterial color={P.hill} roughness={1} />
       </mesh>

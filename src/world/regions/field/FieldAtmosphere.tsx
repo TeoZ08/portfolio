@@ -6,6 +6,7 @@ import { Group, AdditiveBlending } from "three";
 import { useWorldState } from "@/systems/world-state";
 import { useExperienceState } from "@/systems/experience-state";
 import { surfaceHeight } from "./field-layout";
+import { PLAN, HOUSE_DOOR } from "../masterplan-layout";
 import { PLACE_LAYOUT } from "../places/place-layout";
 
 export function FieldAtmosphere() {
@@ -16,8 +17,8 @@ export function FieldAtmosphere() {
   const points = useMemo(() => {
     const array = new Float32Array(54 * 3);
     for (let i = 0; i < 54; i++) {
-      const x = -42 + Math.sin(i * 13.31) * 8;
-      const z = -68 + Math.cos(i * 19.7) * 14;
+      const x = PLAN.forest.x + Math.sin(i * 13.31) * 8;
+      const z = PLAN.forest.z + Math.cos(i * 19.7) * 14;
       array.set([x, surfaceHeight(x, z) + .5 + (i % 8) * .24, z], i * 3);
     }
     return array;
@@ -27,7 +28,7 @@ export function FieldAtmosphere() {
   });
   return <group name="FIELD_EVENING_ATMOSPHERE">
     {night && Object.entries(PLACE_LAYOUT).map(([key, place]) => <pointLight key={key} name={`${key}_EVENING_LAMP`} position={[place.x, surfaceHeight(place.x, place.z) + 2.65, place.z + 1]} color="#ffc878" intensity={key === "hill" ? 2 : 8} distance={12} decay={1.4} />)}
-    {night && <pointLight name="HOUSE_PORCH_WARMTH" position={[-16, 2.5, -30]} color="#ffd08c" intensity={8} distance={13} decay={1.4} />}
+    {night && <pointLight name="HOUSE_PORCH_WARMTH" position={[HOUSE_DOOR[0], 2.5, HOUSE_DOOR[1]]} color="#ffd08c" intensity={8} distance={13} decay={1.4} />}
     <group ref={lights} visible={night} name="GROVE_FIREFLIES">
       <points><bufferGeometry><bufferAttribute attach="attributes-position" args={[points, 3]} /></bufferGeometry><pointsMaterial color="#ffe9a0" size={.055} transparent opacity={.7} blending={AdditiveBlending} depthWrite={false} /></points>
     </group>

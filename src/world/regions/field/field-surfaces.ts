@@ -1,3 +1,4 @@
+import { PLAN } from "../masterplan-layout";
 import { FIELD_BOUNDS, TERRAIN_COLUMNS, TERRAIN_ROWS, terrainHeight } from "./field-layout";
 import { makeSurface } from "./field-geometry";
 import { FIELD_PALETTE as P, linearColor } from "./field-palette";
@@ -14,7 +15,7 @@ export function groundColor(x: number, z: number) {
   const strength = Math.abs(patch - 0.5) * 1.15;
   // A broad, soft bed of moss/shade under the western grove. Colour only: the
   // approved height grid, triangles and Rapier collision surface stay identical.
-  const grove = Math.max(0, 1 - Math.hypot((x + 44) / 14, (z + 68) / 14));
+  const grove = Math.max(0, 1 - Math.hypot((x - PLAN.forest.x) / 12, (z - PLAN.forest.z) / 12));
   const shadeWeight = grove * grove * (3 - 2 * grove) * .72;
   return grass.map((channel, i) => {
     const meadow = Math.max(0, channel + (destination[i] - channel) * strength + grain * channel);
@@ -27,7 +28,7 @@ export function makeTerrainSurface() {
   const triangles: number[] = [];
   const colors: number[] = [];
   for (let row = 0; row <= TERRAIN_ROWS; row += 1) {
-    const z = FIELD_BOUNDS.minZ + row / TERRAIN_ROWS * 140;
+    const z = FIELD_BOUNDS.minZ + row / TERRAIN_ROWS * (FIELD_BOUNDS.maxZ-FIELD_BOUNDS.minZ);
     for (let col = 0; col <= TERRAIN_COLUMNS; col += 1) {
       const x = FIELD_BOUNDS.minX + col / TERRAIN_COLUMNS * 110;
       vertices.push(x, terrainHeight(x, z), z);

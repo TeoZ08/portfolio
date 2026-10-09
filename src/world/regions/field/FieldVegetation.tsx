@@ -5,24 +5,16 @@ import { FieldInstances } from "./FieldMeshes";
 import { makeLeafSurface, makeSurface, organicEllipsoid, type FieldInstance } from "./field-geometry";
 import { insideHouse, pathDistance, seededRandom, surfaceHeight } from "./field-layout";
 import { FIELD_PALETTE as P } from "./field-palette";
+import { authorPoint, routeClearance } from "../masterplan-layout";
 import { insidePlace, nearPlacePath } from "../places/place-layout";
 
 // Hand-composed elliptical beds. Seeded sampling only fills these beds; paths,
 // the house apron and the open center are explicitly kept clear.
 const BEDS = [
-  [-7, 10, 4.5, 6, 850], [7, 2, 4, 8, 950], [-12, -8, 7, 7, 1000],
-  [7, -9, 3, 4, 480], [-6, -18, 6, 5, 700], [23, -25, 7, 10, 1250],
-  [23, -44, 7, 8, 850], [-31, -29, 5, 9, 900], [-29, -47, 7, 5, 600],
-  [9, -53, 9, 6, 850], [-17, -16, 5, 4, 500], [35, -65, 11, 9, 600],
-  [-22, -1, 9, 4, 1400], [-25, -14, 6, 4, 950],
-  // Small, authored margins around the newer places; the connecting clearings
-  // remain open rather than becoming a uniformly planted lawn.
-  [37, -34, 4.5, 7, 750], [33, -51, 6, 3.5, 580],
-  [-29, -64, 4, 8, 880], [-12, -69, 4, 6, 650],
-  [-37, -78, 5, 8, 940], [-24, -93, 7, 4, 700],
-  [-4, -78, 6, 5, 800], [21, -84, 4.5, 7, 760],
-  [36, -76, 6, 5, 750], [2, -96, 8, 4, 680],
-] as const;
+ [-8,24,5,5,650],[8,24,5,5,650],[-28,9,4,12,700],[29,11,4,9,650],
+ [-22,-6,7,8,850],[-13,-15,5,5,600],[11,-23,4,6,500],[31,-23,4,8,650],
+ [-5,3,2,3,300],[6,3,2,3,300],[-7,-26,6,4,500],[3,-30,7,4,500],
+].map(([x,z,rx,rz,n])=>[...authorPoint(x,z),rx/.72,rz/.72,n] as const);
 
 function makeTuft() {
   const vertices: number[] = [], indices: number[] = [];
@@ -60,14 +52,8 @@ const FLOWER = makeSurface(
   [0, 4, 1, 1, 4, 2, 2, 4, 3, 3, 4, 0],
 );
 
-const ROCK_ANCHORS = [
-  [-5.6, 8, 0.85], [5.6, 6, 0.65], [-8, -4, 0.65], [5.7, -17.2, 0.55],
-  [-8.7, -18.2, 0.9], [20.5, -22, 0.9], [23, -35, 0.7],
-  [-29.4, -31, 0.85], [-28, -43, 0.65], [8.5, -51, 0.6],
-  [36.5, -33.7, .65], [33.8, -51.5, .75], [-27.7, -66.9, .7],
-  [-12.1, -69, .6], [-37.7, -77, .9], [-24, -93, .75],
-  [-4.5, -78, .8], [21.5, -85, .7], [36.2, -76, .65],
-] as const;
+const ROCK_ANCHORS = [[-26,20,.85],[29,21,.65],[-26,-16,.8],[31,-26,.7]]
+ .map(([x,z,s])=>[...authorPoint(x,z),s] as const);
 
 function composeVegetation() {
   const random = seededRandom(50517);
@@ -79,7 +65,7 @@ function composeVegetation() {
       const angle = random() * Math.PI * 2, radius = Math.sqrt(random());
       const x = cx + Math.cos(angle) * radius * rx;
       const z = cz + Math.sin(angle) * radius * rz;
-      if (pathDistance(x, z) < 2.95 || insideHouse(x, z, 1.5) || insidePlace(x, z, 1) || nearPlacePath(x, z)) continue;
+      if (routeClearance(x,z,.6) || insideHouse(x, z, 1.5) || insidePlace(x, z, 1) || nearPlacePath(x, z)) continue;
       // Fade the bed into the meadow instead of drawing a hard elliptical edge.
       if (random() > Math.min(1, (1 - radius) * 3.5)) continue;
       const scale = 0.4 + random() * 0.5;

@@ -3,10 +3,11 @@
 import { FieldGeometry } from "../field/FieldMeshes";
 import { FieldMaterial } from "../field/FieldMaterial";
 import { makeSurface } from "../field/field-geometry";
-import { pathDistance, surfaceHeight } from "../field/field-layout";
+import { surfaceHeight } from "../field/field-layout";
 import { groundColor } from "../field/field-surfaces";
 import { linearColor } from "../field/field-palette";
-import { PLACE_LAYOUT, PLACE_PATH_SAMPLES } from "./place-layout";
+import { ROUTES, PLAN } from "../masterplan-layout";
+import { PLACE_LAYOUT } from "./place-layout";
 import { Place, Part, WorldLettering, PLACE_PALETTE as P } from "./PlaceObjects";
 
 function makeBranches() {
@@ -17,9 +18,9 @@ function makeBranches() {
   // This spacing subdivides the terrain grid, keeping the visual surface flush.
   const step = 1.25 / 4;
   const points = new Map<string, { x: number; z: number; distance: number; index: number }>();
-  for (const samples of PLACE_PATH_SAMPLES) {
-    samples.forEach(([x,z], i)=>{
-      const width=1.45+.13*Math.sin(i*.1)+.055*Math.sin(i*.69);
+  for (const route of ROUTES) {
+    route.samples.forEach(([x,z], i)=>{
+      const width=route.width/2*(1+.04*Math.sin(i*.1));
       const radius = width + step * 2;
       for (let gx = Math.floor((x-radius)/step); gx <= Math.ceil((x+radius)/step); gx++) {
         for (let gz = Math.floor((z-radius)/step); gz <= Math.ceil((z+radius)/step); gz++) {
@@ -49,10 +50,10 @@ function makeBranches() {
     const x = point.x*step, z = point.z*step;
     vertices.push(x, surfaceHeight(x,z)+.032, z);
     const grass = groundColor(x,z);
-    const branch = Math.min(1, Math.max(0, (point.distance-.52)/.48));
-    const arrival = Math.min(1, Math.max(0, (pathDistance(x,z)/2.4-.67)/.33));
-    const edge = Math.min(branch, arrival), wear = .97+.02*Math.sin(x*1.8+z*.73);
-    colors.push(...dirt.map((color,c)=>color*wear*(1-edge)+grass[c]*edge));
+    const edge = Math.min(1,Math.max(0,(point.distance-.4)/.6));
+    // Grass-coloured clearings with intermittent wear: flow diagrams are not roads.
+    const wear=(.18+.16*(.5+.5*Math.sin(x*.45+z*.32)))*(1-edge);
+    colors.push(...grass.map((color,c)=>color*(1-wear)+dirt[c]*wear));
     const right = points.get(`${point.x+1}:${point.z}`);
     const next = points.get(`${point.x}:${point.z+1}`);
     const diagonal = points.get(`${point.x+1}:${point.z+1}`);
@@ -67,9 +68,9 @@ const PATHS=makeBranches();
 export function WorldPaths() {
   return <group name="WORLD_CONNECTING_PATHS">
     <mesh receiveShadow><FieldGeometry data={PATHS} /><FieldMaterial vertexColors side={2} /></mesh>
-    <Place name="FIELD_HANDMADE_WAYFINDING" x={10.8} z={-22.5} yaw={.25}>
+    <Place name="FIELD_HANDMADE_WAYFINDING" x={PLAN.plaza[0]-3.5} z={PLAN.plaza[1]+5} yaw={.25}>
       <Part name="SIGNPOST" position={[0, 1.02, 0]} size={[.18, 2.05, .2]} color={P.woodDark} castShadow />
-      {[["← Casa", 1.75, -.06], ["Ateliê →", 1.22, .07], ["↑ Pátio & jardim", .69, -.04]].map(([text,y,angle])=><group key={String(text)} rotation={[0,0,Number(angle)]}>
+      {[["← Casa", 1.75, -.06], ["Ateliê →", 1.22, .07], ["↑ Songahm", .69, -.04]].map(([text,y,angle])=><group key={String(text)} rotation={[0,0,Number(angle)]}>
         <Part name="WAYFINDING_TIMBER" position={[0,Number(y),.01]} size={[2.27,.47,.15]} color={P.woodLight} radius={.045} />
         <WorldLettering text={String(text)} position={[0,Number(y),.092]} width={1.98} />
       </group>)}

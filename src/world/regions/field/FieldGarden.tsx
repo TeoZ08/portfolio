@@ -3,7 +3,7 @@
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { FieldInstances } from "./FieldMeshes";
 import { organicEllipsoid, type FieldInstance } from "./field-geometry";
-import { HOUSE_CENTER, seededRandom } from "./field-layout";
+import { HOUSE_YAW, surfaceHeight, HOUSE_CENTER, seededRandom } from "./field-layout";
 import { FIELD_PALETTE as P } from "./field-palette";
 
 const STONE = organicEllipsoid(14, 8, .13);
@@ -33,7 +33,7 @@ for (let i = 0; i < 5; i++) paving.push({
 });
 
 export function FieldGarden() {
-  return <group name="HOUSE_ENCLOSED_FRONT_GARDEN" position={[HOUSE_CENTER[0], 0, HOUSE_CENTER[1]]}>
+  return <group name="HOUSE_ENCLOSED_FRONT_GARDEN" position={[HOUSE_CENTER[0], surfaceHeight(...HOUSE_CENTER), HOUSE_CENTER[1]]} rotation={[0,HOUSE_YAW,0]}>
     {[-1, 1].map(side => <RigidBody key={side} type="fixed" colliders={false} name="GARDEN_LOW_WALL_COLLIDER">
       <CuboidCollider args={[2.4, .37, .32]} position={[side * 5.6, .37, 8.9]} />
     </RigidBody>)}

@@ -6,8 +6,7 @@ import { FieldGeometry, FieldInstances } from "./FieldMeshes";
 import { FieldMaterial } from "./FieldMaterial";
 import { makeSurface, organicEllipsoid, type Point3 } from "./field-geometry";
 import { makeHouseDetails, makeRoofTile, ROOF_PITCH, ROOF_SLOPE_LENGTH } from "./field-house-details";
-import { HOUSE_EXTERIOR_DOOR_INTERACTION_POINT } from "./field-interaction-targets";
-import { HOUSE_CENTER } from "./field-layout";
+import { HOUSE_YAW, surfaceHeight, HOUSE_CENTER } from "./field-layout";
 import { FIELD_SCALE } from "../world-scale";
 import { FIELD_PALETTE as P } from "./field-palette";
 
@@ -15,11 +14,7 @@ const DETAILS = makeHouseDetails();
 const TILE = makeRoofTile();
 const PLINTH_STONE = organicEllipsoid(10, 6, 0.075);
 const GABLE = makeSurface([0, 5.8, -6, 0, 5.8, 6, 0, 8.8, 0], [0, 1, 2]);
-const DOOR_MARKER_POSITION: Point3 = [
-  0,
-  HOUSE_EXTERIOR_DOOR_INTERACTION_POINT[1] / FIELD_SCALE,
-  HOUSE_EXTERIOR_DOOR_INTERACTION_POINT[2] / FIELD_SCALE - HOUSE_CENTER[1],
-];
+const DOOR_MARKER_POSITION: Point3 = [0,.86/FIELD_SCALE,7.75];
 
 function Timber({ position, size, color = P.wood }: {
   position: Point3; size: Point3; color?: string;
@@ -103,7 +98,7 @@ function EntranceDetails() {
 export function FieldHouse() {
   const showHelpers = useExperienceState(state => state.debugVisible);
   return (
-    <group name="HOUSE_EXTERIOR_VISUAL_PROTOTYPE" position={[HOUSE_CENTER[0], 0, HOUSE_CENTER[1]]}>
+    <group name="HOUSE_EXTERIOR_VISUAL_PROTOTYPE" position={[HOUSE_CENTER[0], surfaceHeight(...HOUSE_CENTER), HOUSE_CENTER[1]]} rotation={[0,HOUSE_YAW,0]}>
       <RigidBody
         name="HOUSE_EXTERIOR_COLLIDER"
         type="fixed"
