@@ -15,7 +15,8 @@
     "test:camera": "node --experimental-strip-types --test scripts/camera-controls.test.mjs",
     "test:movement": "node --experimental-strip-types --test scripts/player-traversal.test.mjs",
     "test:avatar": "node --experimental-strip-types --test scripts/avatar-animation.test.mjs",
-    "test:study": "node --experimental-strip-types --test scripts/study-search.test.mjs"
+    "test:study": "node --experimental-strip-types --test scripts/study-search.test.mjs",
+    "test:touch": "node --experimental-strip-types --test scripts/touch-joystick.test.mjs"
   },
   "keywords": [],
   "author": "",

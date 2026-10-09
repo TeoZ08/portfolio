@@ -3,7 +3,7 @@ button,a,input,select{ -webkit-tap-highlight-color:transparent }
 button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #617a5d;outline-offset:4px}
 .brand-mark{font:italic 36px Georgia,serif;letter-spacing:-.12em;font-weight:700;text-decoration:none;color:inherit;padding-right:.13em}
 .eyebrow{font-size:10px;font-weight:600;letter-spacing:.17em;text-transform:uppercase}
-.world-page{overflow:hidden;background:#bbc9cf}.world-canvas canvas{touch-action:none;overscroll-behavior:none}
+.world-page{overflow:hidden;background:#bbc9cf}.world-canvas canvas{touch-action:none;overscroll-behavior:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .world-presentation{position:fixed;inset:0;pointer-events:none;color:#f4efdd;z-index:3;text-shadow:0 1px 12px #263a2438}
 .world-presentation a,.world-presentation button,.world-presentation .dev-panel{pointer-events:auto}
 .world-menu-access{position:absolute;top:24px;right:24px;opacity:1;border:0;background:var(--paper);color:var(--ink);padding:8px 16px;font-size:20px;border-radius:3px;pointer-events:auto!important}
@@ -35,3 +35,27 @@ button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,s
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 
 @media(max-width:600px){.camera-help,.traversal-help{display:none!important}.world-interaction-prompt{max-width:calc(100vw - 190px);min-height:44px;font-size:11px}}
+
+/* Mobile analog controls: the game surface cannot select text; document/menu text remains selectable. */
+.touch-joystick,.touch-jump{display:none;pointer-events:auto;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;overscroll-behavior:contain;text-shadow:none}
+.touch-joystick *,.touch-jump *{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none}
+@media(pointer:coarse),(max-width:600px){
+  .touch-joystick{display:flex;position:absolute;left:18px;bottom:calc(13px + env(safe-area-inset-bottom,0px));width:132px;align-items:center;flex-direction:column;gap:1px}
+  .touch-joystick-pad{position:relative;width:132px;height:132px;border:1px solid #f1eee0ad;border-radius:50%;background:#263b3473;box-shadow:0 6px 22px #17251d36;touch-action:none}
+  .touch-joystick-pad:before,.touch-joystick-pad:after{content:"";position:absolute;border:1px solid #fff3;border-radius:50%;inset:20%;pointer-events:none}
+  .touch-joystick-pad:after{inset:35%;border-color:#fff2}
+  .touch-joystick-ring{position:absolute;inset:4px;border:1px dashed #f1eee045;border-radius:50%;pointer-events:none}
+  .touch-joystick-thumb{position:absolute;top:50%;left:50%;width:48px;height:48px;border:1px solid #f0ead7e3;border-radius:50%;background:#e4e6d4b3;box-shadow:0 2px 9px #10221a44;pointer-events:none;will-change:transform}
+  .touch-joystick-pad[data-sprinting="true"] .touch-joystick-thumb{background:#f2d3a3e8;border-color:#faf0e3}
+  .touch-joystick-caption{font:600 10px/1.2 system-ui;color:#fff8;letter-spacing:.03em;pointer-events:none}
+  .touch-jump{display:flex;position:absolute;bottom:calc(115px + env(safe-area-inset-bottom,0px));right:18px;width:68px;height:68px;flex-direction:column;justify-content:center;align-items:center;gap:0;border:1px solid #f3efde9c;border-radius:50%;background:#263b34ba;color:#f8f3e7;box-shadow:0 4px 18px #17251d4d}
+  .touch-jump span:first-child{font:600 26px/1 system-ui}
+  .touch-jump span:last-child{font:600 10px/1.4 system-ui}
+  .touch-jump:active{background:#586d58db}
+  .world-interaction-prompt{bottom:calc(44px + env(safe-area-inset-bottom,0px))}
+}
+@media(max-width:375px){
+  .touch-joystick,.touch-joystick-pad{width:118px}
+  .touch-joystick-pad{height:118px}
+  .touch-jump{width:62px;height:62px;bottom:calc(108px + env(safe-area-inset-bottom,0px))}
+}

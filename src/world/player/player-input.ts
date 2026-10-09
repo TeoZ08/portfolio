@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { touchMovement, worldInputBlocked } from "@/systems/experience-state";
+import { resetTouchControls, touchMovement, worldInputBlocked } from "@/systems/experience-state";
 
 const MOVEMENT_KEYS = new Set([
   "w",
@@ -119,6 +119,7 @@ export function usePlayerInput() {
       jumpQueuedRef.current = false;
       input.x = 0;
       input.z = 0;
+      resetTouchControls();
       input.sprinting = false;
       input.jumpPressed = false;
       input.blocked = true;
@@ -141,10 +142,11 @@ export function usePlayerInput() {
       input.z /= magnitude;
     }
 
-    input.sprinting = pressedKeys.has("shift");
-    input.jumpPressed = jumpQueuedRef.current;
+    input.sprinting = pressedKeys.has("shift") || touchMovement.sprinting;
+    input.jumpPressed = jumpQueuedRef.current || touchMovement.jumpQueued;
     input.blocked = false;
     jumpQueuedRef.current = false;
+    touchMovement.jumpQueued = false;
 
     return input;
   }, []);

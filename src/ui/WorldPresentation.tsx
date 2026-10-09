@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { Desktop } from "@/computer/Desktop";
-import { requestCameraRecenter, useExperienceState, requestWorldInteraction, touchMovement } from "@/systems/experience-state";
+import { requestCameraRecenter, useExperienceState, requestWorldInteraction, touchMovement, resetTouchControls } from "@/systems/experience-state";
 import { useInteractionDebugState } from "@/world/interactions/interaction-state";
 import {
   HOUSE_BOOKSHELF_TARGET_ID,
@@ -10,6 +10,7 @@ import {
   HOUSE_REFERENCE_BOARD_TARGET_ID,
 } from "@/world/regions/house/house-interaction-targets";
 import { DevPanel } from "./DevPanel";
+import { TouchJoystick } from "./TouchJoystick";
 import { PauseMenu } from "./PauseMenu";
 import { Arrival, ExperiencePreferences } from "./Arrival";
 import { PlaceExperience } from "./PlaceExperience";
@@ -36,7 +37,8 @@ export function WorldPresentation() {
   const status=useInteractionDebugState(state=>state.status);
   const activeTargetId=useInteractionDebugState(state=>state.activeTargetId);
   const debugVisible=useExperienceState(state=>state.debugVisible);
-  const menuOpen=useExperienceState(state=>state.overlay === "menu");
+  const overlay=useExperienceState(state=>state.overlay);
+  const menuOpen=overlay === "menu";
   const deviceActive=useExperienceState(state=>state.deviceActive);
   const inspection=status==="using"
     ? HOUSE_INSPECTIONS[activeTargetId as keyof typeof HOUSE_INSPECTIONS]
@@ -59,7 +61,7 @@ export function WorldPresentation() {
         event.preventDefault();
         event.stopImmediatePropagation();
         if(event.repeat) return;
-        touchMovement.x=0; touchMovement.z=0;
+        resetTouchControls();
         if(state.overlay === "menu") state.closeOverlay(); else state.openMenu();
       }
     };
@@ -85,9 +87,23 @@ export function WorldPresentation() {
       {inspection.lines.map(line=><p key={line}>{line}</p>)}
       <button type="button" onClick={()=>requestWorldInteraction(true)}><span>Voltar</span><kbd>Esc</kbd></button>
     </aside>}
-    {!menuOpen && !deviceActive && status === "idle" && <div className="touch-movement" aria-label="Controles de movimento">
-      {([['↑',0,-1,'Frente'],['←',-1,0,'Esquerda'],['↓',0,1,'Trás'],['→',1,0,'Direita']] as const).map(([symbol,x,z,title])=><button key={title} aria-label={title} onPointerDown={event=>{event.currentTarget.setPointerCapture(event.pointerId);touchMovement.x=x;touchMovement.z=z;}} onPointerUp={()=>{touchMovement.x=0;touchMovement.z=0;}} onPointerCancel={()=>{touchMovement.x=0;touchMovement.z=0;}} onLostPointerCapture={()=>{touchMovement.x=0;touchMovement.z=0;}}>{symbol}</button>)}
-    </div>}
+    {overlay === null && !deviceActive && status === "idle" && <>
+      <TouchJoystick />
+      <button
+        type="button"
+        className="touch-jump"
+        aria-label="Saltar"
+        onPointerDown={event => {
+          if (event.pointerType === "mouse" && event.button !== 0) return;
+          event.preventDefault();
+          touchMovement.jumpQueued = true;
+        }}
+        onClick={event => { if (event.detail === 0) touchMovement.jumpQueued = true; }}
+      >
+        <span aria-hidden="true">↑</span>
+        <span>Salto</span>
+      </button>
+    </>}
     {status === "using" && !menuOpen && <PlaceExperience targetId={activeTargetId} />}
     <ExperiencePreferences />
     <Arrival />

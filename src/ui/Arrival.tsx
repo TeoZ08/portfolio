@@ -50,6 +50,6 @@ export function Arrival() {
     <button autoFocus onClick={enter}>Entrar e explorar <span aria-hidden="true">↗</span></button>
     <Link href="/projetos" onClick={enter}>Ir direto aos projetos</Link>
     <dl><div><dt>WASD / setas</dt><dd>Caminhar</dd></div><div><dt>Arraste</dt><dd>Olhar ao redor</dd></div><div><dt>E</dt><dd>Usar objetos próximos</dd></div><div><dt>Esc / ···</dt><dd>Mapa e arquivos</dd></div></dl>
-    <p className="arrival-touch">No celular, use as setas na tela e arraste para olhar.</p>
+    <p className="arrival-touch">No celular, mova-se com o joystick à esquerda, toque em Salto à direita e arraste a tela para olhar.</p>
   </dialog>;
 }

@@ -45,7 +45,14 @@ export function worldInputBlocked() {
 }
 
 // Touch values are transient; never published through React/Zustand.
-export const touchMovement = { x: 0, z: 0 };
+export const touchMovement = { x: 0, z: 0, sprinting: false, jumpQueued: false };
+
+export function resetTouchControls() {
+  touchMovement.x = 0;
+  touchMovement.z = 0;
+  touchMovement.sprinting = false;
+  touchMovement.jumpQueued = false;
+}
 export const CAMERA_RECENTER_EVENT = "camera:recenter";
 
 export function requestCameraRecenter() {
