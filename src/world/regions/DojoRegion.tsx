@@ -5,6 +5,7 @@ import { SoftObject } from "./house/HouseObjects";
 import { HouseMaterial } from "./house/HouseMaterial";
 import type { FieldInstance } from "./field/field-geometry";
 import { PLACE_LAYOUT } from "./places/place-layout";
+import { DOJO as D } from "./dojo/dojo-layout";
 import { DojoDetails } from "./dojo/DojoDetails";
 import { DojoArchitecture } from "./dojo/DojoArchitecture";
 import { SongahmScenery } from "./dojo/SongahmScenery";
@@ -19,6 +20,7 @@ export function DojoRegion() {
     <SongahmScenery />
     <DojoArchitecture />
     <group name="DOJO_PRESERVED_TRAINING_SPACE" position={[0, .32, 0]}>
+      <Solid name="DOJO_TATAMI_CONTINUOUS_COLLIDER" position={[0,(D.floor+D.terraceTop)/2-.32,D.tatamiZ]} size={[D.tatamiWidth,D.floor-D.terraceTop,D.tatamiDepth]} visual={false} />
       <HouseInstances name="DOJO_TATAMI_MATS" instances={MATS} finish="fabric" />
       <Solid name="DOJO_BACK_WALL" position={[0, 1.55, -3.87]} size={[11, 2.8, .24]} color={P.plaster} finish="plaster" />
       <Part name="DOJO_TIMBER_WAINSCOT" position={[0, .72, -3.73]} size={[10.9, 1.13, .055]} color={P.songahmTimber} />

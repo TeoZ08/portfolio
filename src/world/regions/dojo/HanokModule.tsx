@@ -3,7 +3,7 @@
 import { useLoader } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import { RigidBody, TrimeshCollider } from "@react-three/rapier";
-import { Mesh, Group } from "three";
+import { Mesh, Group, MeshStandardMaterial } from "three";
 import { transformedGeometry } from "./hanok-geometry";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
@@ -33,12 +33,16 @@ export function HanokModule({ file, position = [0, 0, 0], scale = 1, yaw = 0, op
         const mesh=new Mesh(geometry,source.material);mesh.name=source.name;mesh.castShadow=true;mesh.receiveShadow=true;clone.add(mesh);
       } else {
         const mesh=source.clone();mesh.matrixAutoUpdate=false;mesh.matrix.copy(source.matrixWorld);
+        if(file==='plinth'){
+          const materials=Array.isArray(source.material)?source.material:[source.material];
+          mesh.material=materials.map(original=>{const m=original.clone() as MeshStandardMaterial;m.color.set('#8b8875');m.roughness=1;return m;});
+        }
         mesh.castShadow=true;mesh.receiveShadow=true;clone.add(mesh);
       }
     });
     return clone;
   }, [gltf.scene, open, file]);
-  useEffect(()=>()=>{if(open)model.traverse(o=>{const m=o as Mesh;if(m.isMesh&&m.name==="hanok-main-house_1")m.geometry.dispose();});},[model,open]);
+  useEffect(()=>()=>{if(open||file==="plinth")model.traverse(o=>{const m=o as Mesh;if(m.isMesh&&m.name==="hanok-main-house_1")m.geometry.dispose();if(m.isMesh&&file==="plinth")(Array.isArray(m.material)?m.material:[m.material]).forEach(material=>material.dispose());});},[model,open,file]);
   const shapes = useMemo(() => {
     if(!collision)return [];
     model.updateMatrixWorld(true);

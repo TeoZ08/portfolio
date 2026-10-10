@@ -12,7 +12,8 @@ export function soilWeights(x:number,z:number): [number,number,number] {
   const grove=1-smooth(3,11,Math.hypot((x-PLAN.forest.x)*FIELD_SCALE,(z-PLAN.forest.z)*FIELD_SCALE)+noise*.8);
   const dry=(.5+.5*Math.sin(x*.14+z*.17))* .11;
   const rock=hill*.7;
-  const gravel=Math.max(mineral*.83,path*.66)*(1-rock)*(1-grove*.6);
+  const gallery=1-smooth(4,12,Math.hypot((x-PLAN.gallery.x)*FIELD_SCALE,(z-PLAN.gallery.z)*FIELD_SCALE)+noise*.7);
+  const gravel=Math.max(mineral*.83,path*.66,gallery*.48)*(1-rock)*(1-grove*.6);
   const earth=Math.min(1-gravel-rock,grove*.57+dry+path*.16);
   return [gravel,rock,Math.max(0,earth)];
 }

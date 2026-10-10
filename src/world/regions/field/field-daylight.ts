@@ -9,11 +9,11 @@ export function fieldDaylight(hour: number) {
   if (hour < 13) return {
     upper: "#2f70a7", horizon: "#c3dce3",
     sun: "#ffe5b2", direction: [-.55, .23, -.80] as const,
-    intensity: 3.6, fill: 1.4, fogNear: 105, fogFar: 330, night: false,
+    intensity: 2.8, fill: 1.15, fogNear: 42, fogFar: 190, night: false,
   };
   return {
     upper: "#4c7d9e", horizon: "#e9c99f",
     sun: "#ffd094", direction: [-.72, .18, -.67] as const,
-    intensity: 3.0, fill: 1.2, fogNear: 90, fogFar: 300, night: false,
+    intensity: 2.5, fill: 1.05, fogNear: 38, fogFar: 175, night: false,
   };
 }

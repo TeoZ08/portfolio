@@ -7,6 +7,12 @@ export const DOJO = {
   terraceWidth: 16 / FIELD_SCALE,
   terraceDepth: 10.8 / FIELD_SCALE,
   floor: .513,
+  terraceTop: .4,
+  foundationBottom: -.6,
+  stairBottom: -.25,
+  tatamiWidth: 10.77,
+  tatamiDepth: 7.07,
+  tatamiZ: .04,
   stairZ: [8.7, 8.05, 7.4],
   stairTops: [.14, .27, .4],
 } as const;
