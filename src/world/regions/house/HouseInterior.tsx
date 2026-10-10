@@ -10,6 +10,7 @@ import {
   HOUSE_INTERIOR_ENTRY_POINT,
   HOUSE_REFERENCE_BOARD_INTERACTION_POINT,
 } from "./house-layout";
+import { HOUSE_FLOOR } from "./house-safety";
 import { HouseRoom } from "./HouseRoom";
 import { HouseShell } from "./HouseShell";
 import { HouseLighting } from "./HouseLighting";
@@ -23,9 +24,10 @@ function InteriorColliders() {
       type="fixed"
       colliders={false}
     >
-      <CuboidCollider name="HOUSE_INTERIOR_FLOOR_COLLIDER" args={[8, 0.12, 6]} position={[0, -0.12, 0]} />
-      <CuboidCollider args={[0.25, 2.25, 6.5]} position={[-8.25, 2.25, 0]} />
-      <CuboidCollider args={[0.25, 2.25, 6.5]} position={[8.25, 2.25, 0]} />
+      <CuboidCollider name="HOUSE_INTERIOR_FLOOR_COLLIDER" args={[HOUSE_FLOOR.halfWidth, HOUSE_FLOOR.halfThickness, HOUSE_FLOOR.halfDepth]} position={[0, -HOUSE_FLOOR.halfThickness, HOUSE_FLOOR.centerZ]} />
+      <CuboidCollider args={[0.25, 2.25, 9]} position={[-8.25, 2.25, 2.5]} />
+      <CuboidCollider args={[0.25, 2.25, 9]} position={[8.25, 2.25, 2.5]} />
+      <CuboidCollider name="HOUSE_VISIBLE_RECESS_BACK_WALL" args={[8.25, 2.25, .15]} position={[0, 2.25, 11.5]} />
       <CuboidCollider args={[8.25, 2.25, 0.25]} position={[0, 2.25, -6.25]} />
       <CuboidCollider args={[2.8, 2.25, 0.25]} position={[-5.2, 2.25, 6.25]} />
       <CuboidCollider args={[2.8, 2.25, 0.25]} position={[5.2, 2.25, 6.25]} />

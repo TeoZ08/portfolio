@@ -1,5 +1,7 @@
 "use client";
 
+import { useWorldState } from "@/systems/world-state";
+import { fieldDaylight } from "../field/field-daylight";
 import { FieldGeometry } from "../field/FieldMeshes";
 import type { FieldInstance } from "../field/field-geometry";
 import { HouseBlockout as Part, HouseInstances } from "./HouseBlockout";
@@ -13,8 +15,7 @@ import { HOUSE_PALETTE as P } from "./house-palette";
 const CURTAIN = curtainSurface();
 const BOARDS: FieldInstance[] = [];
 const BOARD_COLORS = [P.floor, P.floorLight, P.floor, P.floorShade, P.floor, P.floorLight];
-// The eight extra rows sit behind the playable threshold. They are visual
-// overscan for the entrance camera, not an extension of the navigable layout.
+// The entrance landing has continuous support through the doorway fade.
 for (let row = 0; row < 26; row += 1) {
   const width = HOUSE_INTERIOR_DEPTH / 18;
   const offset = (row % 3) * 1.06;
@@ -28,12 +29,14 @@ for (let row = 0; row < 26; row += 1) {
 }
 
 function NorthWindow() {
+  const hour = useWorldState(state => state.timeOfDay);
+  const light = fieldDaylight(hour);
   return <group name="HOUSE_NORTH_WINDOW" position={[-2.8, 2.55, -6.05]}>
     {/* The glass picks up the Field sky colour; it is not a painted panorama. */}
     <Part name="WINDOW_REVEAL" position={[0, 0, -0.015]} size={[2.37, 2.13, 0.32]} color={P.woodDark} radius={0.035} />
     <mesh position={[0, 0, 0.169]}>
       <planeGeometry args={[2.04, 1.79]} />
-      <meshStandardMaterial color={P.glass} emissive={P.glassSky} emissiveIntensity={0.25} roughness={0.36} />
+      <meshStandardMaterial color={P.glass} emissive={light.sunset ? light.horizon : P.glassSky} emissiveIntensity={0.25} roughness={0.36} />
     </mesh>
     {[-1, 1].map(side => <group key={side}>
       <Part name="WINDOW_VERTICAL_CASING" position={[side * 1.19, 0, 0.2]} size={[0.16, 2.34, 0.15]} color={P.trim} radius={0.02} />

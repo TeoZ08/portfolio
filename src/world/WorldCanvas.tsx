@@ -20,6 +20,7 @@ import {
 } from "@/world/camera/camera-types";
 import { InteractionSystem } from "@/world/interactions/InteractionSystem";
 import type { InteractionTarget } from "@/world/interactions/interaction-types";
+import { WorldDiagnostics } from "./WorldDiagnostics";
 import { DevPlayer } from "@/world/player/DevPlayer";
 import { createPlayerControlState } from "@/world/player/player-control";
 import { createPlayerMotionState } from "@/world/player/player-motion";
@@ -102,6 +103,7 @@ export function WorldCanvas({
         }}
         dpr={lowQuality ? 1 : [1, 2]}
       >
+        <WorldDiagnostics />
         <color attach="background" args={[backgroundColor]} />
         {isDevelopment && showHelpers ? <DevelopmentHelpers /> : null}
         <Physics
@@ -121,6 +123,7 @@ export function WorldCanvas({
             targets={targets}
           />
           <DevPlayer
+            cameraResyncRef={cameraResyncRef}
             solidColor={playerColor}
             cameraViewRef={cameraViewRef}
             frameUpdatesRef={frameUpdatesRef}

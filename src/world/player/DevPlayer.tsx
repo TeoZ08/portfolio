@@ -8,6 +8,10 @@ import {
 import type { RapierCollider, RapierRigidBody } from "@react-three/rapier";
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
+import { useWorldState } from "@/systems/world-state";
+import { HOUSE_INTERIOR_ENTRY_POINT } from "@/world/regions/house/house-layout";
+import { needsPlayerRecovery, RECOVERY_COOLDOWN } from "@/world/regions/house/house-safety";
+import type { CameraResyncRef } from "@/world/DevFrameLoop";
 import type { DevFrameUpdatesRef } from "@/world/DevFrameLoop";
 import type { CameraViewRef } from "@/world/camera/camera-types";
 import {
@@ -84,6 +88,7 @@ type DevVisualMarker = {
 
 type DevPlayerProps = {
   solidColor?: string;
+  cameraResyncRef: CameraResyncRef;
   cameraViewRef: CameraViewRef;
   frameUpdatesRef: DevFrameUpdatesRef;
   motionRef: PlayerMotionRef;
@@ -133,12 +138,14 @@ function movePlanarVelocityTowards(
 }
 
 export function DevPlayer({
+  cameraResyncRef,
   solidColor,
   cameraViewRef,
   frameUpdatesRef,
   motionRef,
   playerControlRef,
 }: DevPlayerProps) {
+  const recoveryCooldownRef = useRef(0);
   const bodyRef = useRef<RapierRigidBody>(null);
   const colliderRef = useRef<RapierCollider>(null);
   const visualGroupRef = useRef<DevVisualGroup>(null);
@@ -210,6 +217,14 @@ export function DevPlayer({
     };
   }, [motionRef, world]);
 
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production" || !new URLSearchParams(location.search).has("recoveryQA")) return;
+    // Explicit fault injection for local recovery QA, never a gameplay control.
+    const fault = { drop: () => bodyRef.current?.setTranslation({x:0,y:-12,z:0}, true) };
+    Object.assign(window, {__recoveryQA: fault});
+    return () => { delete (window as unknown as {__recoveryQA?:unknown}).__recoveryQA; };
+  }, []);
+
   const updatePlayer = useCallback(
     (delta: number) => {
       const body = bodyRef.current;
@@ -221,6 +236,21 @@ export function DevPlayer({
       }
 
       const control = playerControlRef.current;
+      recoveryCooldownRef.current = Math.max(0, recoveryCooldownRef.current - delta);
+      const region = useWorldState.getState().currentRegion;
+      if (control.transitionRequest === null && needsPlayerRecovery(region, body.translation(), recoveryCooldownRef.current)) {
+        window.dispatchEvent(new Event("world:player-recovered"));
+        resetPlayerControlState(control);
+        control.transitionRequest = {
+          position: region === "HOUSE" ? HOUSE_INTERIOR_ENTRY_POINT : DEV_PLAYER_START_POSITION,
+          rotationY: 0,
+        };
+        recoveryCooldownRef.current = RECOVERY_COOLDOWN;
+        jumpCooldownRef.current = PLAYER_TRAVERSAL.jumpCooldown;
+        body.setLinvel({x:0,y:0,z:0}, true);
+        body.setAngvel({x:0,y:0,z:0}, true);
+        cameraResyncRef.current.stage = 1;
+      }
       const physicsLocked = control.physicsLocked;
       const transitionRequest = control.transitionRequest;
       // Read every frame so blocked interaction states consume transient edges
@@ -490,7 +520,7 @@ export function DevPlayer({
         moving,
       });
     },
-    [cameraViewRef, motionRef, playerControlRef, readInput],
+    [cameraViewRef, cameraResyncRef, motionRef, playerControlRef, readInput],
   );
 
   useLayoutEffect(() => {

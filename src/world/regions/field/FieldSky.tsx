@@ -6,7 +6,7 @@ import { linearColor } from './field-palette';
 import { FieldClouds } from './FieldClouds';
 const VERTEX=`varying vec3 vDirection;void main(){vDirection=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`;
 const FRAGMENT=`
-uniform vec3 upperColor,horizonColor,sunDirection,sunColor;uniform float night,usePanorama;
+uniform vec3 upperColor,horizonColor,sunDirection,sunColor;uniform float night,usePanorama,sunset;
 uniform sampler2D cloudPanorama;varying vec3 vDirection;
 void main(){
  vec3 d=normalize(vDirection);
@@ -14,7 +14,10 @@ void main(){
  vec3 sky=mix(horizonColor,upperColor,pow(h,.65));
  vec2 uv=vec2(atan(d.z,d.x)/6.28318530718+.5,asin(clamp(d.y,-1.,1.))/3.14159265359+.5);
  vec4 clouds=texture2D(cloudPanorama,uv);
+ float sunFacing=pow(max(0.,dot(d,sunDirection)),3.);
  vec3 cloudTint=mix(vec3(.90,.90,.84),vec3(.24,.33,.40),night);
+ cloudTint=mix(cloudTint,mix(vec3(.66,.72,.83),vec3(1.,.73,.48),sunFacing),sunset*.65);
+ sky=mix(sky,sunColor,pow(max(0.,dot(d,sunDirection)),8.)*(1.-smoothstep(.03,.4,d.y))*sunset*.18);
  sky=mix(sky,clouds.rgb*cloudTint,clouds.a*usePanorama);
  float facing=max(0.,dot(d,sunDirection));
  sky=mix(sky,sunColor,(pow(facing,48.)*.13+pow(facing,550.)*.24)*(1.-night*.65));
@@ -37,7 +40,7 @@ export function FieldSky({hour}:{hour:number}){
   },undefined,()=>{if(alive)setTexture(null);});
   return ()=>{alive=false;loaded?.dispose();};
  },[]);
- const uniforms=useMemo(()=>({upperColor:{value:linearColor(light.upper)},horizonColor:{value:linearColor(light.horizon)},sunDirection:{value:new Vector3(...light.direction).normalize()},sunColor:{value:linearColor(light.sun)},night:{value:light.night?1:0},usePanorama:{value:texture&&!procedural?1:0},cloudPanorama:{value:texture}}),[light.upper,light.horizon,light.sun,light.night,light.direction[0],light.direction[1],light.direction[2],texture,procedural]);
+ const uniforms=useMemo(()=>({upperColor:{value:linearColor(light.upper)},horizonColor:{value:linearColor(light.horizon)},sunDirection:{value:new Vector3(...light.direction).normalize()},sunColor:{value:linearColor(light.sun)},night:{value:light.night?1:0},sunset:{value:light.sunset?1:0},usePanorama:{value:texture&&!procedural?1:0},cloudPanorama:{value:texture}}),[light.upper,light.horizon,light.sun,light.night,light.sunset,light.direction[0],light.direction[1],light.direction[2],texture,procedural]);
  return <group name={texture&&!procedural?'FIELD_PANORAMA_SKY':'FIELD_PROCEDURAL_SKY_FALLBACK'}>
   <mesh name="FIELD_SKY"><sphereGeometry args={[450,32,24]}/><shaderMaterial uniforms={uniforms} vertexShader={VERTEX} fragmentShader={FRAGMENT} side={1} depthWrite={false} toneMapped={false}/></mesh>
   {(!texture||procedural)&&<FieldClouds hour={hour}/>}

@@ -8,6 +8,7 @@ import { findProject } from "@/content/portfolio";
 import { searchStudy } from "@/content/study-search";
 import { playChime } from "@/systems/ambient-audio";
 import { requestWorldInteraction } from "@/systems/experience-state";
+import { SUNSET_DEFAULT_HOUR } from "@/world/regions/field/field-daylight";
 import { useWorldState } from "@/systems/world-state";
 
 const TITLES: Record<string, readonly [string, string]> = {
@@ -22,7 +23,7 @@ function LightTable() {
   const time = useWorldState(state => state.timeOfDay);
   return <>
     <p>Experimente o mesmo mundo em outro horário. A luz, o céu e a distância das sombras respondem à sua escolha.</p>
-    <fieldset className="place-choices"><legend>Hora do dia</legend>{[[9, "Manhã"], [17, "Fim de tarde"], [20, "Anoitecer"]].map(([hour, label]) => <button key={hour} aria-pressed={time === hour} onClick={() => useWorldState.getState().setTimeOfDay(Number(hour))}>{label}</button>)}</fieldset>
+    <fieldset className="place-choices"><legend>Hora do dia</legend>{[[9, "Manhã"], [SUNSET_DEFAULT_HOUR, "Fim de tarde"], [20, "Anoitecer"]].map(([hour, label]) => <button key={hour} aria-pressed={time === hour} onClick={() => useWorldState.getState().setTimeOfDay(Number(hour))}>{label}</button>)}</fieldset>
     <Link className="place-text-link" href="/projetos/portfolio-world">Por dentro deste portfólio ↗</Link>
   </>;
 }

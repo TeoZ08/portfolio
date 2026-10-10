@@ -1,5 +1,6 @@
 "use client";
 
+import { crossedHouseExit } from "@/world/regions/house/house-safety";
 import { findWorldDestination } from "@/world/regions/field/world-destinations";
 
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
@@ -230,6 +231,18 @@ export function InteractionSystem({
       }
 
       if (statusAtFrameStart === "idle") {
+        // Walking through the authored doorway uses the same fade/region/camera
+        // transition as E/touch. The landing remains solid during the fade.
+        const walkExit = targets.find(target => target.id === "HOUSE_EXIT_DOOR");
+        if (walkExit && crossedHouseExit(motionRef.current.position)) {
+          runtime.activeTarget = walkExit;
+          runtime.status = "aligned";
+          runtime.transitionElapsed = 0;
+          runtime.transitionQueued = false;
+          setPlayerControlAlignment(playerControlRef, 0, 0, walkExit.interactionRotationY);
+          publishRuntimeState(runtime);
+          return;
+        }
         const candidate = getNearestTarget(motionRef.current.position, targets);
 
         if (candidate !== runtime.candidate) {
@@ -625,6 +638,13 @@ export function InteractionSystem({
       runtime.transitionElapsed = 0;
       publishRuntimeState(runtime);
     };
+    const recoverPlayer = () => {
+      Object.assign(runtime, createInteractionRuntimeState());
+      clearPressedKeys();
+      setPlayerControlIdle(playerControlRef);
+      publishRuntimeState(runtime);
+    };
+    window.addEventListener("world:player-recovered", recoverPlayer);
     window.addEventListener("world:travel", travelFromMap);
     const interactFromButton = () => { runtime.interactRequested = true; };
     const cancelFromButton = () => { runtime.cancelRequested = true; };
@@ -637,6 +657,7 @@ export function InteractionSystem({
     document.addEventListener("visibilitychange", clearPressedKeys);
 
     return () => {
+      window.removeEventListener("world:player-recovered", recoverPlayer);
       window.removeEventListener("world:travel", travelFromMap);
       window.removeEventListener("world:interact", interactFromButton);
       window.removeEventListener("world:cancel", cancelFromButton);
@@ -646,7 +667,7 @@ export function InteractionSystem({
       document.removeEventListener("visibilitychange", clearPressedKeys);
       clearPressedKeys();
     };
-  }, [pressedKeys, runtime]);
+  }, [pressedKeys, runtime, playerControlRef]);
 
   useLayoutEffect(() => {
     const updates = frameUpdatesRef.current;

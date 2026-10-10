@@ -1,5 +1,8 @@
 "use client";
 
+import { useWorldState } from "@/systems/world-state";
+import { useExperienceState } from "@/systems/experience-state";
+import { fieldDaylight } from "../field/field-daylight";
 import { HOUSE_PALETTE as P } from "./house-palette";
 
 // A static shadow-only fourth wall preserves the authored window light. The
@@ -25,11 +28,14 @@ function WindowShadowWall() {
 }
 
 export function HouseLighting() {
+  const hour = useWorldState(state => state.timeOfDay);
+  const lowQuality = useExperienceState(state => state.quality === "low");
+  const light = fieldDaylight(hour);
   return <group name="HOUSE_LATE_AFTERNOON_LIGHT">
     <ambientLight color={P.trim} intensity={0.28} />
-    <hemisphereLight color={P.fill} groundColor={P.bounce} intensity={1.4} />
-    <directionalLight name="HOUSE_WARM_WINDOW_LIGHT" color={P.sun} intensity={2.7}
-      position={[-5, 8, 12]} castShadow shadow-mapSize={[2048, 2048]}
+    <hemisphereLight color={light.sunset ? "#b7c9e7" : P.fill} groundColor={P.bounce} intensity={light.night ? .7 : 1.1} />
+    <directionalLight name="HOUSE_WARM_WINDOW_LIGHT" color={light.sun} intensity={light.night ? .6 : light.sunset ? 2.35 : 2.7}
+      position={[-8, light.sunset ? 5 : 8, 12]} castShadow={!lowQuality} shadow-mapSize={[2048, 2048]}
       shadow-camera-left={-13} shadow-camera-right={13} shadow-camera-top={12} shadow-camera-bottom={-12}
       shadow-camera-near={0.5} shadow-camera-far={48} shadow-bias={-0.00015} shadow-normalBias={0.025}
       shadow-radius={3} />

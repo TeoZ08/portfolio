@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { FIRST_LIGHT_HOUR } from "@/world/regions/field/field-daylight";
+import { SUNSET_DEFAULT_HOUR } from "@/world/regions/field/field-daylight";
 
 export const DEV_FOUNDATION_REGION = "DEV_FOUNDATION" as const;
 export const FIELD_REGION = "FIELD" as const;
@@ -33,6 +33,6 @@ export const useWorldState = create<WorldState>((set) => ({
   beginRegionTransition: (currentRegion) =>
     set({ currentRegion, transitionActive: true }),
   completeRegionTransition: () => set({ transitionActive: false }),
-  timeOfDay: FIRST_LIGHT_HOUR,
+  timeOfDay: SUNSET_DEFAULT_HOUR,
   setTimeOfDay: (value) => set({ timeOfDay: clampTimeOfDay(value) }),
 }));
