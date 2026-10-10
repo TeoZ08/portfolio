@@ -13,6 +13,7 @@ import { ForestRegion } from "./ForestRegion";
 import { WorldPaths } from "./places/WorldPaths";
 import { FieldArrivalDetails } from "./field/FieldArrivalDetails";
 import { FIELD_SCALE } from "./world-scale";
+import { RegionalPlanting } from "./field/RegionalPlanting";
 import { FieldGarden } from "./field/FieldGarden";
 
 export function FieldRegion() {
@@ -26,6 +27,7 @@ export function FieldRegion() {
       <FieldGarden />
       <FieldLandmarks />
       <FieldVegetation />
+      <RegionalPlanting />
       <WorldPaths />
       <WorkshopRegion />
       <DojoRegion />

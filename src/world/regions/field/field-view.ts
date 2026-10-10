@@ -5,8 +5,8 @@ import { EXPLORE_CAMERA_PRESET, type CameraPreset } from "@/world/camera/camera-
 // the original prototype.
 export const FIELD_CAMERA_COMPOSITION: CameraPreset = {
   ...EXPLORE_CAMERA_PRESET,
-  offset: [4.4, 1.7, 5.6],
-  initialPosition: [4.4, 3.6, 10.1],
+  offset: [0, 2.6, 8],
+  initialPosition: [0, 4.5, 34],
   targetHeightOffset: 1.05,
   cameraPositionDamping: 6.5,
   manualPitchLimits: [Math.PI * 8 / 180, Math.PI * 48 / 180],
