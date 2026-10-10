@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import { GALLERY_ARTWORKS } from "@/content/gallery";
 import { useEffect, useRef, useState } from "react";
 import { findProject } from "@/content/portfolio";
 import { searchStudy } from "@/content/study-search";
@@ -9,9 +11,9 @@ import { requestWorldInteraction } from "@/systems/experience-state";
 import { useWorldState } from "@/systems/world-state";
 
 const TITLES: Record<string, readonly [string, string]> = {
-  WORKSHOP_LIGHT_TABLE: ["Ateliê", "A luz muda o lugar."],
-  UNIVERSITY_NOTEBOOK: ["Pátio de estudos", "Um caderno com fontes."],
-  COMMUNITY_WORKSHOP: ["Jardim comunitário", "Uma pausa antes do clique."],
+  WORKSHOP_LIGHT_TABLE: ["Galeria · Processo", "A luz muda o lugar."],
+  UNIVERSITY_NOTEBOOK: ["Galeria · Jarvis", "Um caderno com fontes."],
+  COMMUNITY_WORKSHOP: ["Galeria · UnAPI", "Uma pausa antes do clique."],
   DOJO_PRACTICE: ["Dojang · Songahm", "Tempo para praticar."],
   FOREST_CHIMES: ["Bosque", "Três notas ao vento."],
 };
@@ -49,6 +51,11 @@ function CommunityWorkshop() {
     <div className="place-links"><Link href="/projetos/portal-unapi">Conhecer o projeto ↗</Link><a href="https://pet-sistemas.github.io/unapi-oficinas/" target="_blank" rel="noreferrer">Visitar as oficinas ↗</a></div>
   </>;
 }
+function ExhibitionImages({project}:{project:"unapi"|"jarvis"}) {
+  return <details className="gallery-captures"><summary>Ampliar as capturas da exposição</summary>
+    {GALLERY_ARTWORKS.filter(a=>a.project===project).map(a=><figure key={a.id}><a href={a.src} target="_blank" rel="noreferrer" aria-label={`Abrir captura completa: ${a.title}`}><Image src={a.src} alt={a.alt} width={a.imageWidth} height={a.imageHeight} sizes="(max-width:600px) 90vw, 420px" /></a><figcaption>{a.title} · {a.caption}</figcaption></figure>)}
+  </details>;
+}
 function ForestChimes() {
   const [last, setLast] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -63,7 +70,7 @@ export function PlaceExperience({ targetId }: { targetId: string | null }) {
     const keyboard = (event: KeyboardEvent) => {
       if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); requestWorldInteraction(true); }
       if (event.key !== "Tab") return;
-      const items = panel.current?.querySelectorAll<HTMLElement>("button, a, input, select, [tabindex='0']");
+      const items = Array.from(panel.current?.querySelectorAll<HTMLElement>("button, a, input, select, summary, [tabindex='0']") ?? []).filter(item => item.getClientRects().length > 0 && (item.tagName === "SUMMARY" || !item.closest("details:not([open])")));
       if (!items?.length) return;
       const first = items[0], last = items[items.length - 1];
       if (event.shiftKey && (document.activeElement === first || document.activeElement === panel.current)) { event.preventDefault(); last.focus(); }
@@ -77,8 +84,8 @@ export function PlaceExperience({ targetId }: { targetId: string | null }) {
     <header><span className="place-overline">{title[0]}</span><button onClick={() => requestWorldInteraction(true)} aria-label="Fechar e voltar a explorar">Fechar <kbd>Esc</kbd></button></header>
     <h2 id="place-title">{title[1]}</h2>
     {targetId === "WORKSHOP_LIGHT_TABLE" && <LightTable />}
-    {targetId === "UNIVERSITY_NOTEBOOK" && <StudyNotebook />}
-    {targetId === "COMMUNITY_WORKSHOP" && <CommunityWorkshop />}
+    {targetId === "UNIVERSITY_NOTEBOOK" && <><StudyNotebook /><ExhibitionImages project="jarvis" /></>}
+    {targetId === "COMMUNITY_WORKSHOP" && <><CommunityWorkshop /><ExhibitionImages project="unapi" /></>}
     {targetId === "FOREST_CHIMES" && <ForestChimes />}
     {targetId === "DOJO_PRACTICE" && <><p>O Songahm Taekwondo faz parte da vida que quero construir. Este é o espaço reservado ao treino, à repetição e ao movimento.</p><p className="place-caption">Estudo livre de movimento: guarda, elevação do joelho e extensão controlada. Não representa uma forma oficial do Songahm.</p></>}
   </section>;

@@ -198,3 +198,10 @@ input {
   .place-experience[data-place="DOJO_PRACTICE"] p { font-size:14px; }
   .world-presentation:has(.place-experience[data-place="DOJO_PRACTICE"]) .world-interaction-prompt { display:none; }
 }
+
+/* Gallery captures extend existing place panels; no new mandatory 3D targets. */
+.gallery-captures { margin-top:1.25rem; border-top:1px solid #c9c4b3; padding-top:1rem; }
+.gallery-captures summary { cursor:pointer; min-height:44px; font-size:.85rem; }
+.gallery-captures figure { margin:1rem 0 1.25rem; }
+.gallery-captures img { width:100%; height:auto; display:block; border:1px solid #c9c4b3; }
+.gallery-captures figcaption { font-size:.75rem; line-height:1.5; color:#586354; margin-top:.5rem; }

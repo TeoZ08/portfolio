@@ -69,22 +69,22 @@ export function Worktable({ position, width = 3, depth = 1.3, height = 1.28 }: {
   </group>;
 }
 
-export function WorldLettering({ text, subtitle = "", position, width = 2, rotationY = 0, dark = false }: {
-  text: string; subtitle?: string; position: [number, number, number]; width?: number; rotationY?: number; dark?: boolean;
+export function WorldLettering({ text, subtitle = "", position, width = 2, rotationY = 0, dark = false, compact = false }: {
+  text: string; subtitle?: string; position: [number, number, number]; width?: number; rotationY?: number; dark?: boolean; compact?: boolean;
 }) {
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   useEffect(() => {
-    const image = document.createElement("canvas"); image.width = 768; image.height = 256;
+    const image = document.createElement("canvas"); image.width = 768; image.height = compact ? 128 : 256;
     const ctx = image.getContext("2d"); if (!ctx) return;
-    ctx.fillStyle = dark ? P.ink : P.paper; ctx.fillRect(0, 0, 768, 256);
-    ctx.strokeStyle = dark ? "#768775" : "#beb59a"; ctx.lineWidth = 2; ctx.strokeRect(18, 18, 732, 220);
+    ctx.fillStyle = dark ? P.ink : P.paper; ctx.fillRect(0, 0, 768, image.height);
+    ctx.strokeStyle = dark ? "#768775" : "#beb59a"; ctx.lineWidth = 2; ctx.strokeRect(18, compact ? 12 : 18, 732, compact ? 104 : 220);
     ctx.fillStyle = dark ? P.paper : P.ink; ctx.textAlign = "center";
-    ctx.font = "500 68px Georgia, serif"; ctx.fillText(text, 384, subtitle ? 119 : 153, 680);
-    if (subtitle) { ctx.font = "26px system-ui, sans-serif"; ctx.fillText(subtitle, 384, 178, 660); }
+    ctx.font = compact ? "500 36px Georgia, serif" : "500 68px Georgia, serif"; ctx.fillText(text, 384, compact ? 52 : subtitle ? 119 : 153, 680);
+    if (subtitle) { ctx.font = compact ? "20px system-ui, sans-serif" : "26px system-ui, sans-serif"; ctx.fillText(subtitle, 384, compact ? 92 : 178, 660); }
     setCanvas(image);
-  }, [text, subtitle, dark]);
+  }, [text, subtitle, dark, compact]);
   return <mesh position={position} rotation={[0, rotationY, 0]} name="PHYSICAL_PLACE_LETTERING">
-    <planeGeometry args={[width, width / 3]} />
+    <planeGeometry args={[width, width / (compact ? 6 : 3)]} />
     <meshStandardMaterial key={canvas ? "lettered" : "paper"} color={canvas ? "#ffffff" : P.paper} roughness={1}>
       {canvas && <canvasTexture attach="map" args={[canvas]} colorSpace="srgb" />}
     </meshStandardMaterial>
