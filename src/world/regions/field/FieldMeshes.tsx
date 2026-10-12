@@ -5,6 +5,7 @@ import { useFrame } from "@react-three/fiber";
 import { pigment, ROUGHNESS, type WorldFinish } from "../../materials/world-material-shader";
 import { useExperienceState } from "@/systems/experience-state";
 import { makeInstanceBuffers, type FieldInstance, type SurfaceData } from "./field-geometry";
+import { landscapeHaze } from './landscape-haze';
 
 // Declarative buffer attributes are disposed by R3F on unmount. All instance
 // transforms/colors are uploaded once; no per-frame React work or allocations.
@@ -25,7 +26,7 @@ type InstanceMeshRef = {
 };
 
 export function FieldInstances({
-  name, data, instances, castShadow = false, roughness = 1, doubleSided = false, shadowOnly = false, sway = 0, finish,
+  name, data, instances, castShadow = false, roughness = 1, doubleSided = false, shadowOnly = false, sway = 0, finish, atmosphere,
 }: {
   name: string;
   data: SurfaceData;
@@ -36,6 +37,7 @@ export function FieldInstances({
   shadowOnly?: boolean;
   sway?: number;
   finish?: WorldFinish;
+  atmosphere?: {sunset:boolean;lowQuality:boolean};
 }) {
   const meshRef = useRef<InstanceMeshRef>(null);
   const buffers = useMemo(() => makeInstanceBuffers(instances), [instances]);
@@ -56,11 +58,12 @@ export function FieldInstances({
       castShadow={castShadow} receiveShadow>
       <FieldGeometry data={data} />
       <instancedBufferAttribute attach="instanceColor" args={[buffers.colors, 3]} />
-      <meshStandardMaterial roughness={finish?ROUGHNESS[finish]:roughness} metalness={0} side={doubleSided ? 2 : 0}
+      <meshStandardMaterial key={`haze-${atmosphere?.sunset}-${atmosphere?.lowQuality}`} roughness={finish?ROUGHNESS[finish]:roughness} metalness={0} side={doubleSided ? 2 : 0}
         colorWrite={!shadowOnly} depthWrite={!shadowOnly}
-        customProgramCacheKey={() => `field-014-${finish??"foliage"}-${sway}`}
+        customProgramCacheKey={() => `field-016-${finish??"foliage"}-${sway}-${atmosphere?.sunset}-${atmosphere?.lowQuality}`}
         onBeforeCompile={(shader: { uniforms: Record<string, unknown>; vertexShader: string; fragmentShader: string }) => {
           if(finish)pigment(shader,finish,true,.72);
+          if(atmosphere)landscapeHaze(shader,atmosphere.sunset,atmosphere.lowQuality);
           if (!sway) return;
           shader.uniforms.uFieldBreeze = breeze.current;
           // Keep nearby foliage from filling the lens when a path passes a tree.

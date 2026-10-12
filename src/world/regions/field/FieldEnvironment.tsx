@@ -34,7 +34,7 @@ export function FieldEnvironment() {
         shadow-camera-near={1} shadow-camera-far={220}
         shadow-radius={1.25} shadow-bias={-0.0002} shadow-normalBias={0.065} />
       <FieldSky hour={time} />
-      <FieldLandscape />
+      <FieldLandscape sunset={daylight.sunset} lowQuality={lowQuality} />
     </group>
   );
 }

@@ -13,6 +13,7 @@ export const DOJO = {
   terraceWidth: 14.6 / FIELD_SCALE,
   terraceDepth: 8.8 / FIELD_SCALE,
   floor: .513,
+  deckTop: .45,
   terraceTop: .4,
   foundationBottom: -.6,
   stairBottom: -.25,

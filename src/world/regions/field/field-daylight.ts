@@ -1,3 +1,4 @@
+import { SUNSET_HAZE } from './landscape-haze';
 // One art-directed default, shared by sky, fog and the shadow-casting sun.
 export const FIRST_LIGHT_HOUR = 9; // Optional legacy morning.
 export const SUNSET_DEFAULT_HOUR = 17.5;
@@ -15,7 +16,7 @@ export function fieldDaylight(hour: number) {
   if (hour >= 16) return {
     upper: "#536e94", horizon: "#ecaa79", sun: "#ffbc79",
     direction: [-.72, .145, -.67] as const,
-    intensity: 2.85, fill: 1.2, fogNear: 48, fogFar: 205, night: false, sunset: true,
+    intensity: 2.85, fill: 1.2, fogNear: SUNSET_HAZE.near, fogFar: SUNSET_HAZE.far, night: false, sunset: true,
   };
   return {
     upper: "#4c7d9e", horizon: "#e9c99f", sun: "#ffd094",

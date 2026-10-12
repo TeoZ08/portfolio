@@ -27,7 +27,7 @@ export function DojoArchitecture() {
         from both sides, without moving the approved floor or stair heights. */}
     <HouseInstances name="SONGAHM_MASONRY_JOINTS" instances={MASONRY_JOINTS} finish="stone" />
     <Part name="SONGAHM_STONE_COPING" position={[0,.385,0]} size={[D.terraceWidth,.03,D.terraceDepth]} color="#b3af99" finish="stone" radius={.01} />
-    <Part name="SONGAHM_PRACTICE_FLOOR" position={[0,.425,0]} size={[D.terraceWidth-.22,.05,D.terraceDepth-.22]} color={P.woodLight} radius={.025} />
+    <Part name="SONGAHM_PRACTICE_FLOOR" position={[0,D.deckTop-.025,0]} size={[D.terraceWidth-.22,.05,D.terraceDepth-.22]} color={P.woodLight} radius={.025} />
     {D.stairZ.map((z,i)=><Solid key={z} name={`SONGAHM_STAIR_${i}_COLLIDER`} position={[0,(D.stairTops[i]+D.stairBottom)/2,z]} size={[D.stairWidth,D.stairTops[i]-D.stairBottom,1.4]} color={P.stoneLight} finish="stone" />)}
     <HanokModule file="main-house" scale={D.mainScale} position={[0,.445-.50781*D.mainScale,0]} open collision />
     {/* Wings are separate, modestly scaled bodies, not a uniformly doubled village. */}

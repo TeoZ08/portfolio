@@ -7,6 +7,8 @@ import { Mesh, Group, MeshStandardMaterial, BoxGeometry } from "three";
 import { WING_ENVELOPE, WING_MASONRY } from './wing-envelope';
 import { configureWorldMaterial, type WorldFinish } from "../../materials/world-material-shader";
 import { transformedGeometry } from "./hanok-geometry";
+import { groundHanokPillars } from './pillar-grounding';
+import { pillarSupportNative } from './pillar-layout';
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 // Cached GLBs share geometry and materials. Main house is an architectural skin:
@@ -25,6 +27,7 @@ export function HanokModule({ file, position = [0, 0, 0], scale = 1, yaw = 0, op
       const name=original.name.toLowerCase();
       const finish:WorldFinish=name.includes('tile')||name.includes('clay')?'tile':name.includes('stone')?'stone':name.includes('plaster')?'plaster':name.includes('iron')?'metal':name.includes('paper')?'paper':'wood';
       if(file==='plinth')m.color.set('#8b8875');
+      if((file==='main-house'||file==='side-wing')&&name.includes('stone'))m.color.set('#a6a28e');
       if(architectural)configureWorldMaterial(m,finish,detailScale);
       materials.set(original.uuid,m);return m;
     }
@@ -33,25 +36,27 @@ export function HanokModule({ file, position = [0, 0, 0], scale = 1, yaw = 0, op
     }
     gltf.scene.updateMatrixWorld(true);
     const clone = new Group();
+    const grounding=file==='side-wing'||(file==='main-house'&&open);
+    const stem=file==='side-wing'?'hanok-side-wing':'hanok-main-house';
+    const nativeTimber=gltf.scene.getObjectByName(`${stem}_1`) as Mesh;
+    const nativeStone=gltf.scene.getObjectByName(`${stem}_0`) as Mesh;
+    const supported=grounding?groundHanokPillars(
+      transformedGeometry(nativeTimber.geometry,nativeTimber.matrixWorld),
+      transformedGeometry(nativeStone.geometry,nativeStone.matrixWorld),
+      (x,z)=>pillarSupportNative(file,x,z),open):null;
     gltf.scene.traverse(object => {
       const source = object as Mesh;
       if (!source.isMesh) return;
-      // Replace only the wing's stacked stone plates; its roof, doors and
-      // genuine side/rear walls remain intact, including their front-face normals.
-      if(file==='side-wing' && source.name==='hanok-side-wing_0')return;
+      // Retain just the original column feet from the otherwise omitted stone
+      // mesh. Grounded shafts and feet feed both rendering and exact colliders.
+      if(supported&&(source.name===`${stem}_0`||source.name===`${stem}_1`)) {
+        const geometry=source.name===`${stem}_0`?supported.stone:supported.timber;
+        const mesh=new Mesh(geometry,copyMaterials(source));mesh.name=source.name;
+        mesh.userData.ownedGeometry=true;mesh.castShadow=true;mesh.receiveShadow=true;clone.add(mesh);return;
+      }
       if(file === "stepping-stones" && source.name !== "stepping-stone-path_1")return;
       if(open && !["hanok-main-house_1", "hanok-main-house_7"].includes(source.name))return;
-      if(open && source.name === "hanok-main-house_1") {
-        // Remove the native low perimeter sill: it otherwise blocks the original
-        // training floor. Keep tall posts/joinery; no collision-only invisible fix.
-        const geometry=transformedGeometry(source.geometry,source.matrixWorld);
-        const position=geometry.getAttribute("position"),old=geometry.index!;const indices:number[]=[];
-        for(let i=0;i<old.count;i+=3){const a=old.getX(i),b=old.getX(i+1),c=old.getX(i+2);
-          if(Math.max(position.getY(a),position.getY(b),position.getY(c))>.95)indices.push(a,b,c);
-        }
-        geometry.setIndex(indices);geometry.computeBoundingSphere();
-        const mesh=new Mesh(geometry,copyMaterials(source));mesh.name=source.name;mesh.castShadow=true;mesh.receiveShadow=true;clone.add(mesh);
-      } else {
+      {
         const mesh=source.clone();mesh.matrixAutoUpdate=false;mesh.matrix.copy(source.matrixWorld);
         mesh.material=copyMaterials(source);
         mesh.castShadow=true;mesh.receiveShadow=true;clone.add(mesh);
