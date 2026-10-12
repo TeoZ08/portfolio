@@ -18,7 +18,7 @@ test('Rapier capsule climbs and descends all stairs, terrace and tatami without 
  const w=new RAPIER.World({x:0,y:-20,z:0}),s=.72;
  function box(x,y,z,width,height,depth){const fixed=w.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(x*s,y*s,z*s));w.createCollider(RAPIER.ColliderDesc.cuboid(width*s/2,height*s/2,depth*s/2),fixed);}
  box(0,-.3,0,40,.6,40);box(0,(D.terraceTop+D.foundationBottom)/2,0,D.terraceWidth,D.terraceTop-D.foundationBottom,D.terraceDepth);
- D.stairZ.forEach((z,i)=>box(0,(D.stairTops[i]+D.stairBottom)/2,z,6.8-i*.35,D.stairTops[i]-D.stairBottom,1.4));
+ D.stairZ.forEach((z,i)=>box(0,(D.stairTops[i]+D.stairBottom)/2,z,D.stairWidth,D.stairTops[i]-D.stairBottom,1.4));
  box(0,(D.floor+D.terraceTop)/2,D.tatamiZ,D.tatamiWidth,D.floor-D.terraceTop,D.tatamiDepth);
  const body=w.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0,.86,8));const c=w.createCollider(RAPIER.ColliderDesc.capsule(.5,.35),body);
  const cc=w.createCharacterController(.01);cc.enableAutostep(.42,.25,false);cc.enableSnapToGround(.2);w.step();let min=10;

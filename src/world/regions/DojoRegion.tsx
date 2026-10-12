@@ -24,6 +24,13 @@ export function DojoRegion() {
       <HouseInstances name="DOJO_TATAMI_MATS" instances={MATS} finish="fabric" />
       <Solid name="DOJO_BACK_WALL" position={[0, 1.55, -3.87]} size={[11, 2.8, .24]} color={P.plaster} finish="plaster" />
       <Part name="DOJO_TIMBER_WAINSCOT" position={[0, .72, -3.73]} size={[10.9, 1.13, .055]} color={P.songahmTimber} />
+      {/* Rear side returns define the practice room; the front and the broad
+          lateral circulation stay open. These are deliberate half-height walls. */}
+      {[-1,1].map(side=><group key={side} name="DOJO_OPEN_ROOM_SIDE_RETURN">
+        <Solid name="DOJO_REAR_SIDE_WALL" position={[side*5.65,1.12,-2.35]} size={[.22,1.94,3.04]} color={P.plaster} finish="plaster" />
+        <Part name="DOJO_RETURN_TIMBER_CAP" position={[side*5.65,2.12,-2.35]} size={[.32,.12,3.1]} color={P.songahmTimber} />
+        <Part name="DOJO_RETURN_END_POST" position={[side*5.65,1.2,-.85]} size={[.2,2.1,.2]} color={P.songahmTimber} />
+      </group>)}
       {[-4.8, -2.4, 0, 2.4, 4.8].map(x => <Part key={x} name="DOJO_WALL_TIMBER_JOINERY" position={[x, 1.6, -3.69]} size={[.13, 2.95, .13]} color={P.songahmTimber} castShadow />)}
       <Bench position={[-3.8, .13, 3.03]} width={2.8} back={false} />
       <group name="DOBOK_FOLDED_ON_BENCH" position={[-3.8, .98, 3.03]}>

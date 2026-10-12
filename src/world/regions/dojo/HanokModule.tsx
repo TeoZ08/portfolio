@@ -3,7 +3,8 @@
 import { useLoader } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import { RigidBody, TrimeshCollider } from "@react-three/rapier";
-import { Mesh, Group, MeshStandardMaterial } from "three";
+import { Mesh, Group, MeshStandardMaterial, BoxGeometry } from "three";
+import { WING_ENVELOPE, WING_MASONRY } from './wing-envelope';
 import { configureWorldMaterial, type WorldFinish } from "../../materials/world-material-shader";
 import { transformedGeometry } from "./hanok-geometry";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -35,6 +36,9 @@ export function HanokModule({ file, position = [0, 0, 0], scale = 1, yaw = 0, op
     gltf.scene.traverse(object => {
       const source = object as Mesh;
       if (!source.isMesh) return;
+      // Replace only the wing's stacked stone plates; its roof, doors and
+      // genuine side/rear walls remain intact, including their front-face normals.
+      if(file==='side-wing' && source.name==='hanok-side-wing_0')return;
       if(file === "stepping-stones" && source.name !== "stepping-stone-path_1")return;
       if(open && !["hanok-main-house_1", "hanok-main-house_7"].includes(source.name))return;
       if(open && source.name === "hanok-main-house_1") {
@@ -53,12 +57,21 @@ export function HanokModule({ file, position = [0, 0, 0], scale = 1, yaw = 0, op
         mesh.castShadow=true;mesh.receiveShadow=true;clone.add(mesh);
       }
     });
+    if(file==='side-wing')for(const part of [...WING_ENVELOPE,...WING_MASONRY]) {
+      const geometry=new BoxGeometry(...part.size as [number,number,number]);
+      const material=new MeshStandardMaterial({color:part.color});
+      configureWorldMaterial(material,part.finish as WorldFinish,detailScale);
+      const mesh=new Mesh(geometry,material);mesh.name=part.name;
+      mesh.position.set(...part.position as [number,number,number]);
+      mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.ownedGeometry=true;
+      clone.add(mesh);
+    }
     return clone;
   }, [gltf.scene, open, file, detailScale]);
   useEffect(()=>()=>{
     const materials=new Set<MeshStandardMaterial>();
     model.traverse(o=>{const m=o as Mesh;if(!m.isMesh)return;
-      if(open&&m.name==='hanok-main-house_1')m.geometry.dispose();
+      if(m.userData.ownedGeometry||(open&&m.name==='hanok-main-house_1'))m.geometry.dispose();
       (Array.isArray(m.material)?m.material:[m.material]).forEach(mat=>materials.add(mat as MeshStandardMaterial));
     });materials.forEach(m=>m.dispose());
   },[model,open]);

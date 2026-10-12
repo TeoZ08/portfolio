@@ -5,25 +5,29 @@ import { PLAN } from './masterplan-layout';
 import { FIELD_SCALE as S } from './world-scale';
 import { GALLERY_ARTWORKS } from '@/content/gallery';
 import { FramedProjectArtwork } from './gallery/FramedProjectArtwork';
+import { GALLERY_WALLS, GALLERY_ENVELOPE as G } from './workshop/gallery-layout';
 import type { FieldInstance } from './field/field-geometry';
 
 // Gallery-local physical units. World placement stays exactly on the approved plan.
-const slats:FieldInstance[]=Array.from({length:18},(_,i)=>({position:[(-6.5+i*.51)/S,3.83/S,3.25/S],scale:[.08/S,.14/S,2.25/S],color:'#a78764'}));
+
 const floorSeams:FieldInstance[]=Array.from({length:6},(_,i)=>({position:[0,.135,(i*1.5-3.75)/S],scale:[13.6/S,.009,.018/S],color:'#c6c2b4'}));
 export function WorkshopRegion() {
   return <Place name="ATELIER_GALLERY_V1" {...PLAN.gallery}>
     <Solid name="GALLERY_MINERAL_PLINTH" position={[0,-.095,0]} size={[14/S,.45,9/S]} color="#c9c8b9" finish="stone" />
     <HouseInstances name="GALLERY_FLOOR_JOINTS" instances={floorSeams} finish="stone" />
-    <Solid name="GALLERY_EXHIBITION_WALL" position={[0,1.87/S,-4.5/S]} size={[14/S,3.55/S,.23/S]} color="#ece9de" finish="plaster" />
-    {[-1,1].map(side=><Solid key={side} name="GALLERY_RETURN_WALL" position={[side*7/S,1.75/S,-1.8/S]} size={[.22/S,3.3/S,5.4/S]} color={side<0?'#e5e2d6':'#d4dedb'} finish="plaster" />)}
-    <Part name="GALLERY_REAR_CANOPY" position={[0,3.85/S,-4/S]} size={[14.35/S,.18/S,1.35/S]} color="#8c6d50" castShadow />
-    {/* Offset timber porch and a single mineral blade give an asymmetric front. */}
-    <Solid name="GALLERY_ENTRY_BLADE" position={[-6.45/S,1.94/S,3.6/S]} size={[1.05/S,3.7/S,.3/S]} color="#eeebe1" finish="plaster" />
-    <Part name="GALLERY_OFFSET_FASCIA" position={[-2.15/S,3.9/S,4.23/S]} size={[9.6/S,.28/S,.36/S]} color="#84664a" castShadow />
-    <Part name="GALLERY_PORCH_HEADER" position={[-2.15/S,3.9/S,2.12/S]} size={[9.6/S,.2/S,.22/S]} color="#a18260" castShadow />
-    <HouseInstances name="GALLERY_OPEN_TIMBER_LOUVRES" instances={slats} />
-    {[[-6.5,3.9],[2.4,4.0]].map(([x,z],i)=><Solid key={i} name="GALLERY_PORCH_POST" position={[x/S,1.92/S,z/S]} size={[.19/S,3.65/S,.19/S]} color="#9f7e5b" />)}
-    <WorldLettering compact text="Ateliê / Galeria" subtitle="Obras e experimentos" position={[-2.25/S,3.91/S,4.43/S]} width={2.2/S} />
+    {GALLERY_WALLS.map(w=><Solid key={w.name} name={w.name} position={w.position.map(v=>v/S) as [number,number,number]} size={w.size.map(v=>v/S) as [number,number,number]} color="#ece9de" finish="plaster" />)}
+    {/* One high shelter, supported by real walls and entry piers. No exposed
+        pergola or low transverse beam between the player and the artworks. */}
+    <Part name="GALLERY_HIGH_SHELTER" position={[0,(G.roofBottom+.09)/S,0]} size={[14.5/S,.18/S,9.5/S]} color="#748277" finish="metal" castShadow />
+    <Part name="GALLERY_CEILING" position={[0,(G.roofBottom-.03)/S,0]} size={[14.1/S,.045/S,9.1/S]} color="#e0dccd" finish="plaster" />
+    <Part name="GALLERY_REAR_TOP_PLATE" position={[0,4.55/S,-4.5/S]} size={[14.2/S,.2/S,.3/S]} color="#92785b" />
+    {[-1,1].map(side=><Part key={side} name="GALLERY_SIDE_TOP_PLATE" position={[side*7/S,4.55/S,0]} size={[.3/S,.2/S,9.15/S]} color="#92785b" />)}
+    <pointLight name="GALLERY_LOCAL_EXHIBITION_FILL" position={[0,3.6/S,-1.8/S]} intensity={18} distance={13} decay={2} color="#ffefd2" />
+    <Part name="GALLERY_ENTRY_HIGH_FASCIA" position={[0,4.58/S,4.65/S]} size={[14.5/S,.2/S,.18/S]} color="#82664b" castShadow />
+    {[-1,1].map(side=><Solid key={side} name="GALLERY_ENTRY_PIER" position={[side*3.72/S,2.375/S,4.5/S]} size={[.24/S,4.55/S,.27/S]} color="#92785b" />)}
+    <WorldLettering compact text="Ateliê / Galeria" subtitle="Obras e experimentos" position={[-5.35/S,2.1/S,4.65/S]} width={2.8/S} />
+    {/* A wide, low stone threshold links the existing route to the gallery floor. */}
+    <Solid name="GALLERY_ENTRY_THRESHOLD" position={[0,-.005/S,4.88/S]} size={[7.2/S,.11/S,.85/S]} color="#b6b5a6" finish="stone" />
     {GALLERY_ARTWORKS.map(a=><FramedProjectArtwork key={a.id} artwork={a} />)}
     {/* One process desk; the wings stay free of identical furniture and colliders. */}
     <Worktable position={[0,.13,-3.25/S]} width={3/S} depth={.8/S} height={1/S} />

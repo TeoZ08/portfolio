@@ -1,7 +1,8 @@
 "use client";
 
-import { PLAN } from "../masterplan-layout";
-import { Place, Part, WorldLettering, PLACE_PALETTE as P } from "./PlaceObjects";
+import { Place, Part, Solid, WorldLettering, PLACE_PALETTE as P } from "./PlaceObjects";
+import {PLAZA_SIGN as SIGN} from './wayfinding-layout';
+import {DirectionalBoard} from './DirectionalBoard';
 
 export function WorldPaths() {
   return <group name="WORLD_CONNECTING_PATHS">
@@ -9,12 +10,10 @@ export function WorldPaths() {
       <Part name="MIRANTE_SIGNPOST" position={[0,.9,0]} size={[.15,1.8,.18]} color={P.woodDark} />
       <WorldLettering text="Mirante →" position={[0,1.65,.12]} width={2.1} />
     </Place>
-    <Place name="FIELD_HANDMADE_WAYFINDING" x={PLAN.plaza[0]-3.5} z={PLAN.plaza[1]+5} yaw={.25}>
-      <Part name="SIGNPOST" position={[0, 1.02, 0]} size={[.18, 2.05, .2]} color={P.woodDark} castShadow />
-      {[["← Casa", 1.75, -.06], ["Ateliê →", 1.22, .07], ["↑ Songahm", .69, -.04]].map(([text,y,angle])=><group key={String(text)} rotation={[0,0,Number(angle)]}>
-        <Part name="WAYFINDING_TIMBER" position={[0,Number(y),.01]} size={[2.27,.47,.15]} color={P.woodLight} radius={.045} />
-        <WorldLettering text={String(text)} position={[0,Number(y),.092]} width={1.98} />
-      </group>)}
+    <Place name="FIELD_HANDMADE_WAYFINDING" {...SIGN}>
+      <Solid name="WAYFINDING_SINGLE_BOARD" position={[0,SIGN.centerY,0]} size={[SIGN.width+.14,SIGN.height+.14,.2]} color={P.woodLight} />
+      {[-1,1].map(side=><Solid key={side} name="WAYFINDING_OUTSIDE_SUPPORT" position={[side*(SIGN.width/2+.19),1.7,0]} size={[.17,3.4,.18]} color={P.woodDark} />)}
+      <DirectionalBoard /><DirectionalBoard reverse />
     </Place>
   </group>;
 }
