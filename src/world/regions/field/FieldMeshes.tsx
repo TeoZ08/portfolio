@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
+import { pigment, ROUGHNESS, type WorldFinish } from "../../materials/world-material-shader";
 import { useExperienceState } from "@/systems/experience-state";
 import { makeInstanceBuffers, type FieldInstance, type SurfaceData } from "./field-geometry";
 
@@ -24,7 +25,7 @@ type InstanceMeshRef = {
 };
 
 export function FieldInstances({
-  name, data, instances, castShadow = false, roughness = 1, doubleSided = false, shadowOnly = false, sway = 0,
+  name, data, instances, castShadow = false, roughness = 1, doubleSided = false, shadowOnly = false, sway = 0, finish,
 }: {
   name: string;
   data: SurfaceData;
@@ -34,6 +35,7 @@ export function FieldInstances({
   doubleSided?: boolean;
   shadowOnly?: boolean;
   sway?: number;
+  finish?: WorldFinish;
 }) {
   const meshRef = useRef<InstanceMeshRef>(null);
   const buffers = useMemo(() => makeInstanceBuffers(instances), [instances]);
@@ -54,10 +56,11 @@ export function FieldInstances({
       castShadow={castShadow} receiveShadow>
       <FieldGeometry data={data} />
       <instancedBufferAttribute attach="instanceColor" args={[buffers.colors, 3]} />
-      <meshStandardMaterial roughness={roughness} metalness={0} side={doubleSided ? 2 : 0}
+      <meshStandardMaterial roughness={finish?ROUGHNESS[finish]:roughness} metalness={0} side={doubleSided ? 2 : 0}
         colorWrite={!shadowOnly} depthWrite={!shadowOnly}
-        customProgramCacheKey={() => `field-foliage-${sway}`}
+        customProgramCacheKey={() => `field-014-${finish??"foliage"}-${sway}`}
         onBeforeCompile={(shader: { uniforms: Record<string, unknown>; vertexShader: string; fragmentShader: string }) => {
+          if(finish)pigment(shader,finish,true,.72);
           if (!sway) return;
           shader.uniforms.uFieldBreeze = breeze.current;
           // Keep nearby foliage from filling the lens when a path passes a tree.

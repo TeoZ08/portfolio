@@ -37,8 +37,8 @@ export function FieldGarden() {
     {[-1, 1].map(side => <RigidBody key={side} type="fixed" colliders={false} name="GARDEN_LOW_WALL_COLLIDER">
       <CuboidCollider args={[2.4, .37, .32]} position={[side * 5.6, .37, 8.9]} />
     </RigidBody>)}
-    <FieldInstances name="GARDEN_DRY_STONE_BOUNDARY" data={STONE} instances={masonry} castShadow />
+    <FieldInstances name="GARDEN_DRY_STONE_BOUNDARY" finish="stone" data={STONE} instances={masonry} castShadow />
     <FieldInstances name="GARDEN_LAYERED_SAGE_PLANTING" data={STONE} instances={planting} castShadow />
-    <FieldInstances name="GARDEN_IRREGULAR_ENTRY_STONES" data={STONE} instances={paving} />
+    <FieldInstances name="GARDEN_IRREGULAR_ENTRY_STONES" finish="stone" data={STONE} instances={paving} />
   </group>;
 }

@@ -57,6 +57,7 @@ test('curated clusters leave routes, house and destination envelopes clear',()=>
  let count=0;
  for(const items of Object.values(REGIONAL_PLANTING))for(const p of items){const [x,y,z]=p.position;
  assert.equal(routeClearance(x,z,1.8),false);assert.equal(insideHouse(x,z,2),false);assert.equal(insidePlace(x,z,1.5),false);
- assert.ok(Math.abs(y-(surfaceHeight(x,z)-.02))<1e-6);count++;
+ // Native CC0 base is -.05. Test contact, not the old arbitrary origin.
+ assert.ok(y-.05*p.scale[1]<=surfaceHeight(x,z)-.024);assert.ok(surfaceHeight(x,z)-(y-.05*p.scale[1])<.3);count++;
  }assert.ok(count>20&&count<126);
 });

@@ -3,6 +3,7 @@ import { insidePlace } from '../places/place-layout';
 import { routeClearance } from '../masterplan-layout';
 import { makeSurface, type FieldInstance } from './field-geometry';
 import { linearColor } from './field-palette';
+import { plantingAllowed } from './planting-clearance';
 
 // One continuous height field outside the physical 55u boundary. No isolated
 // mountain props, invisible new ground colliders or circular ridge silhouettes.
@@ -20,10 +21,36 @@ export function landscapeHeight(x:number,z:number) {
   return boundary*(1-blend)+blend*(waves+hills);
 
 }
+export function landscapeCoordinates(outer=285,step=5) {
+  const coords:number[]=[];
+  for(let v=-outer;v<=outer;v+=Math.abs(v)>=75?step:1.25)coords.push(v);
+  return coords;
+}
+const LANDSCAPE_COORDS=landscapeCoordinates();
+function cellIndex(coords:readonly number[],value:number) {
+  let lo=0,hi=coords.length-1;
+  while(hi-lo>1){const mid=(lo+hi)>>1;if(coords[mid]<=value)lo=mid;else hi=mid;}
+  return Math.min(coords.length-2,lo);
+}
+// Same grid, triangle diagonal and Float32 vertex heights as the rendered mesh.
+// Binary cell lookup avoids an O(triangle count) scan per plant.
+export function landscapeSurfaceHeight(x:number,z:number) {
+  if(Math.max(Math.abs(x),Math.abs(z))<=55)return surfaceHeight(x,z);
+  const ix=cellIndex(LANDSCAPE_COORDS,x),iz=cellIndex(LANDSCAPE_COORDS,z);
+  const x0=LANDSCAPE_COORDS[ix],x1=LANDSCAPE_COORDS[ix+1],z0=LANDSCAPE_COORDS[iz],z1=LANDSCAPE_COORDS[iz+1];
+  const u=(x-x0)/(x1-x0),v=(z-z0)/(z1-z0);
+  const a=Math.fround(landscapeHeight(x0,z0)),b=Math.fround(landscapeHeight(x1,z0)),c=Math.fround(landscapeHeight(x0,z1)),d=Math.fround(landscapeHeight(x1,z1));
+  return u+v<=1?a+u*(b-a)+v*(c-a):d+(1-v)*(b-d)+(1-u)*(c-d);
+}
+export function landscapeSlope(x:number,z:number) {
+  const dx=(landscapeSurfaceHeight(x+.6,z)-landscapeSurfaceHeight(x-.6,z))/1.2;
+  const dz=(landscapeSurfaceHeight(x,z+.6)-landscapeSurfaceHeight(x,z-.6))/1.2;
+  return Math.hypot(dx,dz);
+}
 export function makeLandscape(inner:number,outer:number,step:number) {
   // Match the physical mesh's 1.25u tessellation at its four edges. The
   // sparse distant grid otherwise leaves hairline gaps at the height join.
-  const coords:number[]=[];for(let v=-outer;v<=outer;v+=Math.abs(v)>=75?step:1.25)coords.push(v);
+  const coords=landscapeCoordinates(outer,step);
   const n=coords.length-1,p:number[]=[],ids:number[]=[],c:number[]=[];
   const near=linearColor('#65764f'),far=linearColor('#82998c');
   for(let j=0;j<=n;j++)for(let i=0;i<=n;i++){
@@ -44,6 +71,15 @@ for(const [cx,cz,rx,rz] of WOODLAND_BEDS)for(let i=0;i<34;i++){
   const angle=random()*Math.PI*2,radius=Math.sqrt(random());
   const x=cx+Math.cos(angle)*radius*rx,z=cz+Math.sin(angle)*radius*rz,edge=Math.max(Math.abs(x),Math.abs(z));
   if(edge<43||routeClearance(x,z,2.8)||insideHouse(x,z,3)||insidePlace(x,z,3))continue;
-  const y=edge>55?landscapeHeight(x,z):surfaceHeight(x,z),s=(edge<65?1.0:1.25)+random()*(edge<65?1.0:1.6);
-  LANDSCAPE_TREES.push({position:[x,y-.09,z],scale:[s,s*(.85+random()*.35),s],rotation:[0,random()*6.28,0],color:['#647950','#71825a','#7e8c64','#536e57'][i%4]});
+  const y=landscapeSurfaceHeight(x,z),s=(edge<65?1.0:1.25)+random()*(edge<65?1.0:1.6);
+  if(!plantingAllowed(x,z,.14*s,1.22*s)||landscapeSlope(x,z)>.48)continue;
+  if(LANDSCAPE_TREES.some(t=>Math.hypot(x-t.position[0],z-t.position[2])<1.25*(s+t.scale[0])))continue;
+  const height=s*(.85+random()*.35),yaw=random()*6.28,c=Math.cos(yaw),sn=Math.sin(yaw);
+  // The trunk has a square .2u base. Anchor all four rotated corners on the
+  // visible triangles, so a downhill edge cannot hang above the slope.
+  const root=Math.min(y,...[-1,1].flatMap(a=>[-1,1].map(b=>{
+    const dx=a*.1*s,dz=b*.1*s;
+    return landscapeSurfaceHeight(x+dx*c+dz*sn,z-dx*sn+dz*c);
+  })))-.025;
+  LANDSCAPE_TREES.push({position:[x,root,z],scale:[s,height,s],rotation:[0,yaw,0],color:['#647950','#71825a','#7e8c64','#536e57'][i%4]});
 }

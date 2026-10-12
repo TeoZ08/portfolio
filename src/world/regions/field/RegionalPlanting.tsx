@@ -2,6 +2,7 @@
 import { useLoader } from "@react-three/fiber";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { InstancedMesh, Mesh, MeshStandardMaterial } from "three";
+import { configureWorldMaterial } from "@/world/materials/world-material-shader";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { type FieldInstance, makeInstanceBuffers } from "./field-geometry";
 import { REGIONAL_PLANTING as CLUSTERS } from "./regional-planting-layout";
@@ -11,8 +12,12 @@ function Instances({file,items,color}:{file:string;items:readonly FieldInstance[
   const buffers=useMemo(()=>makeInstanceBuffers(items),[items]);
   const parts=useMemo(()=>{
     gltf.scene.updateMatrixWorld(true);const meshes:Mesh[]=[];gltf.scene.traverse(o=>{if((o as Mesh).isMesh)meshes.push(o as Mesh);});
-    return meshes.map(m=>({geometry:m.geometry.clone().applyMatrix4(m.matrixWorld),material:new MeshStandardMaterial({color,roughness:1})}));
-  },[gltf.scene,color]);
+    return meshes.map(m=>{
+      const material=new MeshStandardMaterial({color,roughness:1});
+      if(file.startsWith("rock"))configureWorldMaterial(material,"stone",.72);
+      return {geometry:m.geometry.clone().applyMatrix4(m.matrixWorld),material};
+    });
+  },[gltf.scene,color,file]);
   useEffect(()=>()=>parts.forEach(p=>{p.geometry.dispose();p.material.dispose();}),[parts]);
   return <group name={`REGIONAL_${file}`}>{parts.map((p,i)=><PrimitiveInstances key={i} part={p} count={items.length} matrices={buffers.matrices} />)}</group>;
 }

@@ -4,6 +4,7 @@ import { useLoader } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import { RigidBody, TrimeshCollider } from "@react-three/rapier";
 import { Mesh, Group, MeshStandardMaterial } from "three";
+import { configureWorldMaterial, type WorldFinish } from "../../materials/world-material-shader";
 import { transformedGeometry } from "./hanok-geometry";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
@@ -13,7 +14,22 @@ export function HanokModule({ file, position = [0, 0, 0], scale = 1, yaw = 0, op
   file: string; position?: [number, number, number]; scale?: number | [number, number, number]; yaw?: number; open?: boolean; collision?: boolean;
 }) {
   const gltf = useLoader(GLTFLoader, `/assets/songahm/${file}.glb`);
+  const detailScale=typeof scale==='number'?scale*.72:1;
   const model = useMemo(() => {
+    const materials=new Map<string,MeshStandardMaterial>();
+    const architectural=['main-house','side-wing','plinth','stepping-stones','basin'].includes(file);
+    function materialFor(original:MeshStandardMaterial) {
+      if(materials.has(original.uuid))return materials.get(original.uuid)!;
+      const m=original.clone();
+      const name=original.name.toLowerCase();
+      const finish:WorldFinish=name.includes('tile')||name.includes('clay')?'tile':name.includes('stone')?'stone':name.includes('plaster')?'plaster':name.includes('iron')?'metal':name.includes('paper')?'paper':'wood';
+      if(file==='plinth')m.color.set('#8b8875');
+      if(architectural)configureWorldMaterial(m,finish,detailScale);
+      materials.set(original.uuid,m);return m;
+    }
+    function copyMaterials(source:Mesh) {
+      return Array.isArray(source.material)?source.material.map(m=>materialFor(m as MeshStandardMaterial)):materialFor(source.material as MeshStandardMaterial);
+    }
     gltf.scene.updateMatrixWorld(true);
     const clone = new Group();
     gltf.scene.traverse(object => {
@@ -30,19 +46,22 @@ export function HanokModule({ file, position = [0, 0, 0], scale = 1, yaw = 0, op
           if(Math.max(position.getY(a),position.getY(b),position.getY(c))>.95)indices.push(a,b,c);
         }
         geometry.setIndex(indices);geometry.computeBoundingSphere();
-        const mesh=new Mesh(geometry,source.material);mesh.name=source.name;mesh.castShadow=true;mesh.receiveShadow=true;clone.add(mesh);
+        const mesh=new Mesh(geometry,copyMaterials(source));mesh.name=source.name;mesh.castShadow=true;mesh.receiveShadow=true;clone.add(mesh);
       } else {
         const mesh=source.clone();mesh.matrixAutoUpdate=false;mesh.matrix.copy(source.matrixWorld);
-        if(file==='plinth'){
-          const materials=Array.isArray(source.material)?source.material:[source.material];
-          mesh.material=materials.map(original=>{const m=original.clone() as MeshStandardMaterial;m.color.set('#8b8875');m.roughness=1;return m;});
-        }
+        mesh.material=copyMaterials(source);
         mesh.castShadow=true;mesh.receiveShadow=true;clone.add(mesh);
       }
     });
     return clone;
-  }, [gltf.scene, open, file]);
-  useEffect(()=>()=>{if(open||file==="plinth")model.traverse(o=>{const m=o as Mesh;if(m.isMesh&&m.name==="hanok-main-house_1")m.geometry.dispose();if(m.isMesh&&file==="plinth")(Array.isArray(m.material)?m.material:[m.material]).forEach(material=>material.dispose());});},[model,open,file]);
+  }, [gltf.scene, open, file, detailScale]);
+  useEffect(()=>()=>{
+    const materials=new Set<MeshStandardMaterial>();
+    model.traverse(o=>{const m=o as Mesh;if(!m.isMesh)return;
+      if(open&&m.name==='hanok-main-house_1')m.geometry.dispose();
+      (Array.isArray(m.material)?m.material:[m.material]).forEach(mat=>materials.add(mat as MeshStandardMaterial));
+    });materials.forEach(m=>m.dispose());
+  },[model,open]);
   const shapes = useMemo(() => {
     if(!collision)return [];
     model.updateMatrixWorld(true);

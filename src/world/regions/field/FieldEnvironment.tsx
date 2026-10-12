@@ -32,7 +32,7 @@ export function FieldEnvironment() {
         shadow-mapSize={lowQuality ? [1024, 1024] : [2048, 2048]} shadow-camera-left={-48} shadow-camera-right={48}
         shadow-camera-top={45} shadow-camera-bottom={-45}
         shadow-camera-near={1} shadow-camera-far={220}
-        shadow-radius={3} shadow-bias={-0.0002} shadow-normalBias={0.065} />
+        shadow-radius={1.25} shadow-bias={-0.0002} shadow-normalBias={0.065} />
       <FieldSky hour={time} />
       <FieldLandscape />
     </group>

@@ -3,6 +3,7 @@
 import { BallCollider, RigidBody } from "@react-three/rapier";
 import { FieldInstances } from "./FieldMeshes";
 import { makeLeafSurface, makeSurface, organicEllipsoid, type FieldInstance } from "./field-geometry";
+import { plantingAllowed } from './planting-clearance';
 import { insideHouse, pathDistance, seededRandom, surfaceHeight } from "./field-layout";
 import { FIELD_PALETTE as P } from "./field-palette";
 import { authorPoint, routeClearance } from "../masterplan-layout";
@@ -69,6 +70,7 @@ function composeVegetation() {
       // Fade the bed into the meadow instead of drawing a hard elliptical edge.
       if (random() > Math.min(1, (1 - radius) * 3.5)) continue;
       const scale = 0.4 + random() * 0.5;
+      if(!plantingAllowed(x,z,.1*scale,.5*scale))continue;
       const y = surfaceHeight(x, z);
       grass.push({ position: [x, y - 0.015, z], scale: [scale, scale, scale],
         rotation: [0, random() * 6.28, 0], color: grassColors[Math.floor(random() * 4)] });
@@ -120,7 +122,7 @@ export function FieldVegetation() {
       <FieldInstances name="FIELD_LOW_SHRUBS" data={SHRUB} instances={VEGETATION.shrubs} castShadow />
       <FieldInstances name="FIELD_SHRUB_LEAVES" data={LEAF} instances={VEGETATION.leaves} doubleSided sway={.08} />
       <FieldInstances name="FIELD_MEADOW_FLOWERS" data={FLOWER} instances={VEGETATION.flowers} doubleSided />
-      <FieldInstances name="FIELD_COMPOSITION_STONES" data={ROCK} instances={VEGETATION.rocks} castShadow />
+      <FieldInstances name="FIELD_COMPOSITION_STONES" finish="stone" data={ROCK} instances={VEGETATION.rocks} castShadow />
       <RigidBody type="fixed" colliders={false} name="FIELD_LARGE_STONE_COLLIDERS">
         {ROCK_ANCHORS.map(([x, z, size]) => (
           <BallCollider key={`${x}:${z}`} args={[size]} position={[x, surfaceHeight(x, z) + size * 0.3, z]} />

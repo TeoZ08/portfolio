@@ -3,7 +3,8 @@
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useExperienceState } from "@/systems/experience-state";
 import { FieldGeometry, FieldInstances } from "./FieldMeshes";
-import { FieldMaterial } from "./FieldMaterial";
+import { WorldMaterial } from "../../materials/WorldMaterial";
+import type { WorldFinish } from "../../materials/world-material-shader";
 import { makeSurface, organicEllipsoid, type Point3 } from "./field-geometry";
 import { makeHouseDetails, makeRoofTile, ROOF_PITCH, ROOF_SLOPE_LENGTH } from "./field-house-details";
 import { HOUSE_YAW, surfaceHeight, HOUSE_CENTER } from "./field-layout";
@@ -16,12 +17,12 @@ const PLINTH_STONE = organicEllipsoid(10, 6, 0.075);
 const GABLE = makeSurface([0, 5.8, -6, 0, 5.8, 6, 0, 8.8, 0], [0, 1, 2]);
 const DOOR_MARKER_POSITION: Point3 = [0,.86/FIELD_SCALE,7.75];
 
-function Timber({ position, size, color = P.wood }: {
-  position: Point3; size: Point3; color?: string;
+function Timber({ position, size, color = P.wood, finish = "wood" }: {
+  position: Point3; size: Point3; color?: string; finish?: WorldFinish;
 }) {
   return <mesh position={position} castShadow receiveShadow>
     <boxGeometry args={size} />
-    <meshStandardMaterial color={color} roughness={0.93} />
+    <WorldMaterial color={color} finish={finish} detailScale={.72} />
   </mesh>;
 }
 
@@ -38,7 +39,7 @@ function Window({ position, rotationY = 0, warm = false }: {
       </mesh>
       <Timber position={[0, 0, 0.15]} size={[0.075, 1.72, 0.11]} />
       <Timber position={[0, -0.17, 0.15]} size={[1.78, 0.075, 0.11]} />
-      <Timber position={[0, -1.06, 0.19]} size={[2.3, 0.18, 0.43]} color={P.stoneLight} />
+      <Timber position={[0, -1.06, 0.19]} size={[2.3, 0.18, 0.43]} color={P.stoneLight} finish="stone" />
       {[-1, 1].map((side) => <group key={side} position={[side * 1.35, 0, 0.13]} rotation={[0, side * -0.12, 0]}>
         <Timber position={[0, 0, 0]} size={[0.52, 1.86, 0.1]} color={P.shutter} />
         <Timber position={[0, -0.53, 0.075]} size={[0.49, 0.08, 0.07]} color={P.wood} />
@@ -53,7 +54,7 @@ function EntranceDetails() {
     <group name="HOUSE_WOVEN_WELCOME_MAT" position={[0, 0.105, 6.94]}>
       <mesh receiveShadow>
         <boxGeometry args={[2.12, 0.035, 0.72]} />
-        <meshStandardMaterial color={P.pathEdge} roughness={1} />
+        <WorldMaterial color={P.pathEdge} finish="fabric" detailScale={.72} />
       </mesh>
       {[-0.72, -0.36, 0, 0.36, 0.72].map(x => <mesh key={x} position={[x, 0.022, 0]}>
         <boxGeometry args={[0.055, 0.012, 0.62]} />
@@ -61,13 +62,13 @@ function EntranceDetails() {
       </mesh>)}
       {[-1, 1].flatMap(side => [-0.27, -0.09, 0.09, 0.27].map(z => <mesh key={`${side}:${z}`} position={[side * 1.11, 0, z]}>
         <boxGeometry args={[0.16, 0.018, 0.025]} />
-        <meshStandardMaterial color={P.pathEdge} roughness={1} />
+        <WorldMaterial color={P.pathEdge} finish="fabric" detailScale={.72} />
       </mesh>))}
     </group>
     <group name="HOUSE_CLAY_PORCH_PLANTER" position={[2.35, 0, 6.73]}>
       <mesh position={[0, 0.33, 0]} castShadow receiveShadow>
         <cylinderGeometry args={[0.39, 0.31, 0.66, 12]} />
-        <meshStandardMaterial color={P.roofLight} roughness={0.94} />
+        <WorldMaterial color={P.roofLight} finish="tile" detailScale={.72} />
       </mesh>
       <mesh position={[0, 0.67, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[0.36, 16]} />
@@ -111,32 +112,32 @@ export function FieldHouse() {
       </RigidBody>
       <mesh name="HOUSE_LIME_PLASTER" position={[0, 2.95, 0]} castShadow receiveShadow>
         <boxGeometry args={[16, 5.8, 12]} />
-        <FieldMaterial color={P.plaster} />
+        <WorldMaterial color={P.plaster} finish="plaster" detailScale={.72} />
       </mesh>
       {[-1, 1].map((side) => <group key={side}>
         <mesh position={[side * 8, 0, 0]} castShadow receiveShadow>
           <FieldGeometry data={GABLE} />
-          <FieldMaterial color={P.plasterShade} side={2} />
+          <WorldMaterial color={P.plasterShade} finish="plaster" detailScale={.72} side={2} />
         </mesh>
         <mesh position={[0, 7.3, side * 3.35]} rotation={[side * ROOF_PITCH, 0, 0]} castShadow receiveShadow>
           <boxGeometry args={[17.8, 0.18, ROOF_SLOPE_LENGTH + 0.5]} />
-          <meshStandardMaterial color={P.roofShade} roughness={0.96} />
+          <WorldMaterial color={P.roofShade} finish="tile" detailScale={.72} />
         </mesh>
         <Timber position={[0, 5.77, side * 6.83]} size={[17.9, 0.24, 0.2]} color={P.woodDark} />
       </group>)}
-      <FieldInstances name="HOUSE_CLAY_TILES" data={TILE} instances={DETAILS.roof} roughness={0.92} doubleSided />
+      <FieldInstances name="HOUSE_CLAY_TILES" finish="tile" data={TILE} instances={DETAILS.roof} roughness={0.92} doubleSided />
       <Timber position={[0, 8.94, 0]} size={[17.9, 0.22, 0.28]} color={P.roof} />
-      <FieldInstances name="HOUSE_STONE_FOOTING" data={PLINTH_STONE} instances={DETAILS.stones} />
+      <FieldInstances name="HOUSE_STONE_FOOTING" finish="stone" data={PLINTH_STONE} instances={DETAILS.stones} />
 
       <group name="HOUSE_CLOSED_ENTRY" position={[0, 0, 6.08]}>
         <Timber position={[0, 1.4, 0]} size={[1.86, 2.8, 0.16]} color={P.woodDark} />
         {[-0.58, -0.29, 0, 0.29, 0.58].map((x, i) =>
           <Timber key={x} position={[x, 1.36, 0.11]} size={[0.278, 2.6, 0.06]} color={i % 2 ? P.wood : P.woodLight} />)}
         <Timber position={[-0.56, 1.25, 0.2]} size={[0.06, 0.17, 0.1]} color={P.woodDark} />
-        <Timber position={[0, 0.045, 0.65]} size={[5.2, 0.09, 1.6]} color={P.stoneLight} />
+        <Timber position={[0, 0.045, 0.65]} size={[5.2, 0.09, 1.6]} color={P.stoneLight} finish="stone" />
         <mesh position={[0, 3.18, 0.62]} rotation={[0.15, 0, 0]} castShadow receiveShadow>
           <boxGeometry args={[5.2, 0.17, 2.2]} />
-          <meshStandardMaterial color={P.roof} roughness={1} />
+          <WorldMaterial color={P.roof} finish="tile" detailScale={.72} />
         </mesh>
         <Timber position={[-1.38, 2.91, 0.6]} size={[0.12, 0.34, 1.18]} />
         <Timber position={[1.38, 2.91, 0.6]} size={[0.12, 0.34, 1.18]} />
@@ -158,9 +159,9 @@ export function FieldHouse() {
       </mesh>
       <mesh position={[-4.5, 8.9, -1.8]} castShadow receiveShadow>
         <boxGeometry args={[0.85, 2.25, 0.95]} />
-        <meshStandardMaterial color={P.plasterShade} roughness={1} />
+        <WorldMaterial color={P.plasterShade} finish="plaster" detailScale={.72} />
       </mesh>
-      <Timber position={[-4.5, 10.06, -1.8]} size={[1.04, 0.18, 1.15]} color={P.stoneShade} />
+      <Timber position={[-4.5, 10.06, -1.8]} size={[1.04, 0.18, 1.15]} color={P.stoneShade} finish="stone" />
     </group>
   );
 }

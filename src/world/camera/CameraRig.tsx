@@ -24,6 +24,7 @@ import {
   isInteractiveCameraTarget,
   normalizeWheelDelta,
 } from "./camera-controls";
+import { architecturalCameraPitch } from "./architectural-camera";
 import { EXPLORE_CAMERA_PRESET, type CameraPreset } from "./camera-presets";
 import {
   dampVector3,
@@ -186,14 +187,15 @@ function setDesiredPosition(
   pivotZ: number,
   manualCamera: ManualCameraState,
   radius = manualCamera.currentRadius,
+  pitch = manualCamera.currentPitch,
 ) {
   const horizontalDistance =
-    Math.cos(manualCamera.currentPitch) * radius;
+    Math.cos(pitch) * radius;
 
   desiredPosition.x =
     pivotX - Math.sin(manualCamera.currentYaw) * horizontalDistance;
   desiredPosition.y =
-    pivotY + Math.sin(manualCamera.currentPitch) * radius;
+    pivotY + Math.sin(pitch) * radius;
   desiredPosition.z =
     pivotZ + Math.cos(manualCamera.currentYaw) * horizontalDistance;
 }
@@ -296,6 +298,9 @@ export function CameraRig({
       }
     }
 
+    const initialPitch = preset.mode === "follow" && preset.name === "EXPLORE"
+      ? architecturalCameraPitch(target.lookAt.x, target.lookAt.y, target.lookAt.z, manualCamera.currentRadius, manualCamera.currentPitch)
+      : manualCamera.currentPitch;
     if (preset.mode === "fixed") {
       setDesiredPosition(
         scratch.desiredPosition,
@@ -311,13 +316,15 @@ export function CameraRig({
         target.lookAt.y,
         target.lookAt.z,
         manualCamera,
+        manualCamera.currentRadius,
+        initialPitch,
       );
     }
     cameraLike.position.copy(scratch.desiredPosition);
     setCameraQuaternion(
       cameraLike.quaternion,
       manualCamera.currentYaw,
-      manualCamera.currentPitch,
+      initialPitch,
     );
     updateCameraView(cameraViewRef, cameraLike.quaternion);
     initializedRef.current = true;
@@ -414,12 +421,18 @@ export function CameraRig({
           }
         : target.lookAt;
 
+      const effectivePitch = preset.mode === "follow" && preset.name === "EXPLORE"
+        ? architecturalCameraPitch(pivot.x, pivot.y, pivot.z, manualCamera.currentRadius, manualCamera.currentPitch)
+        : manualCamera.currentPitch;
+
       setDesiredPosition(
         scratch.desiredPosition,
         pivot.x,
         pivot.y,
         pivot.z,
         manualCamera,
+        manualCamera.currentRadius,
+        effectivePitch,
       );
 
       const desiredOffsetX = scratch.desiredPosition.x - pivot.x;
@@ -505,6 +518,7 @@ export function CameraRig({
         pivot.z,
         manualCamera,
         manualCamera.obstructionRadius,
+        effectivePitch,
       );
 
       if (preset.mode === "follow") {
@@ -527,7 +541,7 @@ export function CameraRig({
       setCameraQuaternion(
         cameraLike.quaternion,
         manualCamera.currentYaw,
-        manualCamera.currentPitch,
+        effectivePitch,
       );
       updateCameraView(cameraViewRef, cameraLike.quaternion);
     },

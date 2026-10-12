@@ -9,14 +9,11 @@ import { CylinderCollider, RigidBody } from "@react-three/rapier";
 import { authorPoint } from "./masterplan-layout";
 import { FOREST_ANCHOR } from "./field/field-interaction-targets";
 import { WindChime } from "./forest/WindChime";
+import { FOREST_TREES } from './forest/forest-layout';
 import { FOREST_PALETTE as F } from "./forest/forest-dressing";
 
 // Existing tree geometry reused; crowns flank the west transition and leave the axis clear.
-const ANCHORS = [
- [-22,0,.95],[-24,-6,1.1],[-22,-12,.95],[-17,-12,.85],[-26,6,1.05],
- [-27,17,.9],[-28,-18,1.1],[-11,-12,.8],[-23,-22,1],[-30,-5,1.1],
- [30,18,.9],[32,-5,.8],
-].map(([x,z,s])=>[...authorPoint(x,z),s] as const);
+const ANCHORS=FOREST_TREES.map(t=>[t.x,t.z,t.scale] as const);
 const random = seededRandom(20260919);
 const LEAF = makeLeafSurface(), CANOPY = organicEllipsoid(16, 10, .14);
 const vertices:number[]=[], triangles:number[]=[];
@@ -36,8 +33,8 @@ for(const [index, [x,z,scale]] of ANCHORS.entries()) {
   const grove = x < -15;
   // Alternate spreading and upright silhouettes within the hand-placed grove.
   // Changes are in the authored crowns, not random placement across the field.
-  const spread = index % 3 === 0 ? 1.32 : index % 3 === 1 ? .86 : 1.05;
-  const height = index % 3 === 0 ? .9 : index % 3 === 1 ? 1.13 : 1;
+  const spread = FOREST_TREES[index].spread;
+  const height = FOREST_TREES[index].height;
   trunks.push({position:[x,y,z],scale:[scale*spread,scale*height,scale*spread],rotation:[0,yaw,0],color:P.wood});
   for(const [cx,cy,cz,rx,ry,rz] of [[-.9,4.55,.1,2,1.45,1.45],[1.18,5.1,-.2,1.85,1.25,1.4],[.25,5.83,0,1.7,1.25,1.5],[.5,4.75,1.28,1.48,1.2,1.5]]) {
     const px=x+(cx*Math.cos(yaw)+cz*Math.sin(yaw))*scale*spread, pz=z+(-cx*Math.sin(yaw)+cz*Math.cos(yaw))*scale*spread, py=y+cy*scale*height;

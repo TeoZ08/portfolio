@@ -19,7 +19,7 @@ export function RegionalSoilMaterial() {
   }),[textures]);
   useEffect(()=>()=>prepared.forEach(t=>t.dispose()),[prepared]);
   return <meshStandardMaterial vertexColors roughness={1} metalness={0}
-    customProgramCacheKey={()=>"regional-soil-v3"}
+    customProgramCacheKey={()=>"regional-soil-v4"}
     onBeforeCompile={(shader:SoilShader)=>{
       shader.uniforms.soilMask={value:prepared[4]};
       prepared.forEach((t,i)=>{shader.uniforms[`soilTexture${i}`]={value:t};});
@@ -43,6 +43,15 @@ export function RegionalSoilMaterial() {
       `).replace("#include <roughnessmap_fragment>",`#include <roughnessmap_fragment>
         roughnessFactor=mix(.98,texture2D(soilTexture2,vSoilUV).r,vSoilWeights.x*.4);
         roughnessFactor=mix(roughnessFactor,texture2D(soilTexture3,vSoilUV*.8).r,vSoilWeights.y*.4);
+      `).replace("#include <normal_fragment_maps>",`#include <normal_fragment_maps>
+        float grainFilter=1./(1.+dot(fwidth(vSoilUV*9.),vec2(1.))*3.);
+        vec2 grain=vec2(sin(vSoilUV.x*9.+sin(vSoilUV.y*7.)),cos(vSoilUV.y*9.+sin(vSoilUV.x*7.)));
+        float soilRelief=(grain.x+grain.y)*.003*grainFilter*clamp(vSoilWeights.x+vSoilWeights.y,0.,1.);
+        vec3 soilDx=dFdx(-vViewPosition),soilDy=dFdy(-vViewPosition);
+        vec3 soilRx=cross(soilDy,normal),soilRy=cross(normal,soilDx);
+        float soilDet=dot(soilDx,soilRx);
+        vec3 soilGrad=sign(soilDet)*(dFdx(soilRelief)*soilRx+dFdy(soilRelief)*soilRy);
+        normal=normalize(abs(soilDet)*normal-soilGrad);
       `);
     }} />;
 }

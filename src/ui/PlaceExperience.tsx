@@ -53,8 +53,8 @@ function CommunityWorkshop() {
   </>;
 }
 function ExhibitionImages({project}:{project:"unapi"|"jarvis"}) {
-  return <details className="gallery-captures"><summary>Ampliar as capturas da exposição</summary>
-    {GALLERY_ARTWORKS.filter(a=>a.project===project).map(a=><figure key={a.id}><a href={a.src} target="_blank" rel="noreferrer" aria-label={`Abrir captura completa: ${a.title}`}><Image src={a.src} alt={a.alt} width={a.imageWidth} height={a.imageHeight} sizes="(max-width:600px) 90vw, 420px" /></a><figcaption>{a.title} · {a.caption}</figcaption></figure>)}
+  return <details className="gallery-captures"><summary>Ampliar as obras da exposição</summary>
+    {GALLERY_ARTWORKS.filter(a=>a.project===project).map(a=><figure key={a.id}><a href={a.src} target="_blank" rel="noreferrer" aria-label={`Abrir obra completa: ${a.title}`}><Image src={a.src} alt={a.alt} width={a.imageWidth} height={a.imageHeight} sizes="(max-width:600px) 90vw, 420px" /></a><figcaption>{a.title} · {a.caption}</figcaption></figure>)}
   </details>;
 }
 function ForestChimes() {

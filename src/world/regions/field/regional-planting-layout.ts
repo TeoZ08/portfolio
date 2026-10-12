@@ -1,5 +1,6 @@
 import { type FieldInstance } from "./field-geometry";
 import { authorPoint, routeClearance } from "../masterplan-layout";
+import { plantingAllowed } from './planting-clearance';
 import { insidePlace } from "../places/place-layout";
 import { insideHouse, seededRandom, surfaceHeight } from "./field-layout";
 
@@ -12,7 +13,10 @@ function compose() {
     const a=r()*Math.PI*2,rad=Math.sqrt(r()),[x,z]=authorPoint(cx+Math.cos(a)*rx*rad,cz+Math.sin(a)*rz*rad);
     if(routeClearance(x,z,1.8)||insideHouse(x,z,2)||insidePlace(x,z,1.5))continue;
     const size=(i%6===0?1.5:.55)+r()*.4;
-    const item:FieldInstance={position:[x,surfaceHeight(x,z)-.02,z],scale:[size,size*(.7+r()*.3),size],rotation:[0,r()*6.28,0],color:'#ffffff'};
+    if(!plantingAllowed(x,z,size*.18,size*.52))continue;
+    const sy=size*(.7+r()*.3),radius=.34*size;
+    const soil=Math.min(surfaceHeight(x,z),...[[radius,0],[-radius,0],[0,radius],[0,-radius]].map(([dx,dz])=>surfaceHeight(x+dx,z+dz)));
+    const item:FieldInstance={position:[x,soil+.05*sy-.025,z],scale:[size,sy,size],rotation:[0,r()*6.28,0],color:'#ffffff'};
     (i%6===0?stone:i%2?bush:pebble).push(item);
   }return {stone,bush,pebble};
 }

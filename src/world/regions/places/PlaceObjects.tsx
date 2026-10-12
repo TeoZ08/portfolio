@@ -38,14 +38,14 @@ export function Platform({ width, depth, color = P.stoneLight }: { width: number
     const w = Math.min(1.2, width / 2 - x), d = Math.min(1.15, depth / 2 - z);
     stones.push({ position: [x + w / 2, 0.112, z + d / 2], scale: [w - .02, .035, d - .025], color: (Math.round(x * 4 + z * 3) % 3) ? color : P.stone });
   }
-  return <><Solid name="PLACE_GROUND_PLINTH" position={[0, -.1, 0]} size={[width, .4, depth]} color={P.stoneShade} />
-    <HouseInstances name="PLACE_STONE_PAVING" instances={stones} finish="plaster" />
-    <Solid name="PLACE_LOW_FRONT_STEP" position={[0, .015, depth / 2 + .38]} size={[width * .55, .17, .8]} color={color} /></>;
+  return <><Solid name="PLACE_GROUND_PLINTH" position={[0, -.1, 0]} size={[width, .4, depth]} color={P.stoneShade} finish="stone" />
+    <HouseInstances name="PLACE_STONE_PAVING" instances={stones} finish="stone" />
+    <Solid name="PLACE_LOW_FRONT_STEP" position={[0, .015, depth / 2 + .38]} size={[width * .55, .17, .8]} color={color} finish="stone" /></>;
 }
 
 export function TimberPost({ x, z, height = 3.65 }: { x: number; z: number; height?: number }) {
   return <><Solid name="TIMBER_COLUMN" position={[x, height / 2, z]} size={[.19, height, .22]} />
-    <Part name="COLUMN_STONE_FOOT" position={[x, .19, z]} size={[.31, .36, .33]} color={P.stoneShade} finish="plaster" />
+    <Part name="COLUMN_STONE_FOOT" position={[x, .19, z]} size={[.31, .36, .33]} color={P.stoneShade} finish="stone" />
     <Part name="COLUMN_TOP_JOINERY" position={[x, height - .06, z]} size={[.36, .2, .3]} color={P.woodDark} /></>;
 }
 

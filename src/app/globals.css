@@ -189,6 +189,9 @@ input {
 @media (max-width: 600px) { .place-experience[data-place="DOJO_PRACTICE"] { width: auto; max-height: 35dvh; }.camera-help,.traversal-help { display: none; } }
 
 .place-experience header { position: sticky; top: 0; z-index: 1; background: #f0ecdf; padding-bottom: .5rem; }
+/* Cover the panel's padding above a sticky header while enlarged works scroll. */
+.place-experience header::before { content: ""; position: absolute; z-index: -1; inset: calc(-1 * clamp(1.25rem, 3vw, 2rem)) calc(-1 * clamp(1.25rem, 3vw, 2rem)) 0; background: #f0ecdf; }
+
 
 /* Let the portrait and movement lead on narrow screens during practice. */
 @media (max-width:600px) {
@@ -202,6 +205,6 @@ input {
 /* Gallery captures extend existing place panels; no new mandatory 3D targets. */
 .gallery-captures { margin-top:1.25rem; border-top:1px solid #c9c4b3; padding-top:1rem; }
 .gallery-captures summary { cursor:pointer; min-height:44px; font-size:.85rem; }
-.gallery-captures figure { margin:1rem 0 1.25rem; }
+.gallery-captures figure { margin:1rem 0 1.25rem; scroll-margin-top:4rem; }
 .gallery-captures img { width:100%; height:auto; display:block; border:1px solid #c9c4b3; }
 .gallery-captures figcaption { font-size:.75rem; line-height:1.5; color:#586354; margin-top:.5rem; }

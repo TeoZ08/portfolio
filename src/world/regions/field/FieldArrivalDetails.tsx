@@ -39,6 +39,6 @@ export function FieldArrivalDetails() {
         </group>;
       })}
     </group>)}
-    <FieldInstances name="ARRIVAL_GATE_FOOT_STONES" data={STONE} instances={STONES} castShadow />
+    <FieldInstances name="ARRIVAL_GATE_FOOT_STONES" finish="stone" data={STONE} instances={STONES} castShadow />
   </group>;
 }

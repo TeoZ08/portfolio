@@ -96,7 +96,7 @@ export function WorldCanvas({
       data-world-mode={dataWorldMode}
     >
       <Canvas
-        shadows={dataWorldMode === "vertical-slice" && !lowQuality ? "soft" : false}
+        shadows={dataWorldMode === "vertical-slice" && !lowQuality ? "percentage" : false}
         camera={{
           position: cameraPreset.initialPosition,
           fov: cameraPreset.fov,

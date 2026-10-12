@@ -17,7 +17,7 @@ export function HillRegion() {
       <Bench position={[0, .025, 0]} width={3.5} />
       <Part name="LOOKOUT_NOTEBOOK" position={[1.15, .85, -.02]} size={[.44, .06, .58]} color={P.sage} finish="fabric" rotation={[0, .17, 0]} />
     </Place>
-    <FieldInstances name="LOOKOUT_LOW_STONE_EDGE" data={STONE} instances={STONES} castShadow />
+    <FieldInstances name="LOOKOUT_LOW_STONE_EDGE" finish="stone" data={STONE} instances={STONES} castShadow />
     <Place name="LOOKOUT_SMALL_WAYMARK" x={PLACE_LAYOUT.hill.x-3} z={PLACE_LAYOUT.hill.z+4.5} yaw={.27}>
       <Part name="WAYMARK_POST" position={[0, .63, 0]} size={[.15, 1.26, .16]} color={P.woodDark} />
       <Part name="WAYMARK_BOARD" position={[0, 1.29, 0]} size={[1.8, .62, .11]} color={P.wood} />

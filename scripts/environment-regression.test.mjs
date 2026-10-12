@@ -6,7 +6,7 @@ const {DOJO:D}=await import(url('src/world/regions/dojo/dojo-layout.ts'));
 const {surfaceHeight,terrainHeight}=await import(url('src/world/regions/field/field-layout.ts'));
 const {PLAN,routeClearance}=await import(url('src/world/regions/masterplan-layout.ts'));
 const {insidePlace}=await import(url('src/world/regions/places/place-layout.ts'));
-const {landscapeHeight,makeLandscape,LANDSCAPE_TREES}=await import(url('src/world/regions/field/landscape-layout.ts'));
+const {landscapeHeight,landscapeSurfaceHeight,makeLandscape,LANDSCAPE_TREES}=await import(url('src/world/regions/field/landscape-layout.ts'));
 globalThis.ProgressEvent=class{};await RAPIER.init();
 test('actual quantized plinth intersects ground and reaches the shared terrace top',async()=>{
  const b=readFileSync('public/assets/songahm/plinth.glb');const g=await new GLTFLoader().parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');
@@ -32,7 +32,7 @@ test('landscape meets every physical terrain border vertex in height and tessell
 });
 test('woodland instances leave destinations/routes open and are planted in the rendered surface',()=>{
  assert.ok(LANDSCAPE_TREES.length>250&&LANDSCAPE_TREES.length<410);
- for(const t of LANDSCAPE_TREES){const[x,y,z]=t.position;assert.equal(routeClearance(x,z,2.8),false);assert.equal(insidePlace(x,z,3),false);const h=Math.max(Math.abs(x),Math.abs(z))>55?landscapeHeight(x,z):surfaceHeight(x,z);assert.ok(Math.abs(y+.09-h)<1e-6);}
+ for(const t of LANDSCAPE_TREES){const[x,y,z]=t.position;assert.equal(routeClearance(x,z,2.8),false);assert.equal(insidePlace(x,z,3),false);const h=Math.max(Math.abs(x),Math.abs(z))>55?landscapeSurfaceHeight(x,z):surfaceHeight(x,z);assert.ok(y<=h-.024&&h-y<.3);}
 });
 test('local panorama stays under 160KiB and uses the expected 2K alpha WebP format',()=>{
  const b=readFileSync('public/assets/sky/painted-cloud-panorama.webp');assert.equal(b.toString('ascii',0,4),'RIFF');assert.ok(b.length<160*1024);assert.equal(b.toString('ascii',12,16),'VP8X');assert.equal(b.readUIntLE(24,3)+1,2048);assert.equal(b.readUIntLE(27,3)+1,1024);assert.ok(b[20]&16);
