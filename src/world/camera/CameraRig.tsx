@@ -1,4 +1,6 @@
 "use client";
+import {accumulateMouseLook,applyLookIntent,DEFAULT_MOUSE_SENSITIVITY} from './mouse-look';
+import {connectGameplayPointerLock,requestGameplayPointerLock,releaseGameplayPointerLock} from './pointer-lock';
 import {useThree} from '@react-three/fiber';
 import {useRapier} from '@react-three/rapier';
 import {useCallback,useEffect,useLayoutEffect,useRef} from 'react';
@@ -12,7 +14,7 @@ import type {PlayerMotionRef} from '@/world/player/player-motion';
 import type {CameraPreset} from './camera-presets';
 import type {CameraViewRef,CameraTargetRef} from './camera-types';
 import {CAMERA_INPUT,getWheelIntent,getZoomRadius,isInteractiveCameraTarget,normalizeWheelDelta} from './camera-controls';
-import {PERSPECTIVE,movementBasis,cameraDirection,wrapCameraYaw,clampLookPitch,perspectiveSign,safeCameraDistance,restoreCameraDistance,avatarBlocksLens,writeCameraEye,cameraRenderYaw} from './camera-perspectives';
+import {PERSPECTIVE,movementBasis,cameraDirection,wrapCameraYaw,perspectiveSign,safeCameraDistance,restoreCameraDistance,avatarBlocksLens,writeCameraEye,cameraRenderYaw} from './camera-perspectives';
 import {useCameraState,cameraIntent,cameraTelemetry} from './camera-state';
 type CameraPointer={pointerType:string;x:number;y:number;startX:number;startY:number};
 export function CameraRig({cameraViewRef,frameUpdatesRef,resyncRef,motionRef,playerControlRef}: {
@@ -28,13 +30,12 @@ export function CameraRig({cameraViewRef,frameUpdatesRef,resyncRef,motionRef,pla
     cameraIntent.yaw=wrapCameraYaw(-motionRef.current.rotationY);cameraIntent.pitch=PERSPECTIVE.defaultPitch;cameraIntent.radius=PERSPECTIVE.defaultRadius;
     manualRef.current.targetRadius=cameraIntent.radius;manualRef.current.pendingYaw=0;manualRef.current.pendingPitch=0;
   },[motionRef]);
-  const prepare=useCallback((delta:number)=>{
+  const prepare=useCallback(()=>{
     const m=manualRef.current;
     if(worldInputBlocked()){m.pendingYaw=0;m.pendingPitch=0;return;}
-    cameraIntent.yaw=wrapCameraYaw(cameraIntent.yaw+m.pendingYaw);cameraIntent.pitch=clampLookPitch(cameraIntent.pitch+m.pendingPitch);
+    applyLookIntent(cameraIntent,m.pendingYaw,m.pendingPitch);
     cameraIntent.radius=m.targetRadius;m.pendingYaw=0;m.pendingPitch=0;
-    const direct=useExperienceState.getState().reducedMotion;const a=direct?1:1-Math.exp(-18*delta);
-    m.yaw=wrapCameraYaw(m.yaw+wrapCameraYaw(cameraIntent.yaw-m.yaw)*a);m.pitch+=(cameraIntent.pitch-m.pitch)*a;
+    m.yaw=cameraIntent.yaw;m.pitch=cameraIntent.pitch;
     movementBasis(m.yaw,cameraViewRef.current);
   },[cameraViewRef]);
   const updateRig=useCallback((delta:number)=>{
@@ -66,6 +67,8 @@ export function CameraRig({cameraViewRef,frameUpdatesRef,resyncRef,motionRef,pla
     const element = gl.domElement;
     const pointerState = pointerStateRef.current;
     const manualCamera = manualRef.current;
+    const allowed=()=>!worldInputBlocked()&&useInteractionDebugState.getState().status==='idle';
+    const disconnectPointerLock=connectGameplayPointerLock(element,allowed,()=>{if(allowed())useExperienceState.getState().openMenu();});
 
     const releasePointerCapture = (pointerId: number) => {
       if (element.hasPointerCapture(pointerId)) {
@@ -207,10 +210,8 @@ export function CameraRig({cameraViewRef,frameUpdatesRef,resyncRef,motionRef,pla
         return;
       }
 
-      manualCamera.pendingYaw +=
-        deltaX * CAMERA_INPUT.mouseYawSensitivity;
-      manualCamera.pendingPitch -=
-        deltaY * CAMERA_INPUT.mousePitchSensitivity;
+      const preferences=useExperienceState.getState();
+      accumulateMouseLook(manualCamera,deltaX,deltaY,preferences.mouseSensitivity,preferences.invertMouseY);
       event.preventDefault();
     };
 
@@ -237,9 +238,9 @@ export function CameraRig({cameraViewRef,frameUpdatesRef,resyncRef,motionRef,pla
         // Wheel deltas describe content scroll and are opposite to the
         // physical two-finger gesture. Invert them to match mouse dragging.
         manualCamera.pendingYaw -=
-          deltaX * CAMERA_INPUT.trackpadYawSensitivity;
+          deltaX * CAMERA_INPUT.trackpadYawSensitivity * useExperienceState.getState().mouseSensitivity/DEFAULT_MOUSE_SENSITIVITY;
         manualCamera.pendingPitch +=
-          deltaY * CAMERA_INPUT.trackpadPitchSensitivity;
+          deltaY * CAMERA_INPUT.trackpadPitchSensitivity * useExperienceState.getState().mouseSensitivity/DEFAULT_MOUSE_SENSITIVITY * (useExperienceState.getState().invertMouseY?-1:1);
       } else if (useCameraState.getState().mode !== "first-person") {
         manualCamera.targetRadius = getZoomRadius(
           manualCamera.targetRadius,
@@ -287,7 +288,7 @@ export function CameraRig({cameraViewRef,frameUpdatesRef,resyncRef,motionRef,pla
       releasePointerCapture(event.pointerId);
       pointerState.pointers.delete(event.pointerId);
       if(consciousClick && !worldInputBlocked() && window.innerWidth>600 && !matchMedia('(pointer:coarse)').matches) {
-        void element.requestPointerLock()?.catch(()=>{});
+        requestGameplayPointerLock(event);
       }
 
       if (pointer.pointerType === "touch") {
@@ -321,6 +322,7 @@ export function CameraRig({cameraViewRef,frameUpdatesRef,resyncRef,motionRef,pla
     };
 
     const handleWindowBlur = () => {
+      if(document.pointerLockElement===element&&allowed())useExperienceState.getState().openMenu();
       unlock();
       clearPointerInput(true);
     };
@@ -332,15 +334,17 @@ export function CameraRig({cameraViewRef,frameUpdatesRef,resyncRef,motionRef,pla
       }
     };
 
-    const unlock=()=>{if(document.pointerLockElement===element) document.exitPointerLock();};
+    const unlock=releaseGameplayPointerLock;
     const relativeLook=(event:MouseEvent)=>{
       if(document.pointerLockElement!==element)return;
       if(worldInputBlocked()){unlock();return;}
-      manualCamera.pendingYaw+=event.movementX*.0025;
-      manualCamera.pendingPitch-=event.movementY*.0025;
+      const preferences=useExperienceState.getState();
+      accumulateMouseLook(manualCamera,event.movementX,event.movementY,preferences.mouseSensitivity,preferences.invertMouseY);
     };
     const unsubscribe=useExperienceState.subscribe(()=>{if(worldInputBlocked()){unlock();clearPointerInput(true);}});
     const interactionSubscription=useInteractionDebugState.subscribe(state=>{if(state.status!=='idle'){unlock();clearPointerInput(true);}});
+    const releaseForHtmlFocus=(event:FocusEvent)=>{if(document.pointerLockElement===element&&isInteractiveCameraTarget(event.target)){unlock();clearPointerInput(true);}};
+    document.addEventListener('focusin',releaseForHtmlFocus);
     document.addEventListener('mousemove',relativeLook);
     element.addEventListener("pointerdown", handlePointerDown);
     element.addEventListener("pointermove", handlePointerMove);
@@ -355,7 +359,7 @@ export function CameraRig({cameraViewRef,frameUpdatesRef,resyncRef,motionRef,pla
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      unlock();unsubscribe();interactionSubscription();document.removeEventListener('mousemove',relativeLook);
+      disconnectPointerLock();unlock();unsubscribe();document.removeEventListener('focusin',releaseForHtmlFocus);interactionSubscription();document.removeEventListener('mousemove',relativeLook);
       element.removeEventListener("pointerdown", handlePointerDown);
       element.removeEventListener("pointermove", handlePointerMove);
       element.removeEventListener("pointerup", handlePointerUp);

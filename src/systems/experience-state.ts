@@ -1,3 +1,4 @@
+import { clampMouseSensitivity, DEFAULT_MOUSE_SENSITIVITY } from "@/world/camera/mouse-look";
 import { create } from "zustand";
 
 export type ArchiveApp = "projects" | "faculty" | "notes" | "terminal" | "about" | "contact" | "settings";
@@ -5,6 +6,12 @@ type ExperienceState = {
   overlay: "menu" | "archive" | "arrival" | null;
   archiveApp: ArchiveApp;
   deviceActive: boolean;
+  mouseSensitivity: number;
+  invertMouseY: boolean;
+  crosshair: boolean;
+  setMouseSensitivity: (value:number)=>void;
+  setInvertMouseY: (value:boolean)=>void;
+  setCrosshair: (value:boolean)=>void;
   reducedMotion: boolean;
   quality: "balanced" | "low";
   ambientSound: boolean;
@@ -24,6 +31,12 @@ export const useExperienceState = create<ExperienceState>(set => ({
   overlay: null,
   archiveApp: "projects",
   deviceActive: false,
+  mouseSensitivity: DEFAULT_MOUSE_SENSITIVITY,
+  invertMouseY: false,
+  crosshair: false,
+  setMouseSensitivity: value=>set({mouseSensitivity:clampMouseSensitivity(value)}),
+  setInvertMouseY: invertMouseY=>set({invertMouseY}),
+  setCrosshair: crosshair=>set({crosshair}),
   reducedMotion: false,
   quality: "balanced",
   ambientSound: false,

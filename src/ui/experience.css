@@ -64,3 +64,13 @@ button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,s
 .camera-mode-control span:first-child{font-weight:600}.camera-mode-control kbd{margin-left:8px;font:inherit;color:var(--muted)}.camera-mode-control:hover{background:var(--soft)}.camera-mode-control:active{background:var(--sage)}.camera-mode-control:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 @media(max-width:600px){.camera-mode-control{right:18px;bottom:calc(196px + env(safe-area-inset-bottom,0px));min-width:108px}}
 @media(prefers-reduced-motion:reduce){.camera-mode-control{transition:none}}
+
+/* Desktop capture is an explicit state, not an invisible extra gesture. */
+.mouse-control-status{display:none;position:absolute;right:24px;bottom:calc(var(--space) * 15);max-width:280px;font:11px/1.4 system-ui;color:var(--paper);text-shadow:none}
+@media(any-pointer:fine) and (min-width:601px){.mouse-control-status{display:block}}
+.mouse-control-status>span{display:block;padding:6px 9px;background:#263b34ad;border-radius:3px}
+.mouse-control-status button{display:grid;gap:4px;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:3px;background:var(--paper);color:var(--ink);text-align:left;box-shadow:0 5px 20px #303b3020}
+.mouse-control-status button:hover{background:var(--soft)}.mouse-control-status button:active{transform:translateY(1px)}.mouse-control-status button:disabled{opacity:.6;cursor:wait}
+.mouse-control-status strong{font-weight:600}.mouse-control-status button>span{color:var(--muted)}
+.camera-crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font:18px/1 monospace;color:var(--paper);text-shadow:0 1px 2px var(--ink);pointer-events:none}
+.mouse-preferences input[type=range]{width:100%;accent-color:var(--sage);min-height:28px}.mouse-preferences output{margin-left:auto;font-variant-numeric:tabular-nums}
