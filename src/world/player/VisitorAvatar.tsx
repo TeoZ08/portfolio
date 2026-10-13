@@ -1,9 +1,11 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { Suspense, useRef } from "react";
+import { Suspense, useRef, useLayoutEffect } from "react";
 import { HouseBlockout as Part } from "@/world/regions/house/HouseBlockout";
 import { SoftObject } from "@/world/regions/house/HouseObjects";
+import {registerAvatarCameraView} from "./avatar-camera-visibility";
+import type {Group} from "three";
 import type { PlayerMotionRef } from "./player-motion";
 import type { PlayerControlRef } from "./player-control";
 import { AnimatedVisitor } from "./AnimatedVisitor";
@@ -22,6 +24,8 @@ export function VisitorAvatar({ motionRef, controlRef }: { motionRef: PlayerMoti
 }
 
 function VisitorSilhouette({ motionRef, controlRef }: { motionRef: PlayerMotionRef; controlRef: PlayerControlRef }) {
+  const visibility=useRef<Group>(null);
+  useLayoutEffect(()=>{if(visibility.current)return registerAvatarCameraView(visibility.current);},[]);
   const leftLeg=useRef<Limb>(null),rightLeg=useRef<Limb>(null),leftArm=useRef<Limb>(null),rightArm=useRef<Limb>(null),torso=useRef<Limb>(null);
   const phase=useRef(0),blend=useRef(0),seat=useRef(0),sprint=useRef(0),airborne=useRef(0);
   useFrame((_,delta)=>{
@@ -42,7 +46,7 @@ function VisitorSilhouette({ motionRef, controlRef }: { motionRef: PlayerMotionR
       torso.current.rotation.x=-sprint.current*.055-airborne.current*.02;
     }
   });
-  return <group name="DEV_MATTEO_ASSET_FALLBACK">
+  return <group ref={visibility} name="DEV_MATTEO_ASSET_FALLBACK">
     <group ref={torso}>
       <SoftObject name="VISITOR_JACKET" position={[0,.03,0]} size={[.49,.64,.32]} color={CLOTH} castShadow />
       <Part name="JACKET_HEM" position={[0,-.25,0]} size={[.41,.09,.3]} color="#b6aa8f" finish="fabric" radius={.04} />

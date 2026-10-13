@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import {runFramePhases} from "./frame-phases";
 import { useFrame } from "@react-three/fiber";
 
 export type DevFramePhase = (delta: number) => void;
@@ -19,6 +20,7 @@ export type CameraResyncRef = {
 export type DevFrameUpdates = {
   interaction: DevFramePhase | null;
   player: DevFramePhase | null;
+  cameraInput: DevFramePhase | null;
   cameraTarget: DevFramePhase | null;
   cameraRig: DevFramePhase | null;
 };
@@ -33,6 +35,7 @@ export function createDevFrameUpdates(): DevFrameUpdates {
   return {
     interaction: null,
     player: null,
+    cameraInput: null,
     cameraTarget: null,
     cameraRig: null,
   };
@@ -92,10 +95,7 @@ export function DevFrameLoop({
     const updates = frameUpdatesRef.current;
 
     // Command interaction, apply Rapier movement, then update the camera chain.
-    updates.interaction?.(delta);
-    updates.player?.(delta);
-    updates.cameraTarget?.(delta);
-    updates.cameraRig?.(delta);
+    runFramePhases(updates,delta);
   });
 
   return null;

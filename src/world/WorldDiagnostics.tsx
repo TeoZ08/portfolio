@@ -1,4 +1,6 @@
 "use client";
+import {cameraTelemetry,useCameraState} from "./camera/camera-state";
+import {useInteractionDebugState} from "./interactions/interaction-state";
 import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 
@@ -14,6 +16,7 @@ export function WorldDiagnostics() {
       calls: gl.info.render.calls, triangles: gl.info.render.triangles,
       textures: gl.info.memory.textures, geometries: gl.info.memory.geometries,
       camera: camera.position.toArray(),
+      perspective:{...cameraTelemetry,eye:[...cameraTelemetry.eye],selected:useCameraState.getState().mode,quaternion:camera.quaternion.toArray(),locked:!!document.pointerLockElement,interaction:useInteractionDebugState.getState().status},
       fog: scene.fog ? {color: scene.fog.color.getHexString(), near: "near" in scene.fog ? scene.fog.near : null, far: "far" in scene.fog ? scene.fog.far : null} : null,
       hazePrograms: gl.info.programs?.filter(p => context.getShaderSource(p.fragmentShader)?.includes("hazeDensity")).length,
     }) };

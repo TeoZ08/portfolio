@@ -55,8 +55,10 @@ export function PauseMenu({ open }: { open: boolean }) {
       <button className="pause-map-toggle" onClick={() => useExperienceState.getState().openArrival()}>Rever a chegada e os controles</button>
       <dl className="pause-controls">
         <div><dt>WASD / setas</dt><dd>Caminhar</dd></div>
-        <div><dt>Arrastar / dois dedos</dt><dd>Olhar ao redor</dd></div>
-        <div><dt>Roda / pinça</dt><dd>Aproximar / afastar</dd></div>
+        <div><dt>F5 / Câmera</dt><dd>Primeira pessoa → por trás → de frente</dd></div>
+        <div><dt>Clique no mundo</dt><dd>Capturar mouse; Esc libera o cursor</dd></div>
+        <div><dt>Arrastar / lado direito</dt><dd>Olhar ao redor sem captura</dd></div>
+        <div><dt>Roda / pinça</dt><dd>Distância em terceira pessoa</dd></div>
         <div><dt>C</dt><dd>Recentralizar câmera</dd></div>
         <div><dt>E</dt><dd>Interagir / encerrar</dd></div>
         <div><dt>Esc</dt><dd>Voltar / pausar</dd></div>

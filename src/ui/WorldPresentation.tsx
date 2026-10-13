@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import {useCameraState} from "@/world/camera/camera-state";
+import {CAMERA_MODE_LABELS} from "@/world/camera/camera-perspectives";
 import { Desktop } from "@/computer/Desktop";
 import { requestCameraRecenter, useExperienceState, requestWorldInteraction, touchMovement, resetTouchControls } from "@/systems/experience-state";
 import { useInteractionDebugState } from "@/world/interactions/interaction-state";
@@ -33,6 +35,7 @@ const HOUSE_INSPECTIONS = {
 } as const;
 
 export function WorldPresentation() {
+  const cameraMode=useCameraState(s=>s.mode);
   const label=useInteractionDebugState(state=>state.candidateLabel);
   const status=useInteractionDebugState(state=>state.status);
   const activeTargetId=useInteractionDebugState(state=>state.activeTargetId);
@@ -56,6 +59,7 @@ export function WorldPresentation() {
       }
       // Capture Escape only while exploring or inside the menu. The desktop
       // layer owns Escape while the visitor is using the computer.
+      if(event.key==='Escape' && document.pointerLockElement)document.exitPointerLock();
       if(event.key!=="Escape" || state.deviceActive) return;
       if(state.overlay === "menu" || (state.overlay === null && useInteractionDebugState.getState().status === "idle")) {
         event.preventDefault();
@@ -78,7 +82,8 @@ export function WorldPresentation() {
   const hint=status==="idle"?label:status==="approaching"?"Cancelar aproximação":status==="entering"||status==="exiting"?null:"Voltar a explorar";
   return <div className="world-presentation" data-world-ui>
     {!deviceActive && <button className="world-menu-access" aria-label="Pausa e arquivos (Escape)" disabled={status!=="idle"} onClick={()=>useExperienceState.getState().openMenu()}><span aria-hidden="true">···</span><span className="world-menu-access-label">Pausa e arquivos</span></button>}
-    {!menuOpen && !deviceActive && <button type="button" className="camera-help" onClick={requestCameraRecenter} aria-keyshortcuts="C" aria-label="Recentralizar câmera" title="Arraste: girar · trackpad: orbitar · roda: zoom · C: recentralizar"><span aria-hidden="true">↻</span> Câmera <kbd>C</kbd></button>}
+    {overlay===null && !deviceActive && status==='idle' && <button type="button" className="camera-mode-control" aria-keyshortcuts="F5" aria-label={`Câmera F5: ${CAMERA_MODE_LABELS[cameraMode]}`} onClick={()=>{useCameraState.getState().cycle();document.querySelector<HTMLElement>(".world-canvas")?.focus({preventScroll:true});}}><span>Câmera <kbd>F5</kbd></span><span aria-live="polite">{CAMERA_MODE_LABELS[cameraMode]}</span></button>}
+    {!menuOpen && !deviceActive && <button type="button" className="camera-help" onClick={requestCameraRecenter} aria-keyshortcuts="C" aria-label="Recentralizar câmera" title="Clique: capturar mouse · Esc: soltar · arraste: olhar · roda: distância em terceira pessoa · C: recentralizar"><span aria-hidden="true">↻</span> Câmera <kbd>C</kbd></button>}
     {!menuOpen && !deviceActive && status==="idle" && <div className="traversal-help" aria-label="Shift para correr, Espaço para saltar"><kbd>Shift</kbd> correr <span aria-hidden="true">·</span> <kbd>Espaço</kbd> salto</div>}
     {!menuOpen && !deviceActive && hint && <button className="world-interaction-prompt" onClick={()=>requestWorldInteraction()}><kbd>E</kbd>{hint}</button>}
     {!menuOpen && !deviceActive && inspection && <aside className="world-inspection-card" aria-live="polite" aria-labelledby="world-inspection-title">

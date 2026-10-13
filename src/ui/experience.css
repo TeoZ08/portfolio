@@ -59,3 +59,8 @@ button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,s
   .touch-joystick-pad{height:118px}
   .touch-jump{width:62px;height:62px;bottom:calc(108px + env(safe-area-inset-bottom,0px))}
 }
+
+.camera-mode-control{position:absolute;right:24px;bottom:64px;min-height:44px;min-width:116px;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:8px 12px;border:1px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink);font:11px/1.2 system-ui;text-shadow:none;transition:background .15s}
+.camera-mode-control span:first-child{font-weight:600}.camera-mode-control kbd{margin-left:8px;font:inherit;color:var(--muted)}.camera-mode-control:hover{background:var(--soft)}.camera-mode-control:active{background:var(--sage)}.camera-mode-control:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+@media(max-width:600px){.camera-mode-control{right:18px;bottom:calc(196px + env(safe-area-inset-bottom,0px));min-width:108px}}
+@media(prefers-reduced-motion:reduce){.camera-mode-control{transition:none}}

@@ -1,10 +1,11 @@
 "use client";
 
 import { useFrame, useLoader } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { AnimationMixer, type AnimationAction, type Mesh, type SkinnedMesh, type Group } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { clone } from "three/addons/utils/SkeletonUtils.js";
+import {registerAvatarCameraView} from "./avatar-camera-visibility";
 import { useExperienceState } from "@/systems/experience-state";
 import type { PlayerMotionRef } from "./player-motion";
 import type { PlayerControlRef } from "./player-control";
@@ -24,10 +25,14 @@ export function AnimatedVisitor({ motionRef, controlRef }: { motionRef: PlayerMo
     const model = clone(gltf.scene);
     model.traverse(object => {
       const mesh = object as Mesh;
-      if (mesh.isMesh) { mesh.castShadow = true; mesh.receiveShadow = true; }
+      if (mesh.isMesh) { mesh.castShadow = true; mesh.receiveShadow = true;
+        mesh.material=Array.isArray(mesh.material)?mesh.material.map(m=>m.clone()):mesh.material.clone();
+      }
     });
     return model;
   }, [gltf.scene]);
+  useLayoutEffect(()=>registerAvatarCameraView(model),[model]);
+  useEffect(()=>()=>{model.traverse(o=>{const m=o as Mesh;if(m.isMesh)(Array.isArray(m.material)?m.material:[m.material]).forEach(mat=>mat.dispose());});},[model]);
   const animation = useRef<AnimationState | null>(null);
   const qaEnabled = useMemo(() => process.env.NODE_ENV !== "production" && typeof window !== "undefined" && new URLSearchParams(window.location.search).has("avatarQA"), []);
 

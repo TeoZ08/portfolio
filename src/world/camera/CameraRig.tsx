@@ -1,570 +1,71 @@
 "use client";
-
-import { useThree } from "@react-three/fiber";
-import { useRapier } from "@react-three/rapier";
-import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
-
-import {
-  CAMERA_RECENTER_EVENT,
-  useExperienceState,
-  worldInputBlocked,
-} from "@/systems/experience-state";
-import type {
-  CameraResyncRef,
-  DevFrameUpdatesRef,
-} from "@/world/DevFrameLoop";
-import {
-  CAMERA_INPUT,
-  CAMERA_OBSTRUCTION,
-  clampCameraValue,
-  getCameraDefaultView,
-  getCameraObstructionDistance,
-  getWheelIntent,
-  getZoomRadius,
-  isInteractiveCameraTarget,
-  normalizeWheelDelta,
-} from "./camera-controls";
-import { architecturalCameraPitch } from "./architectural-camera";
-import { EXPLORE_CAMERA_PRESET, type CameraPreset } from "./camera-presets";
-import {
-  dampVector3,
-  getDampingAlpha,
-  type CameraViewRef,
-  type CameraTargetRef,
-  type CameraVector,
-} from "./camera-types";
-
-type QuaternionLike = {
-  x: number;
-  y: number;
-  z: number;
-  w: number;
-};
-
-type VectorLike = CameraVector & {
-  copy: (vector: CameraVector) => void;
-};
-
-type CameraLike = {
-  position: VectorLike;
-  quaternion: QuaternionLike;
-};
-
-type CameraRigScratch = {
-  desiredPosition: CameraVector;
-  rayDirection: CameraVector;
-  rayOrigin: CameraVector;
-};
-
-type ManualCameraState = {
-  currentYaw: number;
-  currentPitch: number;
-  targetYaw: number;
-  targetPitch: number;
-  pendingYaw: number;
-  pendingPitch: number;
-  currentRadius: number;
-  targetRadius: number;
-  obstructionRadius: number;
-  obstructionEngaged: boolean;
-  initialized: boolean;
-};
-
-type FieldCameraOrientation = {
-  yaw: number;
-  pitch: number;
-  valid: boolean;
-};
-
-type CameraPointerState = {
-  activePointerId: number | null;
-  pointers: Map<number, CameraPointer>;
-  pinchDistance: number | null;
-};
-
-type CameraPointer = {
-  pointerType: string;
-  x: number;
-  y: number;
-};
-
-type CameraRigProps = {
-  cameraViewRef: CameraViewRef;
-  frameUpdatesRef: DevFrameUpdatesRef;
-  preset?: CameraPreset;
-  resyncRef: CameraResyncRef;
-  targetRef: CameraTargetRef;
-};
-
-function createCameraRigScratch(): CameraRigScratch {
-  return {
-    desiredPosition: { x: 0, y: 0, z: 0 },
-    rayDirection: { x: 0, y: 0, z: 0 },
-    rayOrigin: { x: 0, y: 0, z: 0 },
-  };
-}
-
-function createManualCameraState(): ManualCameraState {
-  return {
-    currentYaw: 0,
-    currentPitch: 0,
-    targetYaw: 0,
-    targetPitch: 0,
-    pendingYaw: 0,
-    pendingPitch: 0,
-    currentRadius: 1,
-    targetRadius: 1,
-    obstructionRadius: 1,
-    obstructionEngaged: false,
-    initialized: false,
-  };
-}
-
-function createFieldCameraOrientation(): FieldCameraOrientation {
-  return {
-    yaw: 0,
-    pitch: 0,
-    valid: false,
-  };
-}
-
-function createCameraPointerState(): CameraPointerState {
-  return {
-    activePointerId: null,
-    pointers: new Map(),
-    pinchDistance: null,
-  };
-}
-
-function normalizeAngle(angle: number) {
-  const fullTurn = Math.PI * 2;
-  let normalized = (angle + Math.PI) % fullTurn;
-
-  if (normalized < 0) {
-    normalized += fullTurn;
-  }
-
-  return normalized - Math.PI;
-}
-
-function shortestAngleDelta(target: number, current: number) {
-  return normalizeAngle(target - current);
-}
-
-function dampAngle(current: number, target: number, damping: number, delta: number) {
-  const difference = shortestAngleDelta(target, current);
-  const alpha = getDampingAlpha(damping, delta);
-
-  if (Math.abs(difference) <= 0.0001) {
-    return normalizeAngle(target);
-  }
-
-  return normalizeAngle(current + difference * alpha);
-}
-
-function setCameraQuaternion(
-  quaternion: QuaternionLike,
-  yaw: number,
-  pitch: number,
-) {
-  const halfPitch = -pitch / 2;
-  const halfYaw = -yaw / 2;
-  const sinPitch = Math.sin(halfPitch);
-  const cosPitch = Math.cos(halfPitch);
-  const sinYaw = Math.sin(halfYaw);
-  const cosYaw = Math.cos(halfYaw);
-
-  quaternion.x = sinPitch * cosYaw;
-  quaternion.y = cosPitch * sinYaw;
-  quaternion.z = -sinPitch * sinYaw;
-  quaternion.w = cosPitch * cosYaw;
-}
-
-function setDesiredPosition(
-  desiredPosition: CameraVector,
-  pivotX: number,
-  pivotY: number,
-  pivotZ: number,
-  manualCamera: ManualCameraState,
-  radius = manualCamera.currentRadius,
-  pitch = manualCamera.currentPitch,
-) {
-  const horizontalDistance =
-    Math.cos(pitch) * radius;
-
-  desiredPosition.x =
-    pivotX - Math.sin(manualCamera.currentYaw) * horizontalDistance;
-  desiredPosition.y =
-    pivotY + Math.sin(pitch) * radius;
-  desiredPosition.z =
-    pivotZ + Math.cos(manualCamera.currentYaw) * horizontalDistance;
-}
-
-function updateCameraView(
-  cameraViewRef: CameraViewRef,
-  quaternion: QuaternionLike,
-) {
-  const forwardX =
-    -2 * (quaternion.w * quaternion.y + quaternion.x * quaternion.z);
-  const forwardZ =
-    2 * (quaternion.x * quaternion.x + quaternion.y * quaternion.y) - 1;
-  const horizontalLength = Math.hypot(forwardX, forwardZ);
-
-  if (horizontalLength <= 0.0001) {
-    return;
-  }
-
-  const inverseLength = 1 / horizontalLength;
-  const view = cameraViewRef.current;
-  view.forwardX = forwardX * inverseLength;
-  view.forwardZ = forwardZ * inverseLength;
-  view.rightX = -view.forwardZ;
-  view.rightZ = view.forwardX;
-}
-
-export function CameraRig({
-  cameraViewRef,
-  frameUpdatesRef,
-  preset = EXPLORE_CAMERA_PRESET,
-  resyncRef,
-  targetRef,
-}: CameraRigProps) {
-  const { camera, gl } = useThree();
-  const { rapier, world } = useRapier();
-  const reducedMotion = useExperienceState((state) => state.reducedMotion);
-  const cameraLike = camera as unknown as CameraLike;
-  const initializedRef = useRef(false);
-  const scratchRef = useRef<CameraRigScratch | null>(null);
-  const manualCameraRef = useRef(createManualCameraState());
-  const fieldOrientationRef = useRef(createFieldCameraOrientation());
-  const activePresetKeyRef = useRef<string | null>(null);
-  const pointerStateRef = useRef(createCameraPointerState());
-  const obstructionRayRef = useRef<InstanceType<typeof rapier.Ray> | null>(
-    null,
-  );
-
-  if (scratchRef.current === null) {
-    scratchRef.current = createCameraRigScratch();
-  }
-
-  const scratch = scratchRef.current;
-
-  if (obstructionRayRef.current === null) {
-    obstructionRayRef.current = new rapier.Ray(
-      scratch.rayOrigin,
-      scratch.rayDirection,
-    );
-  }
-
-  const obstructionRay = obstructionRayRef.current;
-
-  const initializeRig = useCallback(() => {
-    const target = targetRef.current;
-    const manualCamera = manualCameraRef.current;
-    const presetKey = `${preset.mode}:${preset.name}`;
-    const presetChanged = activePresetKeyRef.current !== presetKey;
-
-    if (presetChanged || !manualCamera.initialized) {
-      const initial = getCameraDefaultView(preset);
-      const shouldRestoreFieldOrientation =
-        preset.mode === "follow" && preset.name === "EXPLORE" && fieldOrientationRef.current.valid;
-      const yaw = shouldRestoreFieldOrientation
-        ? fieldOrientationRef.current.yaw
-        : initial.yaw;
-      const pitch = shouldRestoreFieldOrientation
-        ? clampCameraValue(
-            fieldOrientationRef.current.pitch,
-            preset.manualPitchLimits,
-          )
-        : initial.pitch;
-
-      manualCamera.currentYaw = normalizeAngle(yaw);
-      manualCamera.currentPitch = pitch;
-      manualCamera.targetYaw = manualCamera.currentYaw;
-      manualCamera.targetPitch = pitch;
-      manualCamera.pendingYaw = 0;
-      manualCamera.pendingPitch = 0;
-      manualCamera.currentRadius = initial.radius;
-      manualCamera.targetRadius = initial.radius;
-      manualCamera.obstructionRadius = initial.radius;
-      manualCamera.obstructionEngaged = false;
-      manualCamera.initialized = true;
-      activePresetKeyRef.current = presetKey;
-
-      if (preset.mode === "follow" && preset.name === "EXPLORE") {
-        fieldOrientationRef.current.yaw = manualCamera.currentYaw;
-        fieldOrientationRef.current.pitch = manualCamera.currentPitch;
-        fieldOrientationRef.current.valid = true;
-      }
-    }
-
-    const initialPitch = preset.mode === "follow" && preset.name === "EXPLORE"
-      ? architecturalCameraPitch(target.lookAt.x, target.lookAt.y, target.lookAt.z, manualCamera.currentRadius, manualCamera.currentPitch)
-      : manualCamera.currentPitch;
-    if (preset.mode === "fixed") {
-      setDesiredPosition(
-        scratch.desiredPosition,
-        preset.fixedLookAt[0],
-        preset.fixedLookAt[1],
-        preset.fixedLookAt[2],
-        manualCamera,
-      );
-    } else {
-      setDesiredPosition(
-        scratch.desiredPosition,
-        target.lookAt.x,
-        target.lookAt.y,
-        target.lookAt.z,
-        manualCamera,
-        manualCamera.currentRadius,
-        initialPitch,
-      );
-    }
-    cameraLike.position.copy(scratch.desiredPosition);
-    setCameraQuaternion(
-      cameraLike.quaternion,
-      manualCamera.currentYaw,
-      initialPitch,
-    );
-    updateCameraView(cameraViewRef, cameraLike.quaternion);
-    initializedRef.current = true;
-  }, [cameraLike, cameraViewRef, preset, scratch, targetRef]);
-
-  const recenterCamera = useCallback(() => {
-    const manualCamera = manualCameraRef.current;
-    const initial = getCameraDefaultView(preset);
-
-    manualCamera.pendingYaw = 0;
-    manualCamera.pendingPitch = 0;
-    manualCamera.targetYaw = normalizeAngle(initial.yaw);
-    manualCamera.targetPitch = initial.pitch;
-    manualCamera.targetRadius = initial.radius;
-  }, [preset]);
-
-  const updateRig = useCallback(
-    (delta: number) => {
-      const manualCamera = manualCameraRef.current;
-
-      if (worldInputBlocked()) {
-        // Freeze both smoothing and queued gestures while a semantic overlay
-        // or the HTML computer owns the interaction surface.
-        manualCamera.pendingYaw = 0;
-        manualCamera.pendingPitch = 0;
-        return;
-      }
-
-      const resync = resyncRef.current;
-      if (resync.active && resync.stage === 2) {
-        initializeRig();
-        resync.stage = 0;
-        return;
-      }
-
-      if (!initializedRef.current) {
-        initializeRig();
-        return;
-      }
-
-      const dampingMultiplier = reducedMotion
-        ? CAMERA_INPUT.reducedMotionDampingMultiplier
-        : 1;
-
-      if (manualCamera.pendingYaw !== 0) {
-        manualCamera.targetYaw = normalizeAngle(
-          manualCamera.targetYaw + manualCamera.pendingYaw,
-        );
-        manualCamera.pendingYaw = 0;
-      }
-
-      if (manualCamera.pendingPitch !== 0) {
-        manualCamera.targetPitch = clampCameraValue(
-          manualCamera.targetPitch + manualCamera.pendingPitch,
-          preset.manualPitchLimits,
-        );
-        manualCamera.pendingPitch = 0;
-      }
-
-      if (preset.manualYawLimits !== null) {
-        manualCamera.targetYaw = clampCameraValue(
-          manualCamera.targetYaw,
-          preset.manualYawLimits,
-        );
-      }
-
-      manualCamera.currentYaw = dampAngle(
-        manualCamera.currentYaw,
-        manualCamera.targetYaw,
-        preset.manualRotationDamping * dampingMultiplier,
-        delta,
-      );
-      manualCamera.currentPitch +=
-        (manualCamera.targetPitch - manualCamera.currentPitch) *
-        getDampingAlpha(
-          preset.manualRotationDamping * dampingMultiplier,
-          delta,
-        );
-      manualCamera.currentRadius +=
-        (manualCamera.targetRadius - manualCamera.currentRadius) *
-        getDampingAlpha(preset.zoomDamping * dampingMultiplier, delta);
-
-      if (preset.mode === "follow" && preset.name === "EXPLORE") {
-        fieldOrientationRef.current.yaw = manualCamera.targetYaw;
-        fieldOrientationRef.current.pitch = manualCamera.targetPitch;
-      }
-
-      const target = targetRef.current;
-      const pivot = preset.mode === "fixed"
-        ? {
-            x: preset.fixedLookAt[0],
-            y: preset.fixedLookAt[1],
-            z: preset.fixedLookAt[2],
-          }
-        : target.lookAt;
-
-      const effectivePitch = preset.mode === "follow" && preset.name === "EXPLORE"
-        ? architecturalCameraPitch(pivot.x, pivot.y, pivot.z, manualCamera.currentRadius, manualCamera.currentPitch)
-        : manualCamera.currentPitch;
-
-      setDesiredPosition(
-        scratch.desiredPosition,
-        pivot.x,
-        pivot.y,
-        pivot.z,
-        manualCamera,
-        manualCamera.currentRadius,
-        effectivePitch,
-      );
-
-      const desiredOffsetX = scratch.desiredPosition.x - pivot.x;
-      const desiredOffsetY = scratch.desiredPosition.y - pivot.y;
-      const desiredOffsetZ = scratch.desiredPosition.z - pivot.z;
-      const desiredDistance = Math.hypot(
-        desiredOffsetX,
-        desiredOffsetY,
-        desiredOffsetZ,
-      );
-      const inverseDesiredDistance = desiredDistance > 0.0001
-        ? 1 / desiredDistance
-        : 0;
-
-      scratch.rayDirection.x = desiredOffsetX * inverseDesiredDistance;
-      scratch.rayDirection.y = desiredOffsetY * inverseDesiredDistance;
-      scratch.rayDirection.z = desiredOffsetZ * inverseDesiredDistance;
-      scratch.rayOrigin.x =
-        pivot.x + scratch.rayDirection.x * CAMERA_OBSTRUCTION.pivotOffset;
-      scratch.rayOrigin.y =
-        pivot.y + scratch.rayDirection.y * CAMERA_OBSTRUCTION.pivotOffset;
-      scratch.rayOrigin.z =
-        pivot.z + scratch.rayDirection.z * CAMERA_OBSTRUCTION.pivotOffset;
-
-      const rayLength = Math.max(
-        0,
-        desiredDistance - CAMERA_OBSTRUCTION.pivotOffset,
-      );
-      const hit = rayLength > 0
-        ? world.castRay(
-            obstructionRay,
-            rayLength,
-            true,
-            rapier.QueryFilterFlags.EXCLUDE_SENSORS |
-              rapier.QueryFilterFlags.EXCLUDE_KINEMATIC,
-          )
-        : null;
-      const obstructionTarget = getCameraObstructionDistance({
-        desiredDistance,
-        hitTimeOfImpact: hit?.timeOfImpact ?? null,
-      });
-
-      if (hit !== null) {
-        manualCamera.obstructionEngaged = true;
-      } else if (
-        manualCamera.obstructionEngaged &&
-        manualCamera.obstructionRadius >= desiredDistance - 0.01
-      ) {
-        manualCamera.obstructionEngaged = false;
-      }
-
-      const retracting =
-        obstructionTarget < manualCamera.obstructionRadius - 0.001;
-
-      if (manualCamera.obstructionEngaged) {
-        const obstructionDamping = reducedMotion
-          ? retracting
-            ? CAMERA_OBSTRUCTION.reducedMotionRetractDamping
-            : CAMERA_OBSTRUCTION.reducedMotionRestoreDamping
-          : retracting
-            ? CAMERA_OBSTRUCTION.retractDamping
-            : CAMERA_OBSTRUCTION.restoreDamping;
-        const obstructionDelta = Math.min(
-          delta,
-          CAMERA_OBSTRUCTION.maximumDampingDelta,
-        );
-
-        manualCamera.obstructionRadius +=
-          (obstructionTarget - manualCamera.obstructionRadius) *
-          getDampingAlpha(obstructionDamping, obstructionDelta);
-        manualCamera.obstructionRadius = Math.min(
-          manualCamera.obstructionRadius,
-          desiredDistance,
-        );
-      } else {
-        manualCamera.obstructionRadius = desiredDistance;
-      }
-
-      setDesiredPosition(
-        scratch.desiredPosition,
-        pivot.x,
-        pivot.y,
-        pivot.z,
-        manualCamera,
-        manualCamera.obstructionRadius,
-        effectivePitch,
-      );
-
-      if (preset.mode === "follow") {
-        const positionDamping = retracting
-          ? reducedMotion
-            ? CAMERA_OBSTRUCTION.reducedMotionRetractDamping
-            : CAMERA_OBSTRUCTION.retractDamping
-          : preset.cameraPositionDamping * dampingMultiplier;
-
-        dampVector3(
-          cameraLike.position,
-          scratch.desiredPosition,
-          positionDamping,
-          delta,
-        );
-      } else {
-        cameraLike.position.copy(scratch.desiredPosition);
-      }
-
-      setCameraQuaternion(
-        cameraLike.quaternion,
-        manualCamera.currentYaw,
-        effectivePitch,
-      );
-      updateCameraView(cameraViewRef, cameraLike.quaternion);
-    },
-    [
-      cameraLike,
-      cameraViewRef,
-      initializeRig,
-      obstructionRay,
-      preset,
-      rapier.QueryFilterFlags.EXCLUDE_KINEMATIC,
-      rapier.QueryFilterFlags.EXCLUDE_SENSORS,
-      reducedMotion,
-      resyncRef,
-      scratch,
-      targetRef,
-      world,
-    ],
-  );
-
+import {useThree} from '@react-three/fiber';
+import {useRapier} from '@react-three/rapier';
+import {useCallback,useEffect,useLayoutEffect,useRef} from 'react';
+import {hideAvatarFromLens} from "../player/avatar-camera-visibility";
+import {Vector3,Quaternion,Euler} from 'three';
+import {CAMERA_RECENTER_EVENT,useExperienceState,worldInputBlocked} from '@/systems/experience-state';
+import {useInteractionDebugState} from '@/world/interactions/interaction-state';
+import type {CameraResyncRef,DevFrameUpdatesRef} from '@/world/DevFrameLoop';
+import type {PlayerControlRef} from '@/world/player/player-control';
+import type {PlayerMotionRef} from '@/world/player/player-motion';
+import type {CameraPreset} from './camera-presets';
+import type {CameraViewRef,CameraTargetRef} from './camera-types';
+import {CAMERA_INPUT,getWheelIntent,getZoomRadius,isInteractiveCameraTarget,normalizeWheelDelta} from './camera-controls';
+import {PERSPECTIVE,movementBasis,cameraDirection,wrapCameraYaw,clampLookPitch,perspectiveSign,safeCameraDistance,restoreCameraDistance,avatarBlocksLens,writeCameraEye,cameraRenderYaw} from './camera-perspectives';
+import {useCameraState,cameraIntent,cameraTelemetry} from './camera-state';
+type CameraPointer={pointerType:string;x:number;y:number;startX:number;startY:number};
+export function CameraRig({cameraViewRef,frameUpdatesRef,resyncRef,motionRef,playerControlRef}: {
+  cameraViewRef:CameraViewRef;frameUpdatesRef:DevFrameUpdatesRef;resyncRef:CameraResyncRef;motionRef:PlayerMotionRef;playerControlRef:PlayerControlRef;
+  preset?:CameraPreset;targetRef:CameraTargetRef;
+}) {
+  const {camera,gl}=useThree();const {world,rapier}=useRapier();
+  const manualRef=useRef({pendingYaw:0,pendingPitch:0,targetRadius:cameraIntent.radius,yaw:cameraIntent.yaw,pitch:cameraIntent.pitch,distance:0,avatarHidden:false,previousMode:useCameraState.getState().mode});
+  const pointerStateRef=useRef({activePointerId:null as number|null,pointers:new Map<number,CameraPointer>(),pinchDistance:null as number|null});
+  const scratch=useRef({eye:new Vector3(),direction:new Vector3(),desired:new Vector3(),quaternion:new Quaternion(),euler:new Euler(0,0,0,'YXZ')}).current;
+  const shape=useRef(new rapier.Ball(PERSPECTIVE.cameraClearance)).current;
+  const recenterCamera=useCallback(()=>{
+    cameraIntent.yaw=wrapCameraYaw(-motionRef.current.rotationY);cameraIntent.pitch=PERSPECTIVE.defaultPitch;cameraIntent.radius=PERSPECTIVE.defaultRadius;
+    manualRef.current.targetRadius=cameraIntent.radius;manualRef.current.pendingYaw=0;manualRef.current.pendingPitch=0;
+  },[motionRef]);
+  const prepare=useCallback((delta:number)=>{
+    const m=manualRef.current;
+    if(worldInputBlocked()){m.pendingYaw=0;m.pendingPitch=0;return;}
+    cameraIntent.yaw=wrapCameraYaw(cameraIntent.yaw+m.pendingYaw);cameraIntent.pitch=clampLookPitch(cameraIntent.pitch+m.pendingPitch);
+    cameraIntent.radius=m.targetRadius;m.pendingYaw=0;m.pendingPitch=0;
+    const direct=useExperienceState.getState().reducedMotion;const a=direct?1:1-Math.exp(-18*delta);
+    m.yaw=wrapCameraYaw(m.yaw+wrapCameraYaw(cameraIntent.yaw-m.yaw)*a);m.pitch+=(cameraIntent.pitch-m.pitch)*a;
+    movementBasis(m.yaw,cameraViewRef.current);
+  },[cameraViewRef]);
+  const updateRig=useCallback((delta:number)=>{
+    if(worldInputBlocked())return;
+    const m=manualRef.current,mode=useCameraState.getState().mode,sign=perspectiveSign(mode);
+    const motion=motionRef.current;writeCameraEye(scratch.eye,motion.position);
+    const renderYaw=cameraRenderYaw(mode,m.yaw,motion.rotationY,playerControlRef.current.physicsLocked);
+    cameraDirection(renderYaw,m.pitch,scratch.direction);
+    const desiredDistance=sign===0?0:cameraIntent.radius;
+    // Sweep a real sphere from the body-linked eye, rather than a thin ray
+    // with a minimum radius that could force the lens through nearby walls.
+    scratch.direction.multiplyScalar(sign||1);
+    const hit=sign===0?null:world.castShape(scratch.eye,scratch.quaternion.identity(),scratch.direction,shape,0,desiredDistance,true,
+      rapier.QueryFilterFlags.EXCLUDE_SENSORS|rapier.QueryFilterFlags.EXCLUDE_KINEMATIC);
+    const safe=safeCameraDistance(desiredDistance,hit?.time_of_impact??null,0.02);
+    const reduced=useExperienceState.getState().reducedMotion;
+    const regionResync=resyncRef.current.stage===2;
+    const start=regionResync?safe:mode!==m.previousMode?0:m.distance;
+    m.distance=restoreCameraDistance(start,safe,delta,reduced);
+    m.avatarHidden=avatarBlocksLens(mode,m.distance,m.avatarHidden);hideAvatarFromLens(m.avatarHidden);
+    scratch.desired.copy(scratch.eye).addScaledVector(scratch.direction,m.distance);camera.position.copy(scratch.desired);
+    const front=mode==='third-person-front';scratch.euler.set(front?-m.pitch:m.pitch,front?-renderYaw+Math.PI:-renderYaw,0,'YXZ');camera.quaternion.setFromEuler(scratch.euler);
+    camera.near=.04;if('fov' in camera&&camera.fov!==PERSPECTIVE.fov){camera.fov=PERSPECTIVE.fov;camera.updateProjectionMatrix();}
+    m.previousMode=mode;resyncRef.current.stage=0;
+    cameraTelemetry.renderYaw=renderYaw;cameraTelemetry.yaw=m.yaw;cameraTelemetry.pitch=m.pitch;cameraTelemetry.distance=m.distance;cameraTelemetry.safeDistance=safe;
+    cameraTelemetry.eye[0]=scratch.eye.x;cameraTelemetry.eye[1]=scratch.eye.y;cameraTelemetry.eye[2]=scratch.eye.z;cameraTelemetry.mode=mode;
+  },[camera,motionRef,playerControlRef,rapier.QueryFilterFlags.EXCLUDE_KINEMATIC,rapier.QueryFilterFlags.EXCLUDE_SENSORS,resyncRef,scratch,shape,world]);
   useEffect(() => {
     const element = gl.domElement;
     const pointerState = pointerStateRef.current;
-    const manualCamera = manualCameraRef.current;
+    const manualCamera = manualRef.current;
 
     const releasePointerCapture = (pointerId: number) => {
       if (element.hasPointerCapture(pointerId)) {
@@ -618,6 +119,7 @@ export function CameraRig({
     };
 
     const handlePointerDown = (event: PointerEvent) => {
+      if(event.pointerType==='touch' && event.clientX<gl.domElement.getBoundingClientRect().width*.45)return;
       if (
         (event.pointerType !== "touch" &&
           event.button !== 0 &&
@@ -633,7 +135,7 @@ export function CameraRig({
       }
 
       pointerState.pointers.set(event.pointerId, {
-        pointerType: event.pointerType,
+        pointerType: event.pointerType, startX: event.clientX, startY: event.clientY,
         x: event.clientX,
         y: event.clientY,
       });
@@ -676,11 +178,11 @@ export function CameraRig({
         const touchDistance = getTouchDistance();
 
         if (touchDistance !== null) {
-          if (pointerState.pinchDistance !== null) {
+          if (pointerState.pinchDistance !== null && useCameraState.getState().mode !== "first-person") {
             manualCamera.targetRadius = getZoomRadius(
               manualCamera.targetRadius,
               pointerState.pinchDistance - touchDistance,
-              preset.radiusLimits,
+              PERSPECTIVE.radiusLimits,
             );
           }
 
@@ -701,7 +203,7 @@ export function CameraRig({
         return;
       }
 
-      if (pointerState.activePointerId !== event.pointerId) {
+      if (pointerState.activePointerId !== event.pointerId || document.pointerLockElement === element) {
         return;
       }
 
@@ -738,11 +240,11 @@ export function CameraRig({
           deltaX * CAMERA_INPUT.trackpadYawSensitivity;
         manualCamera.pendingPitch +=
           deltaY * CAMERA_INPUT.trackpadPitchSensitivity;
-      } else {
+      } else if (useCameraState.getState().mode !== "first-person") {
         manualCamera.targetRadius = getZoomRadius(
           manualCamera.targetRadius,
           deltaY,
-          preset.radiusLimits,
+          PERSPECTIVE.radiusLimits,
         );
       }
 
@@ -750,6 +252,11 @@ export function CameraRig({
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "F5") {
+        event.preventDefault();
+        if (!event.repeat && !worldInputBlocked() && !isInteractiveCameraTarget(event.target)) useCameraState.getState().cycle();
+        return;
+      }
       if (
         event.key.toLowerCase() !== "c" ||
         event.repeat ||
@@ -776,8 +283,12 @@ export function CameraRig({
         return;
       }
 
+      const consciousClick=pointer.pointerType === 'mouse' && event.button === 0 && Math.hypot(event.clientX-pointer.startX,event.clientY-pointer.startY)<5;
       releasePointerCapture(event.pointerId);
       pointerState.pointers.delete(event.pointerId);
+      if(consciousClick && !worldInputBlocked() && window.innerWidth>600 && !matchMedia('(pointer:coarse)').matches) {
+        void element.requestPointerLock()?.catch(()=>{});
+      }
 
       if (pointer.pointerType === "touch") {
         updateTouchMode();
@@ -810,15 +321,27 @@ export function CameraRig({
     };
 
     const handleWindowBlur = () => {
+      unlock();
       clearPointerInput(true);
     };
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
+        unlock();
         clearPointerInput(true);
       }
     };
 
+    const unlock=()=>{if(document.pointerLockElement===element) document.exitPointerLock();};
+    const relativeLook=(event:MouseEvent)=>{
+      if(document.pointerLockElement!==element)return;
+      if(worldInputBlocked()){unlock();return;}
+      manualCamera.pendingYaw+=event.movementX*.0025;
+      manualCamera.pendingPitch-=event.movementY*.0025;
+    };
+    const unsubscribe=useExperienceState.subscribe(()=>{if(worldInputBlocked()){unlock();clearPointerInput(true);}});
+    const interactionSubscription=useInteractionDebugState.subscribe(state=>{if(state.status!=='idle'){unlock();clearPointerInput(true);}});
+    document.addEventListener('mousemove',relativeLook);
     element.addEventListener("pointerdown", handlePointerDown);
     element.addEventListener("pointermove", handlePointerMove);
     element.addEventListener("pointerup", handlePointerUp);
@@ -826,12 +349,13 @@ export function CameraRig({
     element.addEventListener("contextmenu", handleContextMenu);
     element.addEventListener("wheel", handleWheel, { passive: false });
     window.addEventListener("pointerup", handlePointerUp);
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true);
     window.addEventListener(CAMERA_RECENTER_EVENT, handleRecenterRequest);
     window.addEventListener("blur", handleWindowBlur);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
+      unlock();unsubscribe();interactionSubscription();document.removeEventListener('mousemove',relativeLook);
       element.removeEventListener("pointerdown", handlePointerDown);
       element.removeEventListener("pointermove", handlePointerMove);
       element.removeEventListener("pointerup", handlePointerUp);
@@ -839,27 +363,17 @@ export function CameraRig({
       element.removeEventListener("contextmenu", handleContextMenu);
       element.removeEventListener("wheel", handleWheel);
       window.removeEventListener("pointerup", handlePointerUp);
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown, true);
       window.removeEventListener(CAMERA_RECENTER_EVENT, handleRecenterRequest);
       window.removeEventListener("blur", handleWindowBlur);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       clearPointerInput(true);
     };
-  }, [gl, preset, recenterCamera]);
+  }, [gl, recenterCamera]);
 
-  useLayoutEffect(() => {
-    initializeRig();
-
-    const updates = frameUpdatesRef.current;
-    updates.cameraRig = updateRig;
-
-    return () => {
-      if (updates.cameraRig === updateRig) {
-        updates.cameraRig = null;
-      }
-      initializedRef.current = false;
-    };
-  }, [frameUpdatesRef, initializeRig, updateRig]);
-
+  useLayoutEffect(()=>{
+    const updates=frameUpdatesRef.current;updates.cameraInput=prepare;updates.cameraRig=updateRig;
+    return()=>{if(updates.cameraInput===prepare)updates.cameraInput=null;if(updates.cameraRig===updateRig)updates.cameraRig=null;};
+  },[frameUpdatesRef,prepare,updateRig]);
   return null;
 }

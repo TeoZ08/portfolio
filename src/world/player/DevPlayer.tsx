@@ -436,9 +436,9 @@ export function DevPlayer({
       const inverseDelta = 1 / delta;
       const motion = motionRef.current;
       const rotationTargetY = transitionRequest?.rotationY ??
-        (control.targetRotationY === null && moving
-          ? Math.atan2(-movementX, -movementZ)
-          : control.targetRotationY);
+        (control.targetRotationY ?? (control.manualInputEnabled && !rawInput.blocked && !physicsLocked
+          ? Math.atan2(-cameraViewRef.current.forwardX,-cameraViewRef.current.forwardZ)
+          : null));
       const nextRotationY = transitionRequest !== null
         ? transitionRequest.rotationY
         : rotationTargetY === null

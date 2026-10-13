@@ -1,5 +1,6 @@
 "use client";
 
+import { useCameraState } from "./camera/camera-state";
 import { Canvas } from "@react-three/fiber";
 import { Physics } from "@react-three/rapier";
 import { useEffect, useRef, type ReactNode } from "react";
@@ -59,6 +60,7 @@ export function WorldCanvas({
   cameraPreset = EXPLORE_CAMERA_PRESET,
   targets = EMPTY_INTERACTION_TARGETS,
 }: WorldCanvasProps) {
+  const cameraMode=useCameraState(state=>state.mode);
   const currentRegion = useWorldState((state) => state.currentRegion);
   const timeOfDay = useWorldState((state) => state.timeOfDay);
   const lowQuality = useExperienceState((state) => state.quality === "low");
@@ -89,6 +91,7 @@ export function WorldCanvas({
       tabIndex={-1}
       aria-label={canvasLabel}
       data-current-region={currentRegion}
+      data-camera-mode={cameraMode}
       data-playground={
         dataWorldMode === "physics-playground" ? "physics" : undefined
       }
@@ -139,6 +142,8 @@ export function WorldCanvas({
             targetRef={cameraTargetRef}
           />
           <CameraRig
+            playerControlRef={playerControlRef}
+            motionRef={motionRef}
             preset={cameraPreset}
             cameraViewRef={cameraViewRef}
             frameUpdatesRef={frameUpdatesRef}

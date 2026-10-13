@@ -49,7 +49,7 @@ export function Arrival() {
     <p>A casa guarda os projetos. O ateliê, os estudos e o jardim mostram outras partes do caminho.</p>
     <button autoFocus onClick={enter}>Entrar e explorar <span aria-hidden="true">↗</span></button>
     <Link href="/projetos" onClick={enter}>Ir direto aos projetos</Link>
-    <dl><div><dt>WASD / setas</dt><dd>Caminhar</dd></div><div><dt>Arraste</dt><dd>Olhar ao redor</dd></div><div><dt>E</dt><dd>Usar objetos próximos</dd></div><div><dt>Esc / ···</dt><dd>Mapa e arquivos</dd></div></dl>
-    <p className="arrival-touch">No celular, mova-se com o joystick à esquerda, toque em Salto à direita e arraste a tela para olhar.</p>
+    <dl><div><dt>WASD / setas</dt><dd>Caminhar</dd></div><div><dt>F5 / Câmera</dt><dd>Alternar três perspectivas</dd></div><div><dt>Clique / arraste</dt><dd>Capturar o mouse / olhar; Esc libera</dd></div><div><dt>E</dt><dd>Usar objetos próximos</dd></div><div><dt>Esc / ···</dt><dd>Mapa e arquivos</dd></div></dl>
+    <p className="arrival-touch">No celular, mova-se com o joystick à esquerda, toque em Salto à direita e arraste o lado direito para olhar. O botão Câmera alterna a perspectiva.</p>
   </dialog>;
 }
