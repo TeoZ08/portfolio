@@ -64,18 +64,20 @@ export const regressions = [{
         samples.push({
           time: performance.now(),
           eye: env.perspective.eye,
+          grounded: document.querySelector('[data-player-grounded]')?.textContent === 'true',
           body: document.body.innerText
         });
-        if (performance.now() - start > 4000) resolve(samples);else setTimeout(step, 150);
+        if (samples.length >= 30) resolve(samples);else setTimeout(step, 200);
       }
       step();
     }));
     g.data.observations.push({
       samples
     });
-    await g.shot('spawn-after4s');
+    await g.shot('spawn-after30x200ms');
     assert(samples.every(s => Math.abs(s.eye[2]) < 7), 'DEV spawn/recovery must remain on DEV floor, not Field z26');
-    assert(samples.some(s => s.body.includes('grounded: true') || s.body.includes('Grounded') || s.eye[1] > .9 && s.eye[1] < 1.5), 'DEV must ground rather than recover repeatedly');
+    assert(samples.filter(s => s.grounded).length >= samples.length * .8, 'DEV must stay grounded, not merely display the Grounded label');
+    assert(samples.every(s => s.eye[1] > .8 && s.eye[1] < 1.6), 'DEV observer must never descend into repeated recovery');
   }
 }, {
   id: 'D04',
@@ -234,19 +236,45 @@ export const regressions = [{
     assert(boxes.every(b => b.width >= 44 && b.height >= 44), 'Interactive hitboxes must be at least44×44 CSSpx');
     assert(boxes.slice(1).every((b, i) => b.x >= boxes[i].x + boxes[i].width), 'Window hitboxes must not overlap');
     assert.equal(await g.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-    await g.page.getByRole('button', {
+    async function tapEdge(locator) {
+      await g.page.locator('.desktop-window').evaluate(e => Promise.all(e.getAnimations().map(a => a.finished)));
+      const box = await locator.boundingBox();
+      const x = box.x + 2,
+        y = box.y + box.height / 2;
+      g.data.inputs.push({
+        nativeTouch: '44px handler edge, outside14px dot',
+        x,
+        y
+      });
+      await g.cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{
+          id: 1,
+          x,
+          y,
+          radiusX: 3,
+          radiusY: 3,
+          force: 1
+        }]
+      });
+      await g.cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchEnd',
+        touchPoints: []
+      });
+    }
+    await tapEdge(g.page.getByRole('button', {
       name: /Restaurar janela|Ampliar janela/
-    }).tap();
-    await g.page.getByRole('button', {
+    }));
+    await tapEdge(g.page.getByRole('button', {
       name: 'Minimizar janela'
-    }).tap();
+    }));
     assert.equal(await g.page.locator('.desktop-window').count(), 0);
     await g.page.getByRole('button', {
       name: /Abrir os projetos/
     }).tap();
-    await g.page.getByRole('button', {
+    await tapEdge(g.page.getByRole('button', {
       name: 'Fechar janela'
-    }).tap();
+    }));
     assert.equal(await g.page.locator('.desktop-window').count(), 0);
     await g.shot('closed');
   }
@@ -348,5 +376,24 @@ regressions.push({
     await g.page.mouse.move(710, 360);
     await g.page.waitForFunction(y => Math.abs(window.__environmentQA.read().perspective.yaw - y) > .05, before);
     await g.shot('look-still-works');
+  }
+});
+regressions.push({
+  id: 'D11.FAVICON.RESOURCE',
+  contracts: [],
+  async run(g) {
+    const response = await g.context.request.get((process.env.QA_BASE_URL || 'http://localhost:3154') + '/favicon.ico');
+    const bytes = await response.body();
+    g.data.observations.push({
+      url: response.url(),
+      status: response.status(),
+      bytes: bytes.length,
+      scope: 'Existing m. brand icon, no gameplay or remote request'
+    });
+    await g.open('/arquivo');
+    await g.shot('favicon-resource');
+    assert.equal(response.status(), 200, 'Known missing favicon must no longer emit404');
+    assert.deepEqual([...bytes.subarray(0, 4)], [0, 0, 1, 0], 'Actual ICO signature, not a misleading extension');
+    assert((await g.page.locator('head link[rel="icon"]').count()) > 0);
   }
 });

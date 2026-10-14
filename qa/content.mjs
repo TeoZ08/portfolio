@@ -5,6 +5,9 @@ const {
   NOTES,
   PROFILE
 } = await sourceModule('src/content/portfolio.ts');
+const {
+  GALLERY_ARTWORKS
+} = await sourceModule('src/content/gallery.ts');
 async function pc(g) {
   await g.open();
   await g.ready();
@@ -23,6 +26,12 @@ async function pc(g) {
     await g.verify('article ' + project.slug, ['PC.PROJECT.' + project.slug], async () => {
       assert.equal(await g.page.locator('.project-article h1').innerText(), project.title);
       assert.equal(await g.page.locator('.article-chapter').count(), project.chapters.length);
+      for (const [i, chapter] of project.chapters.entries()) {
+        const section = g.page.locator('.article-chapter').nth(i);
+        assert.equal(await section.locator('h2').innerText(), chapter.title);
+        const text = await section.innerText();
+        assert(chapter.paragraphs.every(p => text.includes(p)));
+      }
       assert.equal(await g.page.locator('.project-links a').count(), project.links?.length || 0);
     });
     const link = g.page.locator('.article-footer a');
@@ -36,6 +45,13 @@ async function pc(g) {
     });
     await popup.close();
     await g.page.bringToFront();
+    await g.click(g.page.getByRole('button', {
+      name: /Todos os arquivos/
+    }));
+    assert.equal(await g.page.locator('.project-file-row').count(), 3);
+    await g.click(g.page.locator('.project-file-row').filter({
+      hasText: project.title
+    }));
     await g.key('Escape');
     assert.equal(await g.page.locator('.project-article').count(), 0);
   }
@@ -55,6 +71,16 @@ async function pc(g) {
     await g.verify('app ' + id, ['PC.APP.' + id], async () => {
       assert(await g.page.locator('.desktop-window').isVisible());
       assert.equal(await g.page.locator('.desktop-window').getAttribute('aria-label'), name);
+      if (id === 'faculty') {
+        const projects = PROJECTS.filter(p => p.category.startsWith('Formação'));
+        assert.equal(await g.page.locator('.project-file-row').count(), projects.length);
+        for (const p of projects) assert((await g.page.locator('.project-directory').innerText()).includes(p.title));
+      }
+      if (id === 'about') {
+        const text = await g.page.locator('.about-page').innerText();
+        assert(PROFILE.about.every(p => text.includes(p)));
+      }
+      if (id === 'contact') assert.equal(await g.page.locator('.contact-page a').count(), PROFILE.links.length);
     });
   }
   await g.click(g.page.locator('.file-sidebar').getByRole('button', {
@@ -70,6 +96,15 @@ async function pc(g) {
       assert.equal(await g.page.locator('.note-paper h1').innerText(), note.title);
       const body = await g.page.locator('.note-paper').innerText();
       assert(note.body.every(p => body.includes(p)));
+      await g.click(g.page.locator('.file-sidebar').getByRole('button', {
+        name: 'Projetos',
+        exact: true
+      }));
+      await g.click(g.page.locator('.file-sidebar').getByRole('button', {
+        name: 'Notas',
+        exact: true
+      }));
+      assert.equal(await g.page.locator('.note-paper h1').innerText(), note.title);
     });
   }
   await g.click(g.page.locator('.file-sidebar').getByRole('button', {
@@ -126,6 +161,7 @@ async function pc(g) {
       name: 'Terminal',
       exact: true
     }));
+    if (cmd !== 'projetos') await g.verify('terminal fresh mount ' + cmd, ['TERMINAL.history'], async () => assert.equal(await g.page.locator('[role="log"] p').count(), 2));
     await input.fill(cmd);
     await input.press('Enter');
     await g.shot('terminal-opens-' + cmd);
@@ -369,7 +405,10 @@ async function art(g, project) {
     await g.shot('art-' + id);
     await g.verify('expand ' + id, ['ART.' + id + '.EXPAND'], async () => {
       assert(await fig.isVisible());
-      assert((await fig.locator('img').getAttribute('alt')).length > 0);
+      const artwork = GALLERY_ARTWORKS.find(a => a.id === id);
+      assert.equal(await fig.locator('img').getAttribute('alt'), artwork.alt);
+      assert.equal(await fig.locator('a').getAttribute('href'), artwork.src);
+      assert.equal(await fig.locator('figcaption').innerText(), artwork.title + ' · ' + artwork.caption);
       assert((await fig.locator('figcaption').innerText()).length > 0);
     });
     const event = g.context.waitForEvent('page');

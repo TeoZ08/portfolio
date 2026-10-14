@@ -54,6 +54,14 @@ export class Gameplay {
     });
     this.page = await this.context.newPage();
     this.cdp = await this.context.newCDPSession(this.page);
+    await this.cdp.send('Network.enable');
+    this.cdp.on('Network.responseReceived', event => {
+      if (event.response.status >= 400) this.data.errors.push({
+        kind: 'network',
+        url: event.response.url,
+        status: event.response.status
+      });
+    });
     this.page.on('pageerror', e => this.data.errors.push({
       kind: 'pageerror',
       message: e.message
@@ -68,7 +76,8 @@ export class Gameplay {
     this.page.on('console', m => {
       if (m.type() === 'error') this.data.errors.push({
         kind: 'console',
-        message: m.text()
+        message: m.text(),
+        url: m.location().url
       });
     });
     await this.context.addInitScript(() => {
@@ -76,7 +85,7 @@ export class Gameplay {
       for (const type of ['keydown', 'keyup', 'pointerdown', 'pointerup', 'blur', 'focus', 'visibilitychange', 'world:travel', 'world:chime']) window.addEventListener(type, e => window.__functionalEvents.push({
         type,
         key: e.key,
-          repeat: e.repeat,
+        repeat: e.repeat,
         detail: e.detail,
         isTrusted: e.isTrusted,
         time: performance.now(),
@@ -147,7 +156,7 @@ export class Gameplay {
     if (url.startsWith('/arquivo')) await this.page.waitForFunction(() => /^\d{2}:\d{2}$/.test(document.querySelector('.desktop time')?.textContent || ''));
   }
   async ready() {
-    await this.page.waitForFunction(() => window.__environmentQA && (document.querySelector('canvas')?.__avatarQA || location.pathname === '/dev/playground' && window.__environmentQA.read().playerMotion), null, {
+    await this.page.waitForFunction(() => window.__environmentQA && (document.querySelector('canvas')?.__avatarQA || window.__environmentQA.read().playerMotion), null, {
       timeout: 60000
     });
     const enter = this.page.getByRole('button', {
@@ -323,6 +332,46 @@ export class Gameplay {
     });
     return t;
   }
+  async startStatusTrace() {
+    await this.page.evaluate(() => {
+      if (window.__qaStatusTrace) cancelAnimationFrame(window.__qaStatusTrace.frame);
+      const probe = {
+        samples: [],
+        frame: null
+      };
+      window.__qaStatusTrace = probe;
+      function sample() {
+        const env = window.__environmentQA.read();
+        const motion = env.playerMotion || document.querySelector('canvas')?.__avatarQA?.motionRef.current;
+        probe.samples.push({
+          time: performance.now(),
+          status: env.interaction?.status || env.perspective.interaction,
+          region: document.querySelector('.world-canvas')?.dataset.currentRegion,
+          rotationY: motion?.rotationY,
+          position: motion ? {
+            ...motion.position
+          } : null
+        });
+        probe.frame = requestAnimationFrame(sample);
+      }
+      probe.frame = requestAnimationFrame(sample);
+    });
+  }
+  async stopStatusTrace(label) {
+    const phaseTrace = await this.page.evaluate(() => {
+      const p = window.__qaStatusTrace;
+      cancelAnimationFrame(p.frame);
+      delete window.__qaStatusTrace;
+      return p.samples;
+    });
+    this.data.observations.push({
+      label,
+      phaseTrace,
+      scope: 'Read-only RAF samples, stopped explicitly; no product state writes'
+    });
+    await this.save();
+    return phaseTrace;
+  }
   async activate(id, {
     cancel = false
   } = {}) {
@@ -335,10 +384,13 @@ export class Gameplay {
       await this.idle();
       await this.shot(id + '-cancelled');
     }
+    await this.startStatusTrace();
     await this.interact();
     await this.status(t.action.type === 'sit' ? 'sitting' : t.action.type === 'use' ? 'using' : 'idle');
     if (t.action.type === 'enter') await this.idle();
-    return this.shot(id + '-active');
+    const state = await this.shot(id + '-active');
+    state.phaseTrace = await this.stopStatusTrace(id + ' activation');
+    return state;
   }
   async interact() {
     if (this.touch) await this.click(this.page.locator('.world-interaction-prompt'));else await this.key('e');

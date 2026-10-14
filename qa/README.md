@@ -18,7 +18,7 @@ npm run test:all
 QA_BASE_URL=http://localhost:3154 QA_OUT=/caminho/absoluto/qa-nova QA_SUITE=regressions npm run test:functional
 ```
 
-As suítes disponíveis são `regressions`, `journeys`, `content`, `controls`, `related`, `boundaries`, `surfaces`, `interiors`, `sequences` e `all`. Um nome inválido ou seleção vazia falha, em vez de aprovar uma execução sem testes.
+As suítes disponíveis são `regressions`, `journeys`, `content`, `controls`, `related`, `boundaries`, `surfaces`, `interiors`, `sequences`, `completion`, `turns`, `faults`, `contracts`, `preferences`, `small` e `all`. Um nome inválido ou seleção vazia falha, em vez de aprovar uma execução sem testes.
 
 ```sh
 QA_SUITE=journeys QA_ONLY=JOURNEY.FRONT.ORIENTATION.ESC QA_OUT=/caminho/absoluto/qa-jornada npm run test:functional
@@ -40,4 +40,6 @@ node qa/build-registry.mjs /caminho/absoluto/relatorios
 - `failing` indica assertion não atendida; ainda requer diagnóstico para separar oracle errado de defeito. `harness-error` preserva timeout/seletor/rota, sem automaticamente reprovar produto.
 - Touch é emulado. Alt+Tab do SO, IME, telefone físico e audibilidade humana ficam manuais. RAF não mede tempo de GPU nem certifica FPS do equipamento físico.
 
-O registro gerado é provisório até comparar cada GIVEN–WHEN–THEN com a assertion e seu escopo. Um ID ligado a um teste não prova todas variantes desse contrato. Nenhuma operação desta infraestrutura faz merge, push ou deploy.
+O registro usa adjudicação por GIVEN–WHEN–THEN em `fixtures/coverage-adjudication.json` e cenários obrigatórios da última execução. Um ID ligado a um teste não prova todas variantes desse contrato. Nenhuma operação desta infraestrutura faz merge, push ou deploy.
+
+A suíte `faults` e o caso de storage malformado fazem injeção explícita de falha, em contexto novo. Não contam como navegação pública. `focus-probe.mjs` registra tentativa nativa de foco sem aprovar comportamento quando nenhum blur ocorre. `production-smoke.mjs` verifica a build servida em3155 sem globals DEV. O helper opcional `render-favicon.py` usa Pillow e a fonte Georgia Bold Italic instalada; não redistribui a fonte nem afeta runtime.

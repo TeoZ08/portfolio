@@ -15,18 +15,20 @@ async function desktop(g, mode) {
       scope: 'Flat arrival area, actualnative input; instantaneous speed separately'
     });
   }
-  await page.keyboard.down('w');
-  await page.keyboard.down('a');
-  await page.waitForFunction(() => {
-    const m = window.__environmentQA.read().playerMotion;
-    return m.grounded && Math.hypot(m.velocity.x, m.velocity.z) > 3.4;
-  });
-  const diagonal = await g.read();
-  await page.keyboard.up('w');
-  await page.keyboard.up('a');
-  await g.settle();
-  await g.shot('diagonal');
-  await g.verify('diagonal norm', ['MOVEMENT.DIAGONAL'], () => assert(Math.hypot(diagonal.motion.velocity.x, diagonal.motion.velocity.z) < 3.8));
+  for (const side of ['a', 'd']) {
+    await page.keyboard.down('w');
+    await page.keyboard.down(side);
+    await page.waitForFunction(() => {
+      const m = window.__environmentQA.read().playerMotion;
+      return m.grounded && Math.hypot(m.velocity.x, m.velocity.z) > 3.4;
+    });
+    const diagonal = await g.read();
+    await page.keyboard.up('w');
+    await page.keyboard.up(side);
+    await g.settle();
+    await g.shot('diagonal-' + side);
+    await g.verify('diagonal norm ' + side, ['MOVEMENT.DIAGONAL'], () => assert(Math.hypot(diagonal.motion.velocity.x, diagonal.motion.velocity.z) < 3.8));
+  }
   await page.keyboard.down('Shift');
   await page.keyboard.down('w');
   await page.waitForFunction(() => {
@@ -305,13 +307,19 @@ for (const quality of ['balanced', 'low']) for (const mode of modes) {
     id: 'CONTROLS.' + quality + '.' + mode,
     quality,
     contracts: [],
-    run: g => desktop(g, mode)
+    run: async g => {
+      await desktop(g, mode);
+      await g.verify('natural console/network clean', [], () => assert.deepEqual(g.data.errors, []));
+    }
   });
   controls.push({
     id: 'TOUCH.' + quality + '.' + mode,
     quality,
     touch: true,
     contracts: [],
-    run: g => touch(g, mode)
+    run: async g => {
+      await touch(g, mode);
+      await g.verify('natural console/network clean', [], () => assert.deepEqual(g.data.errors, []));
+    }
   });
 }

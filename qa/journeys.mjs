@@ -6,6 +6,19 @@ async function assertActive(g, id, state) {
     assert(state.motion.grounded || t.action.type === 'sit');
     assert(Number.isFinite(state.motion.position.x + state.motion.position.y + state.motion.position.z));
     assert(state.motion.position.y > -1);
+    if (t.action.type !== 'enter') {
+      assert.equal(state.control.manualInputEnabled, false);
+      if (t.action.type === 'sit' || t.action.seated) assert(state.control.physicsLocked);
+    }
+    if (id === 'DOJO_PRACTICE') {
+      assert.equal(state.control.pose, 'practice');
+      assert.equal(state.pose, 'practice');
+    }
+    if (t.action.type === 'enter') {
+      assert(Math.hypot(state.motion.position.x - t.action.destinationPoint[0], state.motion.position.y - t.action.destinationPoint[1], state.motion.position.z - t.action.destinationPoint[2]) < .15);
+      assert(state.phaseTrace.some(s => s.region === t.action.destinationRegion && s.position && Math.hypot(s.position.x - t.action.destinationPoint[0], s.position.y - t.action.destinationPoint[1], s.position.z - t.action.destinationPoint[2]) < .15 && Math.abs(Math.atan2(Math.sin(s.rotationY - t.action.destinationRotationY), Math.cos(s.rotationY - t.action.destinationRotationY))) < .1), 'Destination heading must be observed at transition application; manual idle subsequently follows preserved camera look');
+    }
+    assert(state.phaseTrace.some(s => s.status === 'aligned'), 'Actual aligned phase must be observed, not inferred');
     if (t.action.type === 'sit') assert(Math.hypot(state.motion.position.x - t.action.seatPoint[0], state.motion.position.y - t.action.seatPoint[1], state.motion.position.z - t.action.seatPoint[2]) < .1);
     assert.equal(state.region, t.action.type === 'enter' ? t.action.destinationRegion : t.region);
     if (t.action.type !== 'enter') assert.equal(state.env.interaction.activeTargetId, id);
@@ -120,7 +133,7 @@ async function journey(g, variant = {}) {
     coverage: 'partial',
     scope: 'Routes include dojo stairs/Mirante; not every obstacle or slope angle'
   });
-  await g.verify('console clean', [], () => assert.equal(g.data.errors.filter(e => !(e.kind === 'http' && e.url.endsWith('/favicon.ico')) && !(e.kind === 'console' && e.message.includes('404'))).length, 0));
+  await g.verify('console clean', [], () => assert.deepEqual(g.data.errors, []));
 }
 async function maps(g) {
   await g.open();

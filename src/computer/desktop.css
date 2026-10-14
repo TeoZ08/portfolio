@@ -29,3 +29,5 @@
 }
 .window-actions button::before { box-sizing: border-box; }
 @media (max-width: 640px) { .window-titlebar > .window-owner { display: none; } }
+/* Programmatic Escape focus uses the approved paper/sage system as well. */
+.desktop-window:focus-visible { outline: 2px solid var(--sage); outline-offset: -2px; }

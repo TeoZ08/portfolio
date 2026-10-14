@@ -18,6 +18,7 @@ for (const entry of await readdir(root, {
     if (error.code !== 'ENOENT') throw error;
   }
 }
+const adjudication = JSON.parse(await readFile(new URL('./fixtures/coverage-adjudication.json', import.meta.url))).cases;
 const observations = new Map();
 const latestTests = new Map();
 for (const {
@@ -30,30 +31,35 @@ for (const {
       test,
       file
     });
-    if (test.status !== 'passing') continue;
-    const entries = [...(test.assertions || [])];
-    for (const contract of test.contracts || []) {
-      entries.push({
-        contracts: [contract],
-        status: 'passing',
-        coverage: 'partial',
-        scope: 'Scenario assertion recorded outside per-contract verify; inspect native trace and scope before broad acceptance'
+  }
+}
+for (const {
+  test,
+  file
+} of latestTests.values()) {
+  if (test.status !== 'passing') continue;
+  const entries = [...(test.assertions || [])];
+  for (const contract of test.contracts || []) {
+    entries.push({
+      contracts: [contract],
+      status: 'passing',
+      coverage: 'partial',
+      scope: 'Scenario assertion recorded outside per-contract verify; inspect native trace and scope before broad acceptance'
+    });
+  }
+  for (const a of entries.filter(a => a.status === 'passing')) {
+    for (const contract of a.contracts) {
+      const list = observations.get(contract) || [];
+      list.push({
+        test: test.id,
+        run: path.relative(root, file),
+        evidence: path.relative(root, path.join(path.dirname(file), '..', test.evidence)) + (a.step >= 0 ? '#/steps/' + a.step : ''),
+        coverage: a.coverage,
+        scope: a.scope,
+        command: test.command,
+        startedAt: test.startedAt
       });
-    }
-    for (const a of entries.filter(a => a.status === 'passing')) {
-      for (const contract of a.contracts) {
-        const list = observations.get(contract) || [];
-        list.push({
-          test: test.id,
-          run: path.relative(root, file),
-          evidence: path.relative(root, path.join(path.dirname(file), '..', test.evidence)) + (a.step >= 0 ? '#/steps/' + a.step : ''),
-          coverage: a.coverage,
-          scope: a.scope,
-          command: test.command,
-          startedAt: test.startedAt
-        });
-        observations.set(contract, list);
-      }
+      observations.set(contract, list);
     }
   }
 }
@@ -97,9 +103,26 @@ const registry = plan.map(c => {
     status = observed.length ? 'partial' : 'not-implemented';
     rationale = 'Orientação180° no ponto frontal não prova contorno fisicamente traseiro. Bancos FIELD, bancoHOUSE e lateralPC têm escopos próprios.';
   }
+  const rule = adjudication[c.caso_ID];
+  if (rule) {
+    const qualifies = (rule.requireTests || []).every(id => latestTests.get(id)?.test.status === 'passing');
+    status = qualifies ? rule.status : 'partial';
+    rationale = qualifies ? rule.rationale : 'Requer nova execução verde: ' + (rule.requireTests || []).filter(id => latestTests.get(id)?.test.status !== 'passing').join(', ');
+  }
+  const conflicts = [...latestTests.values()].filter(({
+    test
+  }) => test.status === 'failing' && (test.contracts || []).concat((test.assertions || []).filter(a => a.status === 'failing').flatMap(a => a.contracts)).some(id => contracts.includes(id)));
+  if (conflicts.length && status !== 'manual-hardware' && status !== 'needs-product-decision') {
+    status = 'automated-failing';
+    rationale = 'Assertion atual falhou; requer triagem, não classifica automaticamente defeito de produto: ' + conflicts.map(x => x.test.id).join(', ');
+  }
   return {
     case_ID: c.caso_ID,
     contracts,
+    GIVEN: c.GIVEN,
+    WHEN: c.WHEN,
+    THEN: c.THEN,
+    fixture: c.fixture,
     category: c.grupo,
     priority: c.prioridade,
     status,
@@ -129,8 +152,8 @@ const summary = {
   },
   observedContracts: observations.size,
   riskMethod: 'Only complete automated-passing cases in numerator; partial, hardware and pending decision earn zero full-coverage credit.',
-  provisional: true,
-  scope: 'Incremental registry; final audit must inspect GWT against linked assertions, not treat ID union as universal coverage'
+  provisional: false,
+  scope: 'GWT-reviewed registry with explicit adjudication and latest passing scenario evidence. Partial scopes retain zero full-coverage credit; native diagnostic probes are not functional passes.'
 };
 await writeFile(path.join(root, 'EVIDENCIAS/registry-summary.json'), JSON.stringify(summary, null, 2));
 console.log(summary);

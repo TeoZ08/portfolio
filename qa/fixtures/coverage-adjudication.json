@@ -1,0 +1,199 @@
+{
+  "method": "Review of the actual285GWT, source and linked assertions. Conservative case overrides; required scenario successes are checked dynamically. Full case acceptance concerns its named fixture, not every Cartesian combination.",
+  "cases": {
+    "PT.085": {
+      "status": "partial",
+      "rationale": "Salto físico e retorno ao chão observados; impulso exato6,2 e cooldown0,42s não foram medidos integralmente no navegador."
+    },
+    "PT.086": {
+      "status": "partial",
+      "rationale": "Dash físico acima7 e até9,3m/s observado; duração exata0,18s permanece não medida."
+    },
+    "PT.087": {
+      "status": "partial",
+      "rationale": "Repouso real confirmado após liberar inputs; desaceleração34 não estimada empiricamente."
+    },
+    "PT.088": {
+      "status": "manual-hardware",
+      "rationale": "A seleção nativa de aba em Chrome headless não comprova perda de foco da janela; necessário foco real do SO, sem dispatchEvent."
+    },
+    "PT.106": {
+      "status": "manual-hardware",
+      "rationale": "Roda fina6/3 foi emulada em Chrome; não houve trackpad físico. Provas emuladas preservadas."
+    },
+    "PT.108": {
+      "status": "automated-passing",
+      "requireTests": [
+        "CAMERA.PUBLIC.BUTTON.CONTRACT",
+        "CONTROLS.balanced.third-person-back",
+        "CONTROLS.balanced.third-person-front",
+        "CONTROLS.balanced.first-person"
+      ],
+      "rationale": "C e botão nativos; três modos, heading físico, pitch−0,16 e raio4,2 medidos em área livre; modo conservado."
+    },
+    "PT.179": {
+      "status": "partial",
+      "rationale": "Assento e liberação de controles conferidos; não há oráculo normativo separado para restaurar yaw anterior versus seguir olhar publicado."
+    },
+    "PT.183": {
+      "status": "automated-passing",
+      "requireTests": [
+        "PC.HIDDEN.APP.RETENTION",
+        "PC.DEEP.DESKTOP",
+        "PC.DEEP.TOUCH"
+      ],
+      "rationale": "Minimizar mantém indicador de app selecionado no dock enquanto janela ausente; reabrir retorna projetos. PC profundo complementa preferência/reabertura."
+    },
+    "PT.206": {
+      "status": "automated-passing",
+      "requireTests": [
+        "PC.DEEP.DESKTOP",
+        "PC.DEEP.TOUCH"
+      ],
+      "rationale": "Histórico62 e reset para2linhas ao remontar terminal comprovados no PC profundo, duas superfícies."
+    },
+    "PT.109": {
+      "status": "automated-passing",
+      "requireTests": [
+        "INTERIOR.CAMERA.LOW"
+      ],
+      "rationale": "Pitch±85° observado nos três modos, centro/cantos HOUSE e Songahm; não implica ausência universal de clipping."
+    },
+    "PT.142": {
+      "status": "automated-passing",
+      "requireTests": [
+        "RESILIENCE.ASSET.RETRY",
+        "ASSET.OPTIONAL.SKY",
+        "ASSET.OPTIONAL.AVATAR"
+      ],
+      "rationale": "Falhas injetadas separadas: panorama e avatar mantêm mundo; GLB obrigatório exibe HTML e Retry público recupera. Não são falhas naturais."
+    },
+    "PT.164": {
+      "status": "automated-passing",
+      "requireTests": [
+        "COMPLETE.GALLERY.LINKS.EXITS",
+        "COMPLETE.NAVIGATION.LINKS"
+      ],
+      "rationale": "Link do painel é a URL canônica; HEAD405 foi classificado, GET público200, sem JS remoto nem endpointIA."
+    },
+    "PT.240": {
+      "status": "partial",
+      "rationale": "Observer avatarQA opt-in foi lido em DEV; produção exige prova separada de ausência de globals."
+    },
+    "PT.241": {
+      "status": "automated-passing",
+      "requireTests": [
+        "FAULT.RECOVERY.FIELD",
+        "FAULT.RECOVERY.HOUSE",
+        "FAULT.RECOVERY.DEV_FOUNDATION"
+      ],
+      "rationale": "Hook DEV de falha existente invocado em fixture explicitamente rotulada. Prova do hook e recuperação, nunca de rota ou acesso público."
+    },
+    "PT.263": {
+      "status": "automated-passing",
+      "requireTests": [
+        "D06",
+        "CONTRACT.SIDEBAR.KEYBOARD"
+      ],
+      "rationale": "AX nativo com6nomes e ativação por tap; Tab/Enter nativos nos mesmos6apps em fixture separada."
+    },
+    "PT.264": {
+      "status": "automated-passing",
+      "requireTests": [
+        "D07"
+      ],
+      "rationale": "Três handlers44×44 sem sobreposição e toque perto da borda fora do círculo visual14px. Ergonomia humana continua manual."
+    },
+    "PT.265": {
+      "status": "automated-passing",
+      "requireTests": [
+        "D08",
+        "SURFACE.SYSTEM.MOTION"
+      ],
+      "rationale": "Preferência manual e media reduce em contextos separados; getAnimations/computedstyle reportam duração reduzida."
+    },
+    "RG.D01": {
+      "status": "automated-passing",
+      "requireTests": [
+        "D01",
+        "CONTRACT.ESC.FOCUSED.LINK"
+      ],
+      "rationale": "Gatilho de row removida sempopup e link alcançado por Tab executados: artigo→lista→minimizar→quarto. Botões positivos no PC profundo."
+    },
+    "RG.D02": {
+      "status": "automated-passing",
+      "requireTests": [
+        "D02",
+        "PC.DEEP.DESKTOP",
+        "PC.DEEP.TOUCH",
+        "SURFACE.SMOKE.PREFS"
+      ],
+      "rationale": "Acesso direto e PC integrado salvam low/reduced; refresh e storage conferidos por ações públicas."
+    },
+    "RG.D03": {
+      "status": "automated-passing",
+      "requireTests": [
+        "D03",
+        "DEV.REAL.TARGETS"
+      ],
+      "rationale": "30amostras200ms semloop e percurso público DEV aos dois alvos. Falha injetada é outra fixture e não sustenta acesso."
+    },
+    "RG.D04": {
+      "status": "automated-passing",
+      "requireTests": [
+        "D04",
+        "INTERIOR.CAMERA.LOW"
+      ],
+      "rationale": "Extremos±85°, três modos, centro/cantos, Casa/Songahm low e C recuperando vista, com fonte visual/física compartilhada."
+    },
+    "RG.D05": {
+      "status": "automated-passing",
+      "requireTests": [
+        "D05"
+      ],
+      "rationale": "Dois bancos FIELD: recusa antes de travar, indicação e5s comcontrole livre; contorno frontal senta normalmente. Não extrapolar a todos alvos."
+    },
+    "RG.D06": {
+      "status": "automated-passing",
+      "requireTests": [
+        "D06",
+        "CONTRACT.SIDEBAR.KEYBOARD"
+      ],
+      "rationale": "AX nativo e seisapps touch; ordemTab eEnter comprovados em fixture complementar."
+    },
+    "RG.D07": {
+      "status": "automated-passing",
+      "requireTests": [
+        "D07"
+      ],
+      "rationale": "44×44 no handler após animação, três controles semoverlap e taps nas bordas além do visual14px; dedo físico não certificado."
+    },
+    "RG.D08": {
+      "status": "automated-passing",
+      "requireTests": [
+        "D08",
+        "SURFACE.SYSTEM.MOTION"
+      ],
+      "rationale": "Manual versus mediaquery em contextos separados, minimizar/reabrir e timings do navegador medidos."
+    },
+    "RG.D09": {
+      "status": "automated-passing",
+      "requireTests": [
+        "D09",
+        "CONTRAST.FIELD.MAP.FADE"
+      ],
+      "rationale": "E→Esc/TabEnter rápido e contraste lento HOUSE; FIELD→FIELD complementa gating. F5 preserva ciclo quando foco livre, semreload; não foi inventado bloqueio de câmera."
+    },
+    "RES.ASSETS": {
+      "status": "automated-passing",
+      "requireTests": [
+        "RESILIENCE.ASSET.RETRY",
+        "ASSET.OPTIONAL.SKY",
+        "ASSET.OPTIONAL.AVATAR",
+        "RESILIENCE.NATIVE.NO_WEBGL",
+        "RESILIENCE.POINTER.DENIAL"
+      ],
+      "rationale": "Mundo real com abort isolado/Retry, sky/avatar fallbacks, Chrome semWebGL e sandbox real negando captura, com arraste funcional."
+    }
+  }
+}
