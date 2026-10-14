@@ -22,3 +22,10 @@ export const HOUSE_BOOKSHELF_INTERACTION_POINT = housePlayerPoint(5.95, -1);
 export const HOUSE_INTERIOR_WIDTH = 16;
 export const HOUSE_INTERIOR_DEPTH = 12;
 export const HOUSE_INTERIOR_WALL_HEIGHT = 4.5;
+
+// Shared authored geometry: visual enclosure and camera/player collision agree.
+export const HOUSE_CEILING = {
+  position: [0, HOUSE_INTERIOR_WALL_HEIGHT + .1, 2.5] as [number, number, number],
+  size: [16.5, .2, 18] as [number, number, number],
+  halfSize: [8.25, .1, 9] as [number, number, number],
+};

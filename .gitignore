@@ -17,3 +17,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Local functional QA output (official reports live outside the repository).
+qa-results/

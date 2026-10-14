@@ -24,7 +24,7 @@ import type { InteractionTarget } from "@/world/interactions/interaction-types";
 import { WorldDiagnostics } from "./WorldDiagnostics";
 import { DevPlayer } from "@/world/player/DevPlayer";
 import { createPlayerControlState } from "@/world/player/player-control";
-import { createPlayerMotionState } from "@/world/player/player-motion";
+import { createPlayerMotionState, getPlayerStartPosition } from "@/world/player/player-motion";
 
 const EMPTY_INTERACTION_TARGETS: readonly InteractionTarget[] = [];
 
@@ -73,7 +73,7 @@ export function WorldCanvas({
   );
   const isDevelopment = process.env.NODE_ENV !== "production";
   const frameUpdatesRef = useRef(createDevFrameUpdates());
-  const motionRef = useRef(createPlayerMotionState());
+  const motionRef = useRef(createPlayerMotionState(getPlayerStartPosition(region)));
   const playerControlRef = useRef(createPlayerControlState());
   const cameraTargetRef = useRef(createCameraTargetState());
   const cameraViewRef = useRef(
@@ -106,7 +106,7 @@ export function WorldCanvas({
         }}
         dpr={lowQuality ? 1 : [1, 2]}
       >
-        <WorldDiagnostics />
+        <WorldDiagnostics motionRef={motionRef} playerControlRef={playerControlRef} />
         <color attach="background" args={[backgroundColor]} />
         {isDevelopment && showHelpers ? <DevelopmentHelpers /> : null}
         <Physics
@@ -126,6 +126,7 @@ export function WorldCanvas({
             targets={targets}
           />
           <DevPlayer
+            startPosition={getPlayerStartPosition(region)}
             cameraResyncRef={cameraResyncRef}
             solidColor={playerColor}
             cameraViewRef={cameraViewRef}

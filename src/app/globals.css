@@ -208,3 +208,10 @@ input {
 .gallery-captures figure { margin:1rem 0 1.25rem; scroll-margin-top:4rem; }
 .gallery-captures img { width:100%; height:auto; display:block; border:1px solid #c9c4b3; }
 .gallery-captures figcaption { font-size:.75rem; line-height:1.5; color:#586354; margin-top:.5rem; }
+
+.world-approach-feedback { position: absolute; bottom: 7rem; left: 50%; transform: translateX(-50%); max-width: min(28rem, calc(100vw - 2rem)); margin: 0; padding: .75rem 1rem; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: .25rem; font-size: .8rem; text-align: center; pointer-events: none; }
+.world-interaction-prompt:disabled { cursor: default; opacity: .75; }
+
+@media (pointer: coarse), (max-width: 600px) {
+  .world-approach-feedback { bottom: calc(264px + env(safe-area-inset-bottom, 0px)); width: min(28rem, calc(100vw - 2rem)); }
+}

@@ -6,6 +6,7 @@ export type InteractionDebugSnapshot = {
   status: InteractionStatus;
   candidateId: string | null;
   candidateLabel: string | null;
+  candidateBlockedReason: string | null;
   activeTargetId: string | null;
   activeTargetLabel: string | null;
 };
@@ -14,6 +15,7 @@ const INITIAL_INTERACTION_DEBUG: InteractionDebugSnapshot = {
   status: "idle",
   candidateId: null,
   candidateLabel: null,
+  candidateBlockedReason: null,
   activeTargetId: null,
   activeTargetLabel: null,
 };

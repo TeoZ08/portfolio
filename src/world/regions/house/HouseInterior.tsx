@@ -4,6 +4,7 @@ import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useExperienceState } from "@/systems/experience-state";
 
 import {
+  HOUSE_CEILING,
   HOUSE_BOOKSHELF_INTERACTION_POINT,
   HOUSE_COMPUTER_INTERACTION_POINT,
   HOUSE_ENTRY_BENCH_INTERACTION_POINT,
@@ -24,6 +25,7 @@ function InteriorColliders() {
       type="fixed"
       colliders={false}
     >
+      <CuboidCollider name="HOUSE_VISUAL_CEILING_COLLIDER" args={HOUSE_CEILING.halfSize} position={HOUSE_CEILING.position} />
       <CuboidCollider name="HOUSE_INTERIOR_FLOOR_COLLIDER" args={[HOUSE_FLOOR.halfWidth, HOUSE_FLOOR.halfThickness, HOUSE_FLOOR.halfDepth]} position={[0, -HOUSE_FLOOR.halfThickness, HOUSE_FLOOR.centerZ]} />
       <CuboidCollider args={[0.25, 2.25, 9]} position={[-8.25, 2.25, 2.5]} />
       <CuboidCollider args={[0.25, 2.25, 9]} position={[8.25, 2.25, 2.5]} />

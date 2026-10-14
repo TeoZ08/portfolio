@@ -3,6 +3,8 @@
 import { crossedHouseExit } from "@/world/regions/house/house-safety";
 import { findWorldDestination } from "@/world/regions/field/world-destinations";
 
+import { getNearestTarget } from "./interaction-proximity";
+import { useRapier } from "@react-three/rapier";
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 import type {
@@ -30,6 +32,7 @@ const TRANSITION_DURATION = 0.34;
 type InteractionRuntimeState = {
   status: InteractionStatus;
   candidate: InteractionTarget | null;
+  candidateBlockedReason: string | null;
   activeTarget: InteractionTarget | null;
   interactRequested: boolean;
   cancelRequested: boolean;
@@ -51,6 +54,7 @@ function createInteractionRuntimeState(): InteractionRuntimeState {
   return {
     status: "idle",
     candidate: null,
+    candidateBlockedReason: null,
     activeTarget: null,
     interactRequested: false,
     cancelRequested: false,
@@ -83,44 +87,13 @@ function shortestAngleDelta(target: number, current: number) {
   return delta - Math.PI;
 }
 
-function getNearestTarget(
-  position: PlayerMotionRef["current"]["position"],
-  targets: readonly InteractionTarget[],
-) {
-  let nearest: InteractionTarget | null = null;
-  let nearestDistanceSquared = Number.POSITIVE_INFINITY;
-
-  for (const target of targets) {
-    const dx = target.interactionPoint[0] - position.x;
-    const dy = target.interactionPoint[1] - position.y;
-    const dz = target.interactionPoint[2] - position.z;
-    const distanceSquared = dx * dx + dy * dy + dz * dz;
-    const radiusSquared = target.activationRadius * target.activationRadius;
-
-    if (distanceSquared > radiusSquared) {
-      continue;
-    }
-
-    const isCloser = distanceSquared < nearestDistanceSquared;
-    const isTie =
-      distanceSquared === nearestDistanceSquared &&
-      nearest !== null &&
-      target.id < nearest.id;
-
-    if (isCloser || isTie) {
-      nearest = target;
-      nearestDistanceSquared = distanceSquared;
-    }
-  }
-
-  return nearest;
-}
 
 function publishRuntimeState(runtime: InteractionRuntimeState) {
   publishInteractionDebugSnapshot({
     status: runtime.status,
     candidateId: runtime.candidate?.id ?? null,
     candidateLabel: runtime.candidate?.label ?? null,
+    candidateBlockedReason: runtime.candidateBlockedReason,
     activeTargetId: runtime.activeTarget?.id ?? null,
     activeTargetLabel: runtime.activeTarget?.label ?? null,
   });
@@ -185,6 +158,30 @@ export function InteractionSystem({
   playerControlRef,
   targets,
 }: InteractionSystemProps) {
+  const { world, rapier } = useRapier();
+  const approachShape = useRef(new rapier.Capsule(.5, .35)).current;
+  const approachScratch = useRef({ x: 0, y: 0, z: 0 }).current;
+  const approachRotation = useRef({ x: 0, y: 0, z: 0, w: 1 }).current;
+  const blockedApproach = useCallback((target: InteractionTarget | null) => {
+    if (!target?.clearApproach) return null;
+    const origin = motionRef.current.position;
+    approachScratch.x = target.interactionPoint[0] - origin.x;
+    approachScratch.y = target.interactionPoint[1] - origin.y;
+    approachScratch.z = target.interactionPoint[2] - origin.z;
+    const distance = Math.hypot(approachScratch.x, approachScratch.y, approachScratch.z);
+    if (distance <= target.positionTolerance) return null;
+    approachScratch.x /= distance; approachScratch.y /= distance; approachScratch.z /= distance;
+    // Test the actual body corridor against obstacles, excluding its own body and
+    // terrain support (which the character controller follows while approaching).
+    const hit = world.castShape(origin, approachRotation, approachScratch, approachShape,
+      0, distance, true, rapier.QueryFilterFlags.EXCLUDE_KINEMATIC | rapier.QueryFilterFlags.EXCLUDE_SENSORS,
+      undefined, undefined, undefined, collider =>
+        collider.shapeType() !== rapier.ShapeType.TriMesh &&
+        collider.shapeType() !== rapier.ShapeType.HeightField &&
+        collider.translation().y > Math.min(origin.y, target.interactionPoint[1]) - .85);
+    return hit && hit.time_of_impact < distance - target.positionTolerance
+      ? "Contorne o banco para se aproximar pela frente." : null;
+  }, [world, rapier, motionRef, approachShape, approachScratch, approachRotation]);
   const runtimeRef = useRef<InteractionRuntimeState | null>(null);
   const pressedKeysRef = useRef<Set<string> | null>(null);
 
@@ -245,12 +242,14 @@ export function InteractionSystem({
         }
         const candidate = getNearestTarget(motionRef.current.position, targets);
 
-        if (candidate !== runtime.candidate) {
+        const candidateBlockedReason = blockedApproach(candidate);
+        if (candidate !== runtime.candidate || candidateBlockedReason !== runtime.candidateBlockedReason) {
           runtime.candidate = candidate;
+          runtime.candidateBlockedReason = candidateBlockedReason;
           publishRuntimeState(runtime);
         }
 
-        if (interactRequested && !cancelRequested && candidate !== null) {
+        if (interactRequested && !cancelRequested && candidate !== null && candidateBlockedReason === null) {
           runtime.activeTarget = candidate;
           runtime.status = "approaching";
           runtime.transitionElapsed = 0;
@@ -575,6 +574,7 @@ export function InteractionSystem({
       playerControlRef,
       runtime,
       targets,
+      blockedApproach,
     ],
   );
 
@@ -677,9 +677,11 @@ export function InteractionSystem({
       if (updates.interaction === updateInteractions) {
         updates.interaction = null;
       }
-      resetInteractionDebugState();
     };
   }, [frameUpdatesRef, updateInteractions]);
+
+  // A callback replacement during a region fade is not an interaction reset.
+  useEffect(() => () => resetInteractionDebugState(), []);
 
   return null;
 }

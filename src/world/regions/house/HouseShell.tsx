@@ -9,7 +9,7 @@ import { HouseMaterial } from "./HouseMaterial";
 import { HousePlant } from "./HouseObjects";
 import { HouseRug } from "./HousePersonalDetails";
 import { curtainSurface } from "./house-geometry";
-import { HOUSE_INTERIOR_WIDTH, HOUSE_INTERIOR_DEPTH, HOUSE_INTERIOR_WALL_HEIGHT } from "./house-layout";
+import { HOUSE_INTERIOR_WIDTH, HOUSE_INTERIOR_DEPTH, HOUSE_INTERIOR_WALL_HEIGHT, HOUSE_CEILING } from "./house-layout";
 import { HOUSE_PALETTE as P } from "./house-palette";
 
 const CURTAIN = curtainSurface();
@@ -76,7 +76,7 @@ export function HouseShell() {
     <Part name="HOUSE_EAST_LIMEWASH" position={[8.25, h / 2, 2.5]} size={[0.5, h, 18]} color={P.wallShade} finish="plaster" radius={0.015} castShadow />
     {/* WindowShadowWall remains the authored light mask. This visual ceiling
         encloses the view without removing the established afternoon patches. */}
-    <Part name="HOUSE_ENCLOSING_PLASTER_CEILING" position={[0, h+.1, 2.5]} size={[16.5, .2, 18]} color={P.trim} finish="plaster" radius={.008} />
+    <Part name="HOUSE_ENCLOSING_PLASTER_CEILING" position={HOUSE_CEILING.position} size={HOUSE_CEILING.size} color={P.trim} finish="plaster" radius={.008} />
     <Part name="HOUSE_CAMERA_RECESS_BACK_WALL" position={[0, h/2, 11.5]} size={[16.5, h, .3]} color={P.wallShade} finish="plaster" radius={.01} />
     {/* Same north-wall footprint/collider; the visual opening matches its window. */}
     <Part name="HOUSE_NORTH_WALL_LEFT" position={[-6.2, h / 2, -6.25]} size={[4.3, h, 0.5]} color={P.wall} finish="plaster" radius={0.001} castShadow />

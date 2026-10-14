@@ -7,7 +7,7 @@ import { setAmbientSound } from "@/systems/ambient-audio";
 import { useExperienceState } from "@/systems/experience-state";
 
 const PREFERENCES_KEY = "matteo-world-preferences-v1";
-export function ExperiencePreferences() {
+export function ExperiencePreferences({ showArrival = true }: { showArrival?: boolean }) {
   useEffect(() => {
     const state = useExperienceState.getState();
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -24,14 +24,14 @@ export function ExperiencePreferences() {
         welcomed = saved.welcomed === true;
       } else state.setReducedMotion(motion.matches);
     } catch { state.setReducedMotion(motion.matches); }
-    if (!welcomed) state.openArrival();
+    if (showArrival && !welcomed) state.openArrival();
     const save = useExperienceState.subscribe((next, previous) => {
       if (next.reducedMotion === previous.reducedMotion && next.quality === previous.quality && next.mouseSensitivity===previous.mouseSensitivity && next.invertMouseY===previous.invertMouseY && next.crosshair===previous.crosshair) return;
 
       try { localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ reducedMotion: next.reducedMotion, quality: next.quality, mouseSensitivity:next.mouseSensitivity, invertMouseY:next.invertMouseY, crosshair:next.crosshair, welcomed: JSON.parse(localStorage.getItem(PREFERENCES_KEY) ?? "null")?.welcomed === true })); } catch { /* Storage may be unavailable; the experience remains usable. */ }
     });
     return () => { save(); void setAmbientSound(false); useExperienceState.getState().setAmbientSound(false); };
-  }, []);
+  }, [showArrival]);
   return null;
 }
 export function Arrival() {

@@ -52,6 +52,7 @@ function Terminal({ openApp }: { openApp: (app: ArchiveApp) => void }) {
 export function Desktop({ initialApp = null, onExit, direct = false }: {
   initialApp?: ArchiveApp | null; onExit?: () => void; direct?: boolean;
 }) {
+  const reducedMotion = useExperienceState(state => state.reducedMotion);
   const [app, setApp] = useState<ArchiveApp | null>(initialApp);
   const [projectSlug, setProjectSlug] = useState<string | null>(null);
   const [noteId, setNoteId] = useState<string>(NOTES[0].id);
@@ -71,10 +72,14 @@ export function Desktop({ initialApp = null, onExit, direct = false }: {
     const tick = () => setClock(new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(new Date()));
     tick(); const timer = window.setInterval(tick, 30000); return () => window.clearInterval(timer);
   }, []);
-  useEffect(() => { if(app && !minimized) windowRef.current?.focus({ preventScroll: true }); }, [app, minimized]);
+  useEffect(() => {
+    // Article navigation removes its focused row/link; keep Escape in this layer.
+    const destination = app && !minimized ? windowRef.current : desktopRef.current;
+    destination?.focus({ preventScroll: true });
+  }, [app, minimized, projectSlug]);
   useEffect(() => { if (onExit) desktopRef.current?.focus({ preventScroll: true }); }, [onExit]);
 
-  return <section ref={desktopRef} tabIndex={onExit ? -1 : undefined} className={`desktop ${direct ? "desktop--direct" : ""}`} data-world-ui aria-label="Computador de Matteo" onKeyDown={event => {
+  return <section ref={desktopRef} tabIndex={-1} data-reduced-motion={reducedMotion ? "true" : undefined} className={`desktop ${direct ? "desktop--direct" : ""}`} data-world-ui aria-label="Computador de Matteo" onKeyDown={event => {
     event.stopPropagation();
     if (event.key === "Escape") { event.preventDefault(); goBack(); }
   }}>
@@ -84,7 +89,7 @@ export function Desktop({ initialApp = null, onExit, direct = false }: {
     {(!app || minimized) && <div className="desktop-welcome"><span className="eyebrow">M. L. Scotti</span><h1>Fique à vontade.</h1><p>Projetos, estudos e anotações.<br />Os arquivos estão logo ali.</p><button onClick={() => openApp("projects")}>Abrir os projetos <Icon name="arrow" size={16} /></button></div>}
     {app && !minimized && <div ref={windowRef} tabIndex={-1} className={`desktop-window ${maximized ? "desktop-window--maximized" : ""}`} aria-label={active?.label}>
       <header className="window-titlebar"><div className="window-actions"><button onClick={() => { setApp(null); setProjectSlug(null); }} aria-label="Fechar janela" className="window-close"><Icon name="close" size={11} /></button><button onClick={() => setMinimized(true)} aria-label="Minimizar janela">−</button><button onClick={() => setMaximized(value => !value)} aria-label={maximized ? "Restaurar janela" : "Ampliar janela"}><Icon name="expand" size={10} /></button></div><span><Icon name={active?.icon ?? "folder"} size={14} />{project?.title ?? active?.label}</span><span className="window-owner">Matteo</span></header>
-      <div className="window-layout"><nav className="file-sidebar" aria-label="Aplicativos"><p>MEUS ARQUIVOS</p>{APPS.filter(item => item.id !== "settings").map(item => <button key={item.id} aria-current={app === item.id ? "page" : undefined} onClick={() => openApp(item.id)}><Icon name={item.icon} size={18} /><span>{item.label}</span></button>)}<div className="sidebar-bottom"><span className="little-status" /> arquivo vivo · 2026</div></nav>
+      <div className="window-layout"><nav className="file-sidebar" aria-label="Aplicativos"><p>MEUS ARQUIVOS</p>{APPS.filter(item => item.id !== "settings").map(item => <button key={item.id} aria-label={item.label} aria-current={app === item.id ? "page" : undefined} onClick={() => openApp(item.id)}><Icon name={item.icon} size={18} /><span>{item.label}</span></button>)}<div className="sidebar-bottom"><span className="little-status" /> arquivo vivo · 2026</div></nav>
         <div className="window-content">
           {(app === "projects" || app === "faculty") && (project ? <><button className="document-back" onClick={() => setProjectSlug(null)}>← Todos os arquivos</button><ProjectArticle project={project} /></> : <div className="project-directory"><div className="directory-heading"><p className="eyebrow">{app === "faculty" ? "Aprender, testar, registrar" : "Seleção de trabalhos"}</p><h1>{app === "faculty" ? "Faculdade" : "Projetos"}</h1><p>{active?.subtitle}. Abra um arquivo para conhecer o contexto e o processo.</p></div><div className="directory-columns"><span>ARQUIVO</span><span>CONTEXTO</span></div>{PROJECTS.filter(item => app !== "faculty" || item.category.startsWith("Formação")).map((item, index) => <button className="project-file-row" key={item.slug} onClick={() => setProjectSlug(item.slug)}><span className={`document-thumb document-thumb--${item.state}`}>{item.state === "available" ? <Icon name="home" size={30} /> : <Icon name="book" size={30} />}</span><span className="file-row-title"><small>{String(index + 1).padStart(2, "0")} / {item.state === "available" ? "ESTUDO DE CASO" : "REGISTRO"}</small><strong>{item.title}</strong><span>{item.description}</span></span><span className="file-row-category">{item.category.split(" · ")[0]}<Icon name="arrow" size={19} /></span></button>)}<p className="directory-note">Os projetos compartilham o mesmo conteúdo no mundo e no modo direto.</p></div>)}
           {app === "notes" && <div className="notes-layout"><nav aria-label="Cadernos">{NOTES.map(item => <button key={item.id} onClick={() => setNoteId(item.id)} aria-current={note.id === item.id ? "page" : undefined}><strong>{item.title}</strong><small>{item.date}</small></button>)}</nav><article className="document-page note-paper"><p className="eyebrow">{note.date}</p><h1>{note.title}</h1>{note.body.map(paragraph => <p key={paragraph}>{paragraph}</p>)}<p className="note-signature">Matteo</p></article></div>}

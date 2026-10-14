@@ -27,7 +27,7 @@ export const FOREST_ANCHOR = PLAN.forestBench;
 function benchTarget(id: string, label: string, place: Anchor, floor: number): InteractionTarget {
   return { id, label, action: { type: "sit", seatPoint: placePlayerPoint(place, 0, -.04, floor), seatRotationY: place.yaw },
     interactionPoint: placePlayerPoint(place, 0, -1.25, floor), interactionRotationY: place.yaw,
-    activationRadius: 2, positionTolerance: .12, rotationTolerance: .07 };
+    clearApproach: true, activationRadius: 2, positionTolerance: .12, rotationTolerance: .07 };
 }
 
 export const FIELD_INTERACTION_TARGETS = [

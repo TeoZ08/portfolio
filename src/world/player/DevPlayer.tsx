@@ -26,6 +26,7 @@ import { usePlayerInput } from "@/world/player/player-input";
 import { VisitorAvatar } from "./VisitorAvatar";
 import {
   DEV_PLAYER_START_POSITION,
+  getPlayerStartPosition,
   resetPlayerMotionState,
   type PlayerMotionRef,
 } from "@/world/player/player-motion";
@@ -87,6 +88,7 @@ type DevVisualMarker = {
 };
 
 type DevPlayerProps = {
+  startPosition?: [number, number, number];
   solidColor?: string;
   cameraResyncRef: CameraResyncRef;
   cameraViewRef: CameraViewRef;
@@ -138,6 +140,7 @@ function movePlanarVelocityTowards(
 }
 
 export function DevPlayer({
+  startPosition = DEV_PLAYER_START_POSITION,
   cameraResyncRef,
   solidColor,
   cameraViewRef,
@@ -212,10 +215,10 @@ export function DevPlayer({
         characterControllerRef.current = null;
       }
 
-      resetPlayerMotionState(motionRef.current);
+      resetPlayerMotionState(motionRef.current, startPosition);
       resetPlayerDebugState();
     };
-  }, [motionRef, world]);
+  }, [motionRef, startPosition, world]);
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production" || !new URLSearchParams(location.search).has("recoveryQA")) return;
@@ -242,7 +245,7 @@ export function DevPlayer({
         window.dispatchEvent(new Event("world:player-recovered"));
         resetPlayerControlState(control);
         control.transitionRequest = {
-          position: region === "HOUSE" ? HOUSE_INTERIOR_ENTRY_POINT : DEV_PLAYER_START_POSITION,
+          position: region === "HOUSE" ? HOUSE_INTERIOR_ENTRY_POINT : getPlayerStartPosition(region),
           rotationY: 0,
         };
         recoveryCooldownRef.current = RECOVERY_COOLDOWN;
@@ -536,8 +539,8 @@ export function DevPlayer({
   }, [frameUpdatesRef, playerControlRef, updatePlayer]);
 
   useLayoutEffect(() => {
-    resetPlayerMotionState(motionRef.current);
-  }, [motionRef]);
+    resetPlayerMotionState(motionRef.current, startPosition);
+  }, [motionRef, startPosition]);
 
   return (
     <RigidBody
@@ -545,7 +548,7 @@ export function DevPlayer({
       name="DEV_PLAYER_CAPSULE"
       type="kinematicPosition"
       colliders={false}
-      position={DEV_PLAYER_START_POSITION}
+      position={startPosition}
       enabledRotations={[false, true, false]}
     >
       <CapsuleCollider

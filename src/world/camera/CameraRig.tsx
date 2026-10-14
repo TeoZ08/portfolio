@@ -122,6 +122,9 @@ export function CameraRig({cameraViewRef,frameUpdatesRef,resyncRef,motionRef,pla
     };
 
     const handlePointerDown = (event: PointerEvent) => {
+      // Relative mouse input already belongs to this canvas. The browser
+      // rejects DOM pointer capture while Pointer Lock is active.
+      if (event.pointerType === "mouse" && document.pointerLockElement === element) return;
       if(event.pointerType==='touch' && event.clientX<gl.domElement.getBoundingClientRect().width*.45)return;
       if (
         (event.pointerType !== "touch" &&

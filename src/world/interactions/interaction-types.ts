@@ -38,6 +38,7 @@ export type InteractionTarget = {
   interactionPoint: readonly [number, number, number];
   interactionRotationY: number;
   activationRadius: number;
+  clearApproach?: boolean;
   positionTolerance: number;
   rotationTolerance: number;
 };

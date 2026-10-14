@@ -27,12 +27,18 @@ export const DEV_PLAYER_START_POSITION: [number, number, number] = [
   PLAN.arrival[1]*FIELD_SCALE,
 ];
 
-export function createPlayerMotionState(): PlayerMotionState {
+const PLAYGROUND_START_POSITION: [number, number, number] = [0, .9, 4.5];
+export function getPlayerStartPosition(region: string): [number, number, number] {
+  // HOUSE retains the existing entry/SPA policy; only the DEV floor needs its own spawn.
+  return region === "DEV_FOUNDATION" ? PLAYGROUND_START_POSITION : DEV_PLAYER_START_POSITION;
+}
+
+export function createPlayerMotionState(startPosition = DEV_PLAYER_START_POSITION): PlayerMotionState {
   return {
     position: {
-      x: DEV_PLAYER_START_POSITION[0],
-      y: DEV_PLAYER_START_POSITION[1],
-      z: DEV_PLAYER_START_POSITION[2],
+      x: startPosition[0],
+      y: startPosition[1],
+      z: startPosition[2],
     },
     velocity: { x: 0, y: 0, z: 0 },
     rotationY: 0,
@@ -43,10 +49,10 @@ export function createPlayerMotionState(): PlayerMotionState {
   };
 }
 
-export function resetPlayerMotionState(state: PlayerMotionState) {
-  state.position.x = DEV_PLAYER_START_POSITION[0];
-  state.position.y = DEV_PLAYER_START_POSITION[1];
-  state.position.z = DEV_PLAYER_START_POSITION[2];
+export function resetPlayerMotionState(state: PlayerMotionState, startPosition = DEV_PLAYER_START_POSITION) {
+  state.position.x = startPosition[0];
+  state.position.y = startPosition[1];
+  state.position.z = startPosition[2];
   state.velocity.x = 0;
   state.velocity.y = 0;
   state.velocity.z = 0;
