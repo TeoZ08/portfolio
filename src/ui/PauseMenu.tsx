@@ -34,15 +34,15 @@ export function PauseMenu({ open }: { open: boolean }) {
   return <dialog ref={dialog} className="pause-menu" aria-labelledby="pause-title"
     onCancel={event => { event.preventDefault(); close(); }}
     onKeyDown={event => event.stopPropagation()}>
-    <div className="pause-paper">
+    <div className="pause-paper" data-map-open={mapOpen}>
       <div className="pause-overline"><span className="pause-compass" aria-hidden="true" /><span>Uma pausa no caminho</span></div>
-      <h1 id="pause-title">Fique um pouco.</h1>
-      <p className="pause-copy">O mundo continua lá fora.</p>
+      <h1 id="pause-title">{mapOpen ? "Mapa dos lugares" : "Fique um pouco."}</h1>
+      <p className="pause-copy">Galeria: UnAPI, Jarvis e processo. Casa: arquivos e história.</p>
       <button ref={resume} className="pause-resume" onClick={event=>{dialog.current?.close();close();requestGameplayPointerLock(event);}}>Continuar explorando <span aria-hidden="true">↗</span></button>
       <button className="pause-map-toggle" aria-expanded={mapOpen} onClick={() => setMapOpen(value => !value)}>{mapOpen ? "Guardar o mapa" : "Abrir o mapa dos lugares"}</button>
       {mapOpen && <WorldMap />}
       <nav className="pause-links" aria-label="Acesso direto ao portfólio">
-        <Link href="/projetos" onClick={close}>Projetos <span>01</span></Link>
+        <Link href="/projetos" onClick={close}>Ler os projetos <span>01</span></Link>
         <Link href="/perfil" onClick={close}>Sobre Matteo <span>02</span></Link>
         <Link href="/arquivo" onClick={close}>Arquivo pessoal <span>03</span></Link>
       </nav>

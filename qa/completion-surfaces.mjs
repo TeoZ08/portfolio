@@ -75,7 +75,7 @@ async function navigation(g) {
   for (const [name, url, id] of [['Projetos', '/arquivo', 'UI.DIRECTPROJECTS'], ['Sobre Matteo', '/perfil', 'UI.DIRECTPROFILE'], ['Arquivo pessoal', '/arquivo', 'UI.DIRECTARCHIVE']]) {
     await g.menu();
     await g.click(g.page.locator('.pause-links').getByRole('link', {
-      name: new RegExp(name)
+      name: new RegExp(name, 'i')
     }));
     await g.page.waitForURL('**' + url);
     await g.shot(id);

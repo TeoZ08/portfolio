@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { launch, Gameplay, baseURL } from './lib/gameplay.mjs';
+import { firstVisit } from './first-visit.mjs';
 import { regressions } from './regressions.mjs';
 import { journeys } from './journeys.mjs';
 import { content } from './content.mjs';
@@ -57,8 +58,8 @@ const report = {
   startedAt: new Date().toISOString(),
   tests: []
 };
-const definitions = suite === 'small' ? smallContracts : suite === 'preferences' ? preferencesAssets : suite === 'contracts' ? contractRegressions : suite === 'faults' ? faults : suite === 'turns' ? turnBoundary : suite === 'completion' ? completion : suite === 'sequences' ? sequences : suite === 'interiors' ? interiors : suite === 'surfaces' ? surfaces : suite === 'boundaries' ? boundaries : suite === 'related' ? related : suite === 'controls' ? controls : suite === 'content' ? content : suite === 'journeys' ? journeys : suite === 'all' ? [...regressions, ...journeys, ...content, ...controls, ...related, ...boundaries, ...surfaces, ...interiors, ...sequences, ...completion, ...turnBoundary, ...faults, ...contractRegressions, ...preferencesAssets, ...smallContracts] : regressions;
-if (!['regressions', 'journeys', 'content', 'controls', 'related', 'boundaries', 'surfaces', 'interiors', 'sequences', 'completion', 'turns', 'faults', 'contracts', 'preferences', 'small', 'all'].includes(suite)) throw Error('Unknown QA_SUITE: ' + suite);
+const definitions = suite === 'first-visit' ? firstVisit : suite === 'small' ? smallContracts : suite === 'preferences' ? preferencesAssets : suite === 'contracts' ? contractRegressions : suite === 'faults' ? faults : suite === 'turns' ? turnBoundary : suite === 'completion' ? completion : suite === 'sequences' ? sequences : suite === 'interiors' ? interiors : suite === 'surfaces' ? surfaces : suite === 'boundaries' ? boundaries : suite === 'related' ? related : suite === 'controls' ? controls : suite === 'content' ? content : suite === 'journeys' ? journeys : suite === 'all' ? [...firstVisit, ...regressions, ...journeys, ...content, ...controls, ...related, ...boundaries, ...surfaces, ...interiors, ...sequences, ...completion, ...turnBoundary, ...faults, ...contractRegressions, ...preferencesAssets, ...smallContracts] : regressions;
+if (!['first-visit', 'regressions', 'journeys', 'content', 'controls', 'related', 'boundaries', 'surfaces', 'interiors', 'sequences', 'completion', 'turns', 'faults', 'contracts', 'preferences', 'small', 'all'].includes(suite)) throw Error('Unknown QA_SUITE: ' + suite);
 const tests = definitions.filter(t => !process.env.QA_ONLY || process.env.QA_ONLY.split(',').includes(t.id));
 if (!tests.length) throw Error('QA_ONLY selected no scenarios; an empty run cannot pass');
 const browser = await launch();

@@ -53,11 +53,20 @@ export function Arrival() {
   return <dialog ref={dialog} className="arrival-dialog" aria-labelledby="arrival-title" onCancel={event => { event.preventDefault(); enter(); }}>
     <span className="place-overline">Matteo Lima Scotti</span>
     <h1 id="arrival-title">Um lugar para<br />conhecer o que eu faço.</h1>
-    <p>A casa guarda os projetos. O ateliê, os estudos e o jardim mostram outras partes do caminho.</p>
+    <p>UnAPI e Jarvis na Galeria. Projetos e história na Casa. Você escolhe o caminho.</p>
     <button autoFocus disabled={!ready} onClick={explore}>Entrar e explorar <span aria-hidden="true">↗</span></button>
     {!ready&&<p role="status">Preparando o mundo…</p>}
     <Link href="/projetos" onClick={enter}>Ir direto aos projetos</Link>
-    <dl><div><dt>WASD / setas</dt><dd>Caminhar</dd></div><div><dt>F5 / Câmera</dt><dd>Alternar três perspectivas</dd></div><div><dt>Entrar / continuar</dt><dd>Mouse controla o olhar; Esc libera</dd></div><div><dt>E</dt><dd>Usar objetos próximos</dd></div><div><dt>Esc / ···</dt><dd>Mapa e arquivos</dd></div></dl>
-    <p className="arrival-touch">No celular, mova-se com o joystick à esquerda, toque em Salto à direita e arraste o lado direito para olhar. O botão Câmera alterna a perspectiva.</p>
+    <div className="arrival-basics arrival-desktop" aria-label="Primeiros passos com teclado e mouse">
+      <p><strong>WASD / setas</strong> para caminhar; mouse para olhar.</p>
+      <p><strong>E</strong> usa o objeto próximo. <strong>Esc</strong> volta ou abre mapa e arquivos.</p>
+    </div>
+    <div className="arrival-basics arrival-touch" aria-label="Primeiros passos por toque">
+      <p><strong>Joystick à esquerda:</strong> caminhar. <strong>Arraste à direita:</strong> olhar. Use os dois dedos juntos.</p>
+      <p>Perto de objetos, <strong>toque na ação</strong>. <strong>Mapa e projetos</strong> abre os lugares e a leitura.</p>
+    </div>
+    <details className="arrival-more"><summary>Mais controles</summary>
+      <dl><div><dt>F5 / Câmera</dt><dd>Alternar três perspectivas</dd></div><div><dt>C / ↻ Câmera</dt><dd>Recentralizar o olhar</dd></div><div><dt>Shift / joystick no limite</dt><dd>Correr</dd></div><div><dt>Espaço / Salto</dt><dd>Saltar</dd></div><div><dt>Roda / pinça</dt><dd>Distância em terceira pessoa</dd></div><div><dt>Esc</dt><dd>Liberar mouse / voltar / pausar</dd></div></dl>
+    </details>
   </dialog>;
 }

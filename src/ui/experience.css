@@ -74,3 +74,62 @@ button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,s
 .mouse-control-status strong{font-weight:600}.mouse-control-status button>span{color:var(--muted)}
 .camera-crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font:18px/1 monospace;color:var(--paper);text-shadow:0 1px 2px var(--ink);pointer-events:none}
 .mouse-preferences input[type=range]{width:100%;accent-color:var(--sage);min-height:28px}.mouse-preferences output{margin-left:auto;font-variant-numeric:tabular-nums}
+
+/* GOAL19: existing paper controls, with place names and progressive help. */
+.world-menu-access { min-height:44px; }
+.arrival-dialog .arrival-basics { margin-top:calc(var(--space) * 2); }
+.arrival-basics p { margin:var(--space) 0; }
+.arrival-basics strong { color:var(--ink); font-weight:600; }
+.arrival-dialog .arrival-touch { font-size:.82rem; }
+.arrival-more { margin-top:var(--space); color:var(--ink); font-size:.8rem; }
+.arrival-more summary { min-height:44px; display:list-item; align-content:center; cursor:pointer; text-underline-offset:4px; }
+.arrival-more summary:hover { text-decoration:underline; }
+.arrival-more summary:focus-visible { outline:2px solid var(--sage); outline-offset:4px; }
+.arrival-dialog .arrival-more dl { margin:0; }
+.world-map svg { float:none; display:block; width:100%; height:224px; margin:var(--space) 0; max-height:none; }
+.world-map ol { clear:both; padding-left:24px; }
+.world-map li button { padding:var(--space); }
+.world-map li span { font-size:.75rem; line-height:1.5; }
+.world-map .map-travel-note { color:var(--ink); }
+.pause-paper[data-map-open="true"] h1 { font-size:28px; margin:16px 0 8px; }
+.pause-paper[data-map-open="true"] .pause-copy { font-size:13px; margin-bottom:16px; }
+.interaction-context { display:block; margin-top:4px; color:var(--muted); font:11px/1.4 system-ui; }
+@media(pointer:coarse),(max-width:600px) {
+ .arrival-desktop { display:none; }
+ .arrival-dialog .arrival-more dl { display:block; }
+ .world-menu-access-label { display:inline; margin-left:8px; }
+ .world-menu-access { padding:8px 12px; background:var(--paper); color:var(--ink); }
+ .world-interaction-prompt .interaction-context { max-width:160px; }
+}
+@media(max-height:480px) {
+ .arrival-dialog { padding:16px 24px; }
+ .arrival-dialog h1 { font-size:1.6rem; margin:8px 0; }
+ .arrival-dialog button { margin:8px 0; }
+ .world-map svg { height:176px; }
+}
+
+.map-drawing { margin:var(--space) 0; border-block:1px solid var(--line); }
+.map-drawing summary { min-height:44px; align-content:center; cursor:pointer; color:var(--ink); font-size:.8rem; }
+.map-drawing summary:focus-visible { outline:2px solid var(--sage); outline-offset:4px; }
+.world-map ol { margin:var(--space) 0; }
+.world-map li { margin:0; border-bottom:1px solid var(--line); }
+@media(max-width:600px) {
+ .arrival-dialog { padding:24px; }
+ .arrival-dialog h1 { margin:16px 0; }
+ .arrival-dialog .arrival-basics { margin-top:16px; }
+ .pause-paper[data-map-open="true"] { padding:24px; }
+}
+
+.pause-paper[data-map-open="true"] .pause-overline,
+.pause-paper[data-map-open="true"] .pause-copy { display:none; }
+.pause-paper[data-map-open="true"] h1 { margin:0 0 16px; }
+.pause-paper[data-map-open="true"] > .pause-map-toggle { margin:8px 0; }
+.arrival-dialog { pointer-events:auto; }
+@media(pointer:coarse),(max-width:600px) {
+ .world-interaction-prompt { bottom:calc(16px + env(safe-area-inset-bottom,0px)); }
+}
+@media(max-width:375px),(max-height:480px) {
+ .world-interaction-prompt .interaction-context { display:none; }
+}
+.arrival-dialog > a { display:flex; align-items:center; min-height:44px; }
+.arrival-dialog > button { margin-bottom:8px; }

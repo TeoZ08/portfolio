@@ -18,7 +18,9 @@ npm run test:all
 QA_BASE_URL=http://localhost:3154 QA_OUT=/caminho/absoluto/qa-nova QA_SUITE=regressions npm run test:functional
 ```
 
-As suítes disponíveis são `regressions`, `journeys`, `content`, `controls`, `related`, `boundaries`, `surfaces`, `interiors`, `sequences`, `completion`, `turns`, `faults`, `contracts`, `preferences`, `small` e `all`. Um nome inválido ou seleção vazia falha, em vez de aprovar uma execução sem testes.
+A suíte `first-visit` cobre os novos fluxos GOAL19 (instruções por dispositivo, ajuda opcional, mapa, projetos reais, foco/retorno e touch simultâneo). `qa/first-visit-audit.mjs` captura as superfícies de entrada em um diretório novo.
+
+As suítes disponíveis são `first-visit`, `regressions`, `journeys`, `content`, `controls`, `related`, `boundaries`, `surfaces`, `interiors`, `sequences`, `completion`, `turns`, `faults`, `contracts`, `preferences`, `small` e `all`. Um nome inválido ou seleção vazia falha, em vez de aprovar uma execução sem testes.
 
 ```sh
 QA_SUITE=journeys QA_ONLY=JOURNEY.FRONT.ORIENTATION.ESC QA_OUT=/caminho/absoluto/qa-jornada npm run test:functional
@@ -43,3 +45,9 @@ node qa/build-registry.mjs /caminho/absoluto/relatorios
 O registro usa adjudicação por GIVEN–WHEN–THEN em `fixtures/coverage-adjudication.json` e cenários obrigatórios da última execução. Um ID ligado a um teste não prova todas variantes desse contrato. Nenhuma operação desta infraestrutura faz merge, push ou deploy.
 
 A suíte `faults` e o caso de storage malformado fazem injeção explícita de falha, em contexto novo. Não contam como navegação pública. `focus-probe.mjs` registra tentativa nativa de foco sem aprovar comportamento quando nenhum blur ocorre. `production-smoke.mjs` verifica a build servida em3155 sem globals DEV. O helper opcional `render-favicon.py` usa Pillow e a fonte Georgia Bold Italic instalada; não redistribui a fonte nem afeta runtime.
+
+## GOAL19 — primeira visita
+
+Na branch de prévia, use `QA_BASE_URL=http://localhost:3156 QA_SUITE=first-visit QA_OUT=/caminho/novo npm run test:functional`. O fluxo testa entrada por teclado/touch, ajuda opcional, mapa, leitura real, retorno e ações sem sobreposição em 390×844/320×390. O observer AX do Chrome não substitui leitor de tela físico.
+
+`qa/first-visit-audit.mjs` captura chegada, controles, mapa e os contextos da Galeria/PC por ações públicas, em desktop/touch. `qa/goal19-validation.mjs` executa sequencialmente as jornadas, controles, superfícies, conteúdo, interiores, links e performance nas prévias 3156(candidata)/3157(snapshotbase). Ambas precisam estar prontas; o script não cria servidores nem publica.

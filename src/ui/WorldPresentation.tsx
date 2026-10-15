@@ -19,6 +19,13 @@ import { PauseMenu } from "./PauseMenu";
 import { Arrival, ExperiencePreferences } from "./Arrival";
 import { PlaceExperience } from "./PlaceExperience";
 
+const PROJECT_CONTEXT: Record<string, string> = {
+  WORKSHOP_LIGHT_TABLE: "Galeria · processo e imagens deste mundo",
+  UNIVERSITY_NOTEBOOK: "Galeria · Jarvis Acadêmico e fontes",
+  COMMUNITY_WORKSHOP: "Galeria · Portal UnAPI e oficinas",
+  HOUSE_COMPUTER: "Casa · projetos, estudos e sobre Matteo",
+};
+
 const HOUSE_INSPECTIONS = {
   [HOUSE_REFERENCE_BOARD_TARGET_ID]: {
     title: "Mural de referências",
@@ -43,6 +50,7 @@ export function WorldPresentation() {
   const crosshair=useExperienceState(state=>state.crosshair);
   const cameraMode=useCameraState(s=>s.mode);
   const blockedReason = useInteractionDebugState(state => state.candidateBlockedReason);
+  const candidateId=useInteractionDebugState(state=>state.candidateId);
   const label=useInteractionDebugState(state=>state.candidateLabel);
   const status=useInteractionDebugState(state=>state.status);
   const activeTargetId=useInteractionDebugState(state=>state.activeTargetId);
@@ -88,7 +96,7 @@ export function WorldPresentation() {
   }, [status, transitionActive, menuOpen, deviceActive]);
   const hint=status==="idle"?label:status==="approaching"?"Cancelar aproximação":status==="entering"||status==="exiting"?null:"Voltar a explorar";
   return <div className="world-presentation" data-world-ui>
-    {!deviceActive && <button className="world-menu-access" aria-label="Pausa e arquivos (Escape)" disabled={status!=="idle" || transitionActive} onClick={()=>useExperienceState.getState().openMenu()}><span aria-hidden="true">···</span><span className="world-menu-access-label">Pausa e arquivos</span></button>}
+    {!deviceActive && <button className="world-menu-access" aria-label="Mapa e projetos · pausa e arquivos (Escape)" disabled={status!=="idle" || transitionActive} onClick={()=>useExperienceState.getState().openMenu()}><span aria-hidden="true">···</span><span className="world-menu-access-label">Mapa e projetos</span></button>}
     {overlay===null && !deviceActive && status==='idle' && <button type="button" className="camera-mode-control" aria-keyshortcuts="F5" aria-label={`Câmera F5: ${CAMERA_MODE_LABELS[cameraMode]}`} onClick={()=>{useCameraState.getState().cycle();document.querySelector<HTMLElement>(".world-canvas")?.focus({preventScroll:true});}}><span>Câmera <kbd>F5</kbd></span><span aria-live="polite">{CAMERA_MODE_LABELS[cameraMode]}</span></button>}
     {overlay===null && !deviceActive && status==='idle' && <div className="mouse-control-status" data-pointer-status={pointerStatus}>
       {pointerStatus==='locked'?<span role="status">Mouse controla o olhar · Esc libera</span>:<button type="button" disabled={!pointerReady || pointerStatus==='pending'} onClick={requestGameplayPointerLock}>
@@ -99,7 +107,7 @@ export function WorldPresentation() {
     {crosshair && cameraMode==='first-person' && pointerStatus==='locked' && overlay===null && !deviceActive && status==='idle' && <span className="camera-crosshair" aria-hidden="true">+</span>}
     {!menuOpen && !deviceActive && <button type="button" className="camera-help" onClick={requestCameraRecenter} aria-keyshortcuts="C" aria-label="Recentralizar câmera" title="Clique: capturar mouse · Esc: soltar · arraste: olhar · roda: distância em terceira pessoa · C: recentralizar"><span aria-hidden="true">↻</span> Câmera <kbd>C</kbd></button>}
     {!menuOpen && !deviceActive && status==="idle" && <div className="traversal-help" aria-label="Shift para correr, Espaço para saltar"><kbd>Shift</kbd> correr <span aria-hidden="true">·</span> <kbd>Espaço</kbd> salto</div>}
-    {!menuOpen && !deviceActive && hint && <button className="world-interaction-prompt" disabled={status === "idle" && !!blockedReason} aria-describedby={status === "idle" && blockedReason ? "world-approach-feedback" : undefined} onClick={()=>requestWorldInteraction()}><kbd>E</kbd>{hint}</button>}
+    {!menuOpen && !deviceActive && hint && <button className="world-interaction-prompt" disabled={status === "idle" && !!blockedReason} aria-describedby={status === "idle" && blockedReason ? "world-approach-feedback" : undefined} onClick={()=>requestWorldInteraction()}><kbd>E</kbd><span>{hint}{status === "idle" && candidateId && PROJECT_CONTEXT[candidateId] && <small className="interaction-context">{PROJECT_CONTEXT[candidateId]}</small>}</span></button>}
     {!menuOpen && !deviceActive && overlay === null && status === "idle" && blockedReason &&
       <p id="world-approach-feedback" className="world-approach-feedback" role="status">{blockedReason}</p>}
     {!menuOpen && !deviceActive && inspection && <aside className="world-inspection-card" aria-live="polite" aria-labelledby="world-inspection-title">

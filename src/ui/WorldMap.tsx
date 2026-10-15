@@ -8,15 +8,17 @@ import { FIELD_BOUNDS as B } from "@/world/regions/field/field-layout";
 const point = ([x, z]: readonly number[]) => `${x-B.minX},${z-B.minZ}`;
 export function WorldMap() {
   return <div className="world-map">
-    <p>Escolha um lugar para chegar diretamente, ou volte para seguir a pé.</p>
-    <svg viewBox={`0 0 ${B.maxX-B.minX} ${B.maxZ-B.minZ}`} role="img" aria-label="Mapa do blockout: Casa oeste, Galeria leste, Songahm norte, Bosque lateral e Mirante nordeste">
+    <p>Casa a oeste · Galeria a leste · Songahm ao norte. Três experiências no mesmo pavilhão da Galeria.</p>
+    <p className="map-travel-note">Escolha um lugar para chegar diretamente, ou continue a pé.</p>
+    <details className="map-drawing"><summary>Ver os caminhos no mapa</summary>
+    <svg viewBox={`0 0 ${B.maxX-B.minX} ${B.maxZ-B.minZ}`} role="img" aria-label="Mapa dos lugares: Casa oeste, Galeria leste, Songahm norte, Bosque lateral e Mirante nordeste">
       <rect width={B.maxX-B.minX} height={B.maxZ-B.minZ} rx="8" fill="#dfe2cc" />
       <ellipse cx={PLAN.dojo.x-B.minX} cy={PLAN.dojo.z-B.minZ} rx={PLAN.dojo.width/2} ry={PLAN.dojo.depth/2} fill="#c5bda7" opacity=".75" />
       <rect x={PLAN.dojo.x-B.minX-16/.72/2} y={PLAN.dojo.z-B.minZ-10.8/.72/2} width={16/.72} height={10.8/.72} rx="1" fill="#6b766c" />
       {ROUTES.map(r=>r.samples).map((points, i) => <polyline key={i} points={points.map(point).join(" ")} fill="none" stroke="#b2a783" strokeWidth="1.8" strokeLinejoin="round" />)}
       {WORLD_DESTINATIONS.map((place, i) => <g key={place.id} transform={`translate(${place.x-B.minX} ${place.z-B.minZ})`}><circle r="3.5" fill="#4e654f" /><text textAnchor="middle" dominantBaseline="central" fill="#f8f2de" fontSize="4">{i + 1}</text></g>)}
       <circle cx={PLAN.arrival[0]-B.minX} cy={PLAN.arrival[1]-B.minZ} r="2" fill="#b27653" /><text x={PLAN.arrival[0]-B.minX+5} y={PLAN.arrival[1]-B.minZ+1} fill="#455941" fontSize="3.6">Chegada</text>
-    </svg>
+    </svg></details>
     <ol>{WORLD_DESTINATIONS.map(place => <li key={place.id}><button type="button" onClick={() => {
       useExperienceState.getState().closeOverlay();
       window.dispatchEvent(new CustomEvent("world:travel", { detail: place.id }));
