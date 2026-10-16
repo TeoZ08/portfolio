@@ -15,7 +15,11 @@ export function getAvatarPose(motion: PlayerMotionState, control: PlayerControlS
 
 // Native support-phase travel / duration, scaled with the 1.12 uniform avatar scale.
 // This matches planted foot velocity to physics instead of reusing V5 cadence.
-export function getAvatarCadence(pose: AvatarPose, speed: number) {
+type GaitCalibration = { stroke: number; duty: number; duration: number; min: number; max: number };
+export function getAvatarCadence(pose: AvatarPose, speed: number, profile?: Partial<Record<AvatarPose, GaitCalibration>>) {
+  const gait = profile?.[pose];
+  if (gait) return Math.min(gait.max, Math.max(gait.min, Math.max(0, speed) * gait.duty * gait.duration / (gait.stroke * 1.12)));
+  // Original V3 remains a preserved asset/fallback with its original calibration.
   if (pose === "walk") return Math.min(2.6, Math.max(.35, speed / (.184 * 1.12 / .60)));
   if (pose === "run") return Math.min(2.1, Math.max(.55, speed / (.270 * 1.12 / (.38 * .75))));
   return 1;
@@ -28,11 +32,8 @@ export function getAvatarSeatOffset(targetId: string | null) {
   return -.466;
 }
 
-// Dojang trim/tatami sit above the unchanged .40m terrace collider.
-// Arguments are the unscaled local coordinates in PLACE_LAYOUT.dojo.
-export function getAvatarDojoLift(x: number, z: number, scale = .72) {
-  if (Math.abs(x) <= 5.4 && Math.abs(z) <= 3.575) return .113 * scale;
-  if (Math.abs(x) <= 5.575 && Math.abs(z) <= 4.025) return .075 * scale;
-  if (Math.abs(x) <= 6.6 && Math.abs(z) <= 4.7) return .05 * scale;
+// Current surface colliders already support the capsule on the tatami/trim.
+// Extra lift duplicated that height (A04); keep one foot/capsule alignment.
+export function getAvatarDojoLift(_x: number, _z: number, _scale = .72) {
   return 0;
 }

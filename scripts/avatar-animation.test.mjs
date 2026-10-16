@@ -97,9 +97,11 @@ test("chibi cadence cancels support-foot travel at calibrated walk/run speeds", 
 });
 
 test("visual seat and dojo calibration preserves the existing collision heights", () => {
-  assert.equal(getAvatarDojoLift(0, 1.1), .113 * .72);
-  assert.equal(getAvatarDojoLift(5.5, 3.8), .075 * .72);
-  assert.equal(getAvatarDojoLift(6, 4.5), .05 * .72);
+  // Current surface colliders already carry the capsule at these elevations.
+  // A second visual lift reproduced GOAL20 A04; the game raycast covers contact.
+  assert.equal(getAvatarDojoLift(0, 1.1), 0);
+  assert.equal(getAvatarDojoLift(5.5, 3.8), 0);
+  assert.equal(getAvatarDojoLift(6, 4.5), 0);
   assert.equal(getAvatarDojoLift(0, 5.8), 0);
   assert.equal(getAvatarDojoLift(20, 0), 0);
   const contact=.13838209716022853 * 1.12;

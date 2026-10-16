@@ -88,6 +88,6 @@ export function PlaceExperience({ targetId }: { targetId: string | null }) {
     {targetId === "UNIVERSITY_NOTEBOOK" && <><StudyNotebook /><ExhibitionImages project="jarvis" /></>}
     {targetId === "COMMUNITY_WORKSHOP" && <><CommunityWorkshop /><ExhibitionImages project="unapi" /></>}
     {targetId === "FOREST_CHIMES" && <ForestChimes />}
-    {targetId === "DOJO_PRACTICE" && <><p>O Songahm Taekwondo faz parte da vida que quero construir. Este é o espaço reservado ao treino, à repetição e ao movimento.</p><p className="place-caption">Estudo livre de movimento: guarda, elevação do joelho e extensão controlada. Não representa uma forma oficial do Songahm.</p></>}
+    {targetId === "DOJO_PRACTICE" && <><p>O Songahm Taekwondo faz parte da vida que quero construir. Este é o espaço reservado ao treino, à repetição e ao movimento.</p><p className="place-caption">Estudo livre: guarda, pivô e um chute semicircular médio, com recolhimento. Não representa uma forma oficial do Songahm.</p></>}
   </section>;
 }

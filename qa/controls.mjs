@@ -46,8 +46,16 @@ async function desktop(g, mode) {
   });
   const beforeJump = await g.read();
   await g.key('Space');
-  await page.waitForFunction(() => window.__environmentQA.read().playerMotion.airborne);
-  const jump = await g.shot('jump');
+  // Save the physical state in the same poll that observes takeoff. A slow
+  // screenshot can finish after this short jump has already landed.
+  const takeoff = await page.waitForFunction(() => {
+    const motion = window.__environmentQA.read().playerMotion;
+    return motion.airborne ? { time: performance.now(), motion: JSON.parse(JSON.stringify(motion)) } : null;
+  });
+  const jump = await takeoff.jsonValue();
+  await takeoff.dispose();
+  g.data.observations.push({ label: 'Native takeoff before screenshot', ...jump });
+  await g.shot('jump');
   await g.verify('jump', ['MOVEMENT.JUMP'], () => {
     assert(jump.motion.airborne);
     assert(jump.motion.position.y > beforeJump.motion.position.y + .05);

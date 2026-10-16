@@ -194,11 +194,11 @@ input {
 
 
 /* Let the portrait and movement lead on narrow screens during practice. */
-@media (max-width:600px) {
-  /* This short mobile panel fits its content; avoid an extra composited scroll surface over WebGL. */
-  .place-experience[data-place="DOJO_PRACTICE"] { top:auto; bottom:12px; max-height:none; overflow-y:visible; }
-  .place-experience[data-place="DOJO_PRACTICE"] h2 { font-size:22px; margin:12px 0; }
-  .place-experience[data-place="DOJO_PRACTICE"] p { font-size:14px; }
+@media (max-width:600px), (pointer:coarse) and (max-height:500px) {
+  /* Keep the lower body visible during the kick; the context stays readable. */
+  .place-experience[data-place="DOJO_PRACTICE"] { top:16px; bottom:auto; max-height:35dvh; overflow-y:auto; padding:16px; }
+  .place-experience[data-place="DOJO_PRACTICE"] h2 { font-size:22px; margin:8px 0; }
+  .place-experience[data-place="DOJO_PRACTICE"] p { font-size:14px; margin:8px 0; }
   .world-presentation:has(.place-experience[data-place="DOJO_PRACTICE"]) .world-interaction-prompt { display:none; }
 }
 
