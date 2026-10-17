@@ -1,0 +1,68 @@
+.panel {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 5;
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: calc(100svh - 2rem);
+  overflow: auto;
+  padding: 1.15rem;
+  border: 1px solid #505861;
+  border-radius: 0.65rem;
+  background: rgba(22, 25, 29, 0.95);
+  box-shadow: 0 14px 32px #0007;
+  color: #eff0f3;
+}
+.eyebrow {
+  margin: 0 0 0.4rem;
+  color: #b6bdc9;
+  font-size: 0.66rem;
+  letter-spacing: 0.11em;
+}
+.heading { margin: 0 0 0.6rem; font-size: 1.15rem; }
+.caption { margin: 0; color: #c0c4cd; font-size: 0.85rem; line-height: 1.55; }
+.progress { margin: 1rem 0 0.65rem; font-size: 0.86rem; font-weight: 700; }
+.discoveryList { display: grid; gap: 0.5rem; }
+.discoveryRow {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  padding: 0.6rem;
+  border: 1px solid #404750;
+  border-radius: 0.4rem;
+}
+.discoveryRow strong { font-size: 0.8rem; }
+.discoveryRow p { margin: 0.15rem 0 0; color: #c0c4cd; font-size: 0.72rem; line-height: 1.45; }
+.check { color: #a3c8b4; } .pending { color: #9199a5; }
+.nearby, .feedback {
+  margin: 0.8rem 0;
+  padding: 0.7rem;
+  border-radius: 0.4rem;
+  background: #30363e;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.nearby p { margin: 0 0 0.6rem; }
+.action {
+  border: 1px solid #b7c3d9;
+  border-radius: 0.4rem;
+  background: #d8dfea;
+  color: #1a1e25;
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+.reset, .link {
+  display: inline-block;
+  margin: 0.5rem 0.75rem 0 0;
+  border: 0;
+  background: none;
+  color: #d8dfea;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.78rem;
+  padding: 0;
+}
+@media (max-width: 640px) {
+  .panel { top: auto; bottom: 0.75rem; max-height: min(55svh, 23rem); }
+}
